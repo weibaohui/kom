@@ -72,9 +72,8 @@ func (k8s *Kom) Update(dest interface{}) *Kom {
 	tx.Error = tx.Callback().Update().Execute(tx.Statement.Context, tx)
 	return tx
 }
-func (k8s *Kom) Delete(dest interface{}) *Kom {
+func (k8s *Kom) Delete() *Kom {
 	tx := k8s.getInstance()
-	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Delete().Execute(tx.Statement.Context, tx)
 	return tx
 }
