@@ -9,13 +9,13 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func Delete(ctx context.Context, k8s *kom.Kom) error {
+func Delete(ctx context.Context, kom *kom.Kom) error {
 	if klog.V(8).Enabled() {
-		json := k8s.Statement.String()
+		json := kom.Statement.String()
 		klog.V(8).Infof("DefaultCB Delete %s", json)
 	}
 
-	stmt := k8s.Statement
+	stmt := kom.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace

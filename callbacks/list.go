@@ -14,13 +14,13 @@ import (
 )
 
 // List todo 删除这个ctx参数，ctx从statement中获取
-func List(ctx context.Context, k8s *kom.Kom) error {
+func List(ctx context.Context, kom *kom.Kom) error {
 	if klog.V(6).Enabled() {
-		json := k8s.Statement.String()
+		json := kom.Statement.String()
 		klog.V(6).Infof("DefaultCB List %s", json)
 	}
 
-	stmt := k8s.Statement
+	stmt := kom.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
