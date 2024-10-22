@@ -1,12 +1,15 @@
 package example
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/kom/applier"
+	"github.com/weibaohui/kom/kom/poder"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,6 +23,7 @@ func Example() {
 	builtInExample()
 	crdExample()
 	YamlApplyDelete()
+	PodLogs()
 }
 func YamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -281,4 +285,60 @@ func builtInExample() {
 	for _, d := range items {
 		fmt.Printf("List Deployment WithLabelSelector Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
 	}
+}
+
+func PodLogs() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random-char-pod-1
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: container-b
+`
+	_ = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	_ = applier.Instance().WithContext(context.TODO()).Apply(yaml)
+
+	time.Sleep(time.Second * 5)
+	options := corev1.PodLogOptions{
+		Container: "container-b",
+	}
+	podLogs := poder.Instance().WithContext(context.TODO()).
+		Namespace("default").
+		Name("random-char-pod-1").
+		GetLogs("random-char-pod", &options)
+	logStream, err := podLogs.Stream(context.TODO())
+	if err != nil {
+		fmt.Println("Error getting pod logs:", err)
+	}
+	// 逐行读取日志并发送到 Channel
+	reader := bufio.NewReader(logStream)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			// 处理读取错误，向客户端发送错误消息
+			fmt.Printf("Error reading stream: %v\n", err)
+			break
+		}
+		fmt.Println(line)
+	}
+
+	_ = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+
 }
