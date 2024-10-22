@@ -114,31 +114,31 @@ func getKubeConfig(path string) (*rest.Config, error) {
 	return config, err
 }
 
-func (k8s *Kom) getInstance() *Kom {
-	if k8s.clone > 0 {
-		tx := &Kom{Error: k8s.Error}
+func (kom *Kom) getInstance() *Kom {
+	if kom.clone > 0 {
+		tx := &Kom{Error: kom.Error}
 
-		if k8s.clone == 1 {
+		if kom.clone == 1 {
 			// clone with new statement
 			tx.Statement = &Statement{
 				Kom:           tx,
-				Context:       k8s.Statement.Context,
-				client:        k8s.Statement.client,
-				DynamicClient: k8s.Statement.DynamicClient,
-				config:        k8s.Statement.config,
-				ListOptions:   k8s.Statement.ListOptions,
-				Namespace:     k8s.Statement.Namespace,
-				Namespaced:    k8s.Statement.Namespaced,
-				GVR:           k8s.Statement.GVR,
-				GVK:           k8s.Statement.GVK,
-				Name:          k8s.Statement.Name,
+				Context:       kom.Statement.Context,
+				client:        kom.Statement.client,
+				DynamicClient: kom.Statement.DynamicClient,
+				config:        kom.Statement.config,
+				ListOptions:   kom.Statement.ListOptions,
+				Namespace:     kom.Statement.Namespace,
+				Namespaced:    kom.Statement.Namespaced,
+				GVR:           kom.Statement.GVR,
+				GVK:           kom.Statement.GVK,
+				Name:          kom.Statement.Name,
 			}
-			tx.callbacks = k8s.callbacks
+			tx.callbacks = kom.callbacks
 
 		} else {
 			// with clone statement
-			tx.Statement = k8s.Statement.clone()
-			tx.callbacks = k8s.callbacks
+			tx.Statement = kom.Statement.clone()
+			tx.callbacks = kom.callbacks
 			tx.Statement.Kom = tx
 
 		}
@@ -146,8 +146,8 @@ func (k8s *Kom) getInstance() *Kom {
 		return tx
 	}
 
-	return k8s
+	return kom
 }
-func (k8s *Kom) Callback() *callbacks {
-	return k8s.callbacks
+func (kom *Kom) Callback() *callbacks {
+	return kom.callbacks
 }

@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) ([]unstructured.Unstructured, error) {
+func (kom *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) ([]unstructured.Unstructured, error) {
 	gvr, namespaced := getGVR(kind)
 	if gvr.Empty() {
 		return nil, fmt.Errorf("不支持的资源类型: %s", kind)
@@ -27,9 +27,9 @@ func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts 
 
 	var list *unstructured.UnstructuredList
 	if namespaced {
-		list, err = k8s.dynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
+		list, err = kom.dynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
-		list, err = k8s.dynamicClient.Resource(gvr).List(ctx, listOptions)
+		list, err = kom.dynamicClient.Resource(gvr).List(ctx, listOptions)
 	}
 	if err != nil {
 		return nil, err
