@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
 )
 
 func (kom *Kom) WithContext(ctx context.Context) *Kom {
@@ -104,18 +102,4 @@ func (kom *Kom) fill(m *unstructured.Unstructured) *Kom {
 		*m = *dest
 	}
 	return kom
-}
-
-func (kom *Kom) sqlTest() {
-	pod := v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "",
-		},
-	}
-	err := kom.Resource(&pod).
-		Namespace("default").Name("").Get(&pod)
-	if err != nil {
-		klog.Errorf("kom.First(&pod) error :%v", err)
-	}
 }

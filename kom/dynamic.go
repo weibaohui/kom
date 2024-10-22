@@ -133,9 +133,8 @@ func getGVKFromObj(obj interface{}) (schema.GroupVersionKind, error) {
 }
 
 func ParseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
-
 	// 获取单个GVK
-	gvk := getParsedGVK(gvks, versions...)
+	gvk := GetParsedGVK(gvks, versions...)
 
 	// 获取GVR
 	if isBuiltinResource(gvk.Kind) {
@@ -151,5 +150,32 @@ func ParseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schem
 		gvr = GetGRVFromCRD(crd)
 	}
 
+	return
+}
+
+func GetParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
+	if len(gvks) == 0 {
+		return schema.GroupVersionKind{}
+	}
+	if len(versions) > 0 {
+		// 指定了版本
+		v := versions[0]
+		for _, g := range gvks {
+			if g.Version == v {
+				return schema.GroupVersionKind{
+					Kind:    g.Kind,
+					Group:   g.Group,
+					Version: g.Version,
+				}
+			}
+		}
+	} else {
+		// 取第一个
+		return schema.GroupVersionKind{
+			Kind:    gvks[0].Kind,
+			Group:   gvks[0].Group,
+			Version: gvks[0].Version,
+		}
+	}
 	return
 }
