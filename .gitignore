@@ -19,3 +19,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 /k8sorm
+/tmp/
