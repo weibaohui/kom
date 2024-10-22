@@ -60,8 +60,7 @@ func List(ctx context.Context, k8s *kom.Kom) error {
 
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		stmt.RemoveManagedFields(obj)
-
+		utils.RemoveManagedFields(obj)
 		// 创建新的指向元素类型的指针
 		newElemPtr := reflect.New(elemType)
 		// unstructured 转换为原始目标类型

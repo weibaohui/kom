@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,6 @@ func Create(ctx context.Context, k8s *kom.Kom) error {
 	if err != nil {
 		return err
 	}
-	stmt.RemoveManagedFields(res)
-
+	utils.RemoveManagedFields(res)
 	return nil
 }

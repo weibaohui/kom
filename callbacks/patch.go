@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,7 +42,7 @@ func Patch(ctx context.Context, k8s *kom.Kom) error {
 		return err
 	}
 
-	stmt.RemoveManagedFields(res)
+	utils.RemoveManagedFields(res)
 
 	// 将 unstructured 转换回原始对象
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, stmt.Dest)

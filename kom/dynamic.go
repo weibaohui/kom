@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/weibaohui/kom/kom/option"
+	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -34,27 +35,9 @@ func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts 
 	var resources []unstructured.Unstructured
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		k8s.RemoveManagedFields(obj)
+		utils.RemoveManagedFields(obj)
 		resources = append(resources, *obj)
 	}
 
 	return resources, nil
-}
-
-// RemoveManagedFields 删除 unstructured.Unstructured 对象中的 metadata.managedFields 字段
-func (k8s *Kom) RemoveManagedFields(obj *unstructured.Unstructured) {
-	// 获取 metadata
-	metadata, found, err := unstructured.NestedMap(obj.Object, "metadata")
-	if err != nil || !found {
-		return
-	}
-
-	// 删除 managedFields
-	delete(metadata, "managedFields")
-
-	// 更新 metadata
-	err = unstructured.SetNestedMap(obj.Object, metadata, "metadata")
-	if err != nil {
-		return
-	}
 }
