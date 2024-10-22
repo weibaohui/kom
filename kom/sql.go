@@ -33,7 +33,11 @@ func (k8s *Kom) Name(name string) *Kom {
 	tx.Statement.Name = name
 	return tx
 }
-
+func (k8s *Kom) ListOptions(opts *metav1.ListOptions) *Kom {
+	tx := k8s.getInstance()
+	tx.Statement.ListOptions = opts
+	return tx
+}
 func (k8s *Kom) CRD(group string, version string, kind string) *Kom {
 	gvk := schema.GroupVersionKind{
 		Group:   group,

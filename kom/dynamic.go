@@ -9,23 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// ListOption Functional options for ListResources
-type ListOption func(*metav1.ListOptions)
-
-// WithLabelSelector 设置 LabelSelector
-func WithLabelSelector(labelSelector string) ListOption {
-	return func(lo *metav1.ListOptions) {
-		lo.LabelSelector = labelSelector
-	}
-}
-
-// WithFieldSelector 设置 FieldSelector
-func WithFieldSelector(fieldSelector string) ListOption {
-	return func(lo *metav1.ListOptions) {
-		lo.FieldSelector = fieldSelector
-	}
-}
-
 func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...ListOption) ([]unstructured.Unstructured, error) {
 	gvr, namespaced := k8s.GetGVR(kind)
 	if gvr.Empty() {
