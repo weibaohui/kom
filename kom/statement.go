@@ -19,7 +19,6 @@ import (
 type StatementType string
 
 type Statement struct {
-	*Kom
 	Error         error
 	RowsAffected  int64
 	Statement     *Statement
@@ -30,7 +29,7 @@ type Statement struct {
 	Namespaced    bool
 	ListOptions   []metav1.ListOptions
 	Context       context.Context
-	client        *kubernetes.Clientset
+	Client        *kubernetes.Clientset
 	config        *rest.Config
 	DynamicClient dynamic.Interface
 	Dest          interface{}
