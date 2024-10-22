@@ -3,7 +3,6 @@ package kom
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/weibaohui/kom/kom/option"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +38,7 @@ func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts 
 		resources = append(resources, *obj)
 	}
 
-	return sortByCreationTime(resources), nil
+	return resources, nil
 }
 
 // RemoveManagedFields 删除 unstructured.Unstructured 对象中的 metadata.managedFields 字段
@@ -58,14 +57,4 @@ func (k8s *Kom) RemoveManagedFields(obj *unstructured.Unstructured) {
 	if err != nil {
 		return
 	}
-}
-
-// sortByCreationTime 按创建时间排序资源
-func sortByCreationTime(items []unstructured.Unstructured) []unstructured.Unstructured {
-	sort.Slice(items, func(i, j int) bool {
-		ti := items[i].GetCreationTimestamp()
-		tj := items[j].GetCreationTimestamp()
-		return ti.After(tj.Time)
-	})
-	return items
 }
