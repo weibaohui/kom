@@ -58,9 +58,8 @@ func InitConnection(path string) *Kom {
 
 	// 注册回调参数
 	kom.Statement = &Statement{
-		Kom:           kom,
 		Context:       context.Background(),
-		client:        client,
+		Client:        client,
 		DynamicClient: dynClient,
 		config:        config,
 	}
@@ -121,9 +120,8 @@ func (kom *Kom) getInstance() *Kom {
 		if kom.clone == 1 {
 			// clone with new statement
 			tx.Statement = &Statement{
-				Kom:           tx,
 				Context:       kom.Statement.Context,
-				client:        kom.Statement.client,
+				Client:        kom.Statement.Client,
 				DynamicClient: kom.Statement.DynamicClient,
 				config:        kom.Statement.config,
 				ListOptions:   kom.Statement.ListOptions,
@@ -134,13 +132,11 @@ func (kom *Kom) getInstance() *Kom {
 				Name:          kom.Statement.Name,
 			}
 			tx.callbacks = kom.callbacks
-
+			tx.Client = kom.Client
 		} else {
 			// with clone statement
 			tx.Statement = kom.Statement.clone()
 			tx.callbacks = kom.callbacks
-			tx.Statement.Kom = tx
-
 		}
 
 		return tx
