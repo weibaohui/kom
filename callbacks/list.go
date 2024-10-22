@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,6 +54,7 @@ func List(ctx context.Context, k8s *kom.Kom) error {
 		return err
 	}
 
+	utils.SortByCreationTime(list.Items)
 	// 先清空之前的值
 	destValue.Elem().Set(reflect.MakeSlice(destValue.Elem().Type(), 0, 0))
 
