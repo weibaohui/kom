@@ -1,4 +1,4 @@
-package dynamic
+package example
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func crdExample() {
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
-		Delete(&crontab).Error
+		Delete().Error
 	if err != nil {
 		klog.Errorf("CronTab Delete(&item) error :%v", err)
 	}
@@ -122,30 +122,6 @@ func builtInExample() {
 	}
 	fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
 
-	var items []v1.Deployment
-	err = kom.Init().
-		WithContext(context.TODO()).
-		Resource(&item).
-		Namespace("default").
-		List(&items).Error
-	if err != nil {
-		fmt.Printf("List Error %v\n", err)
-	}
-	fmt.Printf("List Deployment count %d\n", len(items))
-	for _, d := range items {
-		fmt.Printf("List Deployment Items foreach %s\n", d.Spec.Template.Spec.Containers[0].Image)
-	}
-
-	var crontabList []unstructured.Unstructured
-	err = kom.Init().
-		WithContext(context.TODO()).
-		CRD("stable.example.com", "v1", "CronTab").
-		Namespace("default").
-		List(&crontabList).Error
-	fmt.Printf("List crd crontabList count %d\n", len(crontabList))
-	for _, d := range crontabList {
-		fmt.Printf("List Deployment Items foreach %s\n", d.GetName())
-	}
 	createItem := v1.Deployment{
 
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,5 +210,32 @@ func builtInExample() {
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
 		Name(createItem.Name).
-		Delete(&createItem).Error
+		Delete().Error
+
+	var items []v1.Deployment
+	err = kom.Init().
+		WithContext(context.TODO()).
+		Resource(&item).
+		Namespace("default").
+		List(&items).Error
+	if err != nil {
+		fmt.Printf("List Error %v\n", err)
+	}
+	fmt.Printf("List Deployment count %d\n", len(items))
+	for _, d := range items {
+		fmt.Printf("List Deployment  Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	err = kom.Init().
+		WithContext(context.TODO()).
+		Resource(&item).
+		Namespace("default").
+		List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+	if err != nil {
+		fmt.Printf("List Error %v\n", err)
+	}
+	fmt.Printf("List Deployment WithLabelSelector app=nginx count =%v \n", len(items))
+	for _, d := range items {
+		fmt.Printf("List Deployment WithLabelSelector Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
+	}
 }

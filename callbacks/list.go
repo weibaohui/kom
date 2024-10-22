@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/weibaohui/kom/kom"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
@@ -13,9 +14,9 @@ import (
 
 // List todo 删除这个ctx参数，ctx从statement中获取
 func List(ctx context.Context, k8s *kom.Kom) error {
-	if klog.V(8).Enabled() {
+	if klog.V(6).Enabled() {
 		json := k8s.Statement.String()
-		klog.V(8).Infof("DefaultCB List %s", json)
+		klog.V(6).Infof("DefaultCB List %s", json)
 	}
 
 	stmt := k8s.Statement
@@ -24,6 +25,10 @@ func List(ctx context.Context, k8s *kom.Kom) error {
 	ns := stmt.Namespace
 	ctx = stmt.Context
 	opts := stmt.ListOptions
+	listOptions := metav1.ListOptions{}
+	if len(opts) > 0 {
+		listOptions = opts[0]
+	}
 
 	// 使用反射获取 dest 的值
 	destValue := reflect.ValueOf(stmt.Dest)
@@ -40,13 +45,16 @@ func List(ctx context.Context, k8s *kom.Kom) error {
 	var err error
 
 	if namespaced {
-		list, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, *opts)
+		list, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
-		list, err = stmt.DynamicClient.Resource(gvr).List(ctx, *opts)
+		list, err = stmt.DynamicClient.Resource(gvr).List(ctx, listOptions)
 	}
 	if err != nil {
 		return err
 	}
+
+	// 先清空之前的值
+	destValue.Elem().Set(reflect.MakeSlice(destValue.Elem().Type(), 0, 0))
 
 	for _, item := range list.Items {
 		obj := item.DeepCopy()

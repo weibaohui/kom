@@ -33,11 +33,7 @@ func (k8s *Kom) Name(name string) *Kom {
 	tx.Statement.Name = name
 	return tx
 }
-func (k8s *Kom) ListOptions(opts *metav1.ListOptions) *Kom {
-	tx := k8s.getInstance()
-	tx.Statement.ListOptions = opts
-	return tx
-}
+
 func (k8s *Kom) CRD(group string, version string, kind string) *Kom {
 	gvk := schema.GroupVersionKind{
 		Group:   group,
@@ -58,8 +54,9 @@ func (k8s *Kom) Get(dest interface{}) *Kom {
 	tx.Error = tx.Callback().Get().Execute(tx.Statement.Context, tx)
 	return tx
 }
-func (k8s *Kom) List(dest interface{}) *Kom {
+func (k8s *Kom) List(dest interface{}, opt ...metav1.ListOptions) *Kom {
 	tx := k8s.getInstance()
+	tx.Statement.ListOptions = opt
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().List().Execute(tx.Statement.Context, tx)
 	return tx

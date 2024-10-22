@@ -28,7 +28,7 @@ type Statement struct {
 	GVR           schema.GroupVersionResource
 	GVK           schema.GroupVersionKind
 	Namespaced    bool
-	ListOptions   *metav1.ListOptions
+	ListOptions   []metav1.ListOptions
 	Context       context.Context
 	client        *kubernetes.Clientset
 	config        *rest.Config

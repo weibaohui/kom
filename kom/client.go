@@ -121,6 +121,12 @@ func (k8s *Kom) getInstance() *Kom {
 				client:        k8s.Statement.client,
 				DynamicClient: k8s.Statement.DynamicClient,
 				config:        k8s.Statement.config,
+				ListOptions:   k8s.Statement.ListOptions,
+				Namespace:     k8s.Statement.Namespace,
+				Namespaced:    k8s.Statement.Namespaced,
+				GVR:           k8s.Statement.GVR,
+				GVK:           k8s.Statement.GVK,
+				Name:          k8s.Statement.Name,
 			}
 			tx.callbacks = k8s.callbacks
 

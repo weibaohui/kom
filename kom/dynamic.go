@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/weibaohui/kom/kom/option"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...ListOption) ([]unstructured.Unstructured, error) {
+func (k8s *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) ([]unstructured.Unstructured, error) {
 	gvr, namespaced := k8s.GetGVR(kind)
 	if gvr.Empty() {
 		return nil, fmt.Errorf("不支持的资源类型: %s", kind)
