@@ -151,3 +151,6 @@ func (kom *Kom) getInstance() *Kom {
 func (kom *Kom) Callback() *callbacks {
 	return kom.callbacks
 }
+func (kom *Kom) RestConfig() *rest.Config {
+	return kom.config
+}
