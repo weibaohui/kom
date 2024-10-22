@@ -26,7 +26,6 @@ func Delete(ctx context.Context, kom *kom.Kom) error {
 		err = fmt.Errorf("删除对象必须指定名称")
 		return err
 	}
-
 	if namespaced {
 		err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
 	} else {
