@@ -6,6 +6,7 @@ import (
 
 	"github.com/weibaohui/kom/callbacks"
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/kom/doc"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -20,4 +21,5 @@ func Init() {
 
 	callbacks.RegisterDefaultCallbacks()
 
+	doc.Instance()
 }

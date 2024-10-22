@@ -1,4 +1,4 @@
-package kubectl
+package doc
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
+
+var trees []TreeNode
 
 type Docs struct {
 	Trees []TreeNode
@@ -22,8 +24,6 @@ func Instance() *Docs {
 	d.Trees = trees
 	return d
 }
-
-var trees []TreeNode
 
 // TreeNode 表示树形结构的节点
 type TreeNode struct {
