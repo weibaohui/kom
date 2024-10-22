@@ -18,7 +18,7 @@ var (
 var apiResources []metav1.APIResource
 
 type Kom struct {
-	client        *kubernetes.Clientset
+	Client        *kubernetes.Clientset
 	config        *rest.Config
 	dynamicClient dynamic.Interface
 
@@ -34,7 +34,7 @@ func Init() *Kom {
 
 // InitConnection 在主入口处进行初始化
 func InitConnection(path string) {
-	klog.V(2).Infof("k8s client init")
+	klog.V(2).Infof("k8s Client init")
 	kom = &Kom{clone: 1}
 
 	config, err := getKubeConfig(path)
@@ -51,10 +51,10 @@ func InitConnection(path string) {
 		panic(err.Error())
 	}
 
-	kom.client = client
+	kom.Client = client
 	kom.config = config
 	kom.dynamicClient = dynClient
-	_, lists, _ := kom.client.Discovery().ServerGroupsAndResources()
+	_, lists, _ := kom.Client.Discovery().ServerGroupsAndResources()
 	for _, list := range lists {
 
 		resources := list.APIResources
