@@ -49,15 +49,15 @@ spec:
         - name: example-container
           image: nginx
 `
-	result := applier.Apply(yaml)
+	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}
-	result = applier.Apply(yaml)
+	result = applier.Instance().WithContext(context.TODO()).Apply(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}
-	result = applier.Delete(yaml)
+	result = applier.Instance().WithContext(context.TODO()).Delete(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}

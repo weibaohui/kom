@@ -1,6 +1,7 @@
 package applier
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,21 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func Apply(str string) (result []string) {
+type Applier struct {
+	Kom *kom.Kom
+}
+
+func Instance() *Applier {
+	return &Applier{
+		Kom: kom.Init(),
+	}
+}
+func (a *Applier) WithContext(ctx context.Context) *Applier {
+	a.Kom = a.Kom.WithContext(ctx)
+	return a
+}
+
+func (a *Applier) Apply(str string) (result []string) {
 	docs := splitYAML(str)
 
 	for _, doc := range docs {
@@ -23,12 +38,12 @@ func Apply(str string) (result []string) {
 			result = append(result, fmt.Sprintf("YAML 解析失败: %v", err))
 			continue
 		}
-		result = append(result, createOrUpdateCRD(&obj))
+		result = append(result, a.createOrUpdateCRD(&obj))
 	}
 
 	return result
 }
-func Delete(str string) (result []string) {
+func (a *Applier) Delete(str string) (result []string) {
 	docs := splitYAML(str)
 
 	for _, doc := range docs {
@@ -41,12 +56,12 @@ func Delete(str string) (result []string) {
 			result = append(result, fmt.Sprintf("YAML 解析失败: %v", err))
 			continue
 		}
-		result = append(result, deleteCRD(&obj))
+		result = append(result, a.deleteCRD(&obj))
 	}
 
 	return result
 }
-func createOrUpdateCRD(obj *unstructured.Unstructured) string {
+func (a *Applier) createOrUpdateCRD(obj *unstructured.Unstructured) string {
 	// 提取 Group, Version, Kind
 	gvk := obj.GroupVersionKind()
 	if gvk.Kind == "" || gvk.Version == "" {
@@ -64,26 +79,26 @@ func createOrUpdateCRD(obj *unstructured.Unstructured) string {
 		obj.SetNamespace(ns)
 	}
 	var cr *unstructured.Unstructured
-	err := kom.Init().CRD(gvk.Group, gvk.Version, gvk.Kind).Namespace(ns).Name(name).Get(&cr).Error
+	err := a.Kom.CRD(gvk.Group, gvk.Version, gvk.Kind).Namespace(ns).Name(name).Get(&cr).Error
 
 	if err == nil && cr != nil && cr.GetName() != "" {
 		// 已经存在资源，那么就更新
 		obj.SetResourceVersion(cr.GetResourceVersion())
-		err = kom.Init().CRD(gvk.Group, gvk.Version, gvk.Kind).Name(name).Namespace(ns).Update(&obj).Error
+		err = a.Kom.CRD(gvk.Group, gvk.Version, gvk.Kind).Name(name).Namespace(ns).Update(&obj).Error
 		if err != nil {
 			return fmt.Sprintf("update %s/%s,%s %s/%s error:%v", gvk.Group, gvk.Version, gvk.Kind, ns, name, err)
 		}
 		return fmt.Sprintf("%s/%s updated", kind, name)
 	} else {
 		// 不存在，那么就创建
-		err = kom.Init().CRD(gvk.Group, gvk.Version, gvk.Kind).Name(name).Namespace(ns).Create(&obj).Error
+		err = a.Kom.CRD(gvk.Group, gvk.Version, gvk.Kind).Name(name).Namespace(ns).Create(&obj).Error
 		if err != nil {
 			return fmt.Sprintf("create %s/%s,%s %s/%s error:%v", gvk.Group, gvk.Version, gvk.Kind, ns, name, err)
 		}
 		return fmt.Sprintf("%s/%s created", kind, name)
 	}
 }
-func deleteCRD(obj *unstructured.Unstructured) string {
+func (a *Applier) deleteCRD(obj *unstructured.Unstructured) string {
 	// 提取 Group, Version, Kind
 	gvk := obj.GroupVersionKind()
 	if gvk.Kind == "" || gvk.Version == "" {
@@ -91,7 +106,7 @@ func deleteCRD(obj *unstructured.Unstructured) string {
 	}
 	ns := obj.GetNamespace()
 	name := obj.GetName()
-	err := kom.Init().CRD(gvk.Group, gvk.Version, gvk.Kind).Namespace(ns).Name(name).Delete().Error
+	err := a.Kom.CRD(gvk.Group, gvk.Version, gvk.Kind).Namespace(ns).Name(name).Delete().Error
 	if err != nil {
 		return fmt.Sprintf("delete %s/%s,%s %s/%s error:%v", gvk.Group, gvk.Version, gvk.Kind, ns, name, err)
 	}
