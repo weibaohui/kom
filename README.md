@@ -1,11 +1,18 @@
-好的，这里是更新后的 `README.md`，包含了资源的增删改查及列表操作，以及各种选项的说明：
 
-```markdown
 # Kom - Kubernetes Operations Manager
 
 ## 简介
 
 `kom` 是一个用于 Kubernetes 操作的工具，提供了一系列功能来管理 Kubernetes 资源，包括创建、更新、删除和获取资源。这个项目支持多种 Kubernetes 资源类型的操作，并能够处理自定义资源定义（CRD）。
+通过使用 `kom`，你可以轻松地进行资源的增删改查和日志获取以及操作POD内文件等动作。
+
+## 示例程序
+**k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
+1. **下载**：从 [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m) 下载最新版本。
+2. **运行**：使用 `./k8m` 命令启动,访问[http://127.0.0.1:3618](http://127.0.0.1:3618)。
+
+
+
 
 ## 安装
 
@@ -280,5 +287,15 @@ spec:
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-		
+			if err == io.EOF {
+				break
 
+
+			}
+			fmt.Println("Error reading log:", err)
+			break
+		}
+		fmt.Print(line)
+	}
+}
+```
