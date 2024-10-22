@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -15,17 +16,17 @@ import (
 var (
 	kom *Kom
 )
-var apiResources []metav1.APIResource
+var apiResources []metav1.APIResource   // 当前k8s已注册资源
+var crdList []unstructured.Unstructured // 当前k8s已注册资源
 
 type Kom struct {
 	Client        *kubernetes.Clientset
+	Statement     *Statement
+	Error         error
 	config        *rest.Config
 	dynamicClient dynamic.Interface
-
-	callbacks *callbacks
-	Statement *Statement
-	clone     int
-	Error     error
+	callbacks     *callbacks
+	clone         int
 }
 
 func Init() *Kom {
@@ -54,9 +55,21 @@ func InitConnection(path string) {
 	kom.Client = client
 	kom.config = config
 	kom.dynamicClient = dynClient
+
+	// 注册回调参数
+	kom.Statement = &Statement{
+		Kom:           kom,
+		Context:       context.Background(),
+		client:        client,
+		DynamicClient: dynClient,
+		config:        config,
+	}
+
+	kom.callbacks = initializeCallbacks(kom)
+
+	// 提取ApiResources
 	_, lists, _ := kom.Client.Discovery().ServerGroupsAndResources()
 	for _, list := range lists {
-
 		resources := list.APIResources
 		version := list.GroupVersionKind().Version
 		group := list.GroupVersionKind().Group
@@ -77,16 +90,8 @@ func InitConnection(path string) {
 		}
 	}
 
-	// 注册回调参数
-	kom.Statement = &Statement{
-		Kom:           kom,
-		Context:       context.Background(),
-		client:        client,
-		DynamicClient: dynClient,
-		config:        config,
-	}
-
-	kom.callbacks = initializeCallbacks(kom)
+	// 提取crdList
+	crdList, _ = kom.ListResources(context.TODO(), "CustomResourceDefinition", "")
 
 }
 

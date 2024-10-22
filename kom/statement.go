@@ -78,29 +78,29 @@ func (s *Statement) clone() *Statement {
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
 
 	// 获取单个GVK
-	gvk := s.GetParsedGVK(gvks, versions...)
+	gvk := getParsedGVK(gvks, versions...)
 	s.GVK = gvk
 
 	// 获取GVR
-	if s.IsBuiltinResource(gvk.Kind) {
+	if isBuiltinResource(gvk.Kind) {
 		// 内置资源
-		s.GVR, s.Namespaced = s.GetGVR(gvk.Kind)
+		s.GVR, s.Namespaced = getGVR(gvk.Kind)
 
 	} else {
-		crd, err := s.GetCRD(s.Context, gvk.Kind, gvk.Group)
+		crd, err := getCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			s.Error = err
 			return s
 		}
 		// 检查CRD是否是Namespaced
 		s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		s.GVR = s.getGRVFromCRD(crd)
+		s.GVR = getGRVFromCRD(crd)
 
 	}
 
 	return s
 }
-func (s *Statement) GetParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
+func getParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
 	if len(gvks) == 0 {
 		return schema.GroupVersionKind{}
 	}

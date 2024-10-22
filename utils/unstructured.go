@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"fmt"
 	"sort"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 func SortByCreationTime(items []unstructured.Unstructured) []unstructured.Unstructured {
@@ -31,4 +33,22 @@ func RemoveManagedFields(obj *unstructured.Unstructured) {
 	if err != nil {
 		return
 	}
+}
+
+// ConvertUnstructuredToYAML 将 Unstructured 对象转换为 YAML 字符串
+func ConvertUnstructuredToYAML(obj *unstructured.Unstructured) (string, error) {
+
+	// Marshal Unstructured 对象为 JSON
+	jsonBytes, err := obj.MarshalJSON()
+	if err != nil {
+		return "", fmt.Errorf("无法序列化 Unstructured 对象为 JSON: %v", err)
+	}
+
+	// 将 JSON 转换为 YAML
+	yamlBytes, err := yaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		return "", fmt.Errorf("无法将 JSON 转换为 YAML: %v", err)
+	}
+
+	return string(yamlBytes), nil
 }
