@@ -83,7 +83,7 @@ func isBuiltinResource(kind string) bool {
 	}
 	return false
 }
-func getCRD(kind string, group string) (*unstructured.Unstructured, error) {
+func GetCRD(kind string, group string) (*unstructured.Unstructured, error) {
 	// crdList 是共享变量，初始化时已加载
 	for _, crd := range crdList {
 		spec, found, err := unstructured.NestedMap(crd.Object, "spec")
@@ -106,7 +106,7 @@ func getCRD(kind string, group string) (*unstructured.Unstructured, error) {
 	return nil, fmt.Errorf("crd %s.%s not found", kind, group)
 }
 
-func getGRVFromCRD(crd *unstructured.Unstructured) schema.GroupVersionResource {
+func GetGRVFromCRD(crd *unstructured.Unstructured) schema.GroupVersionResource {
 	// 提取 GVR
 	group := crd.Object["spec"].(map[string]interface{})["group"].(string)
 	version := crd.Object["spec"].(map[string]interface{})["versions"].([]interface{})[0].(map[string]interface{})["name"].(string)
@@ -130,4 +130,26 @@ func getGVKFromObj(obj interface{}) (schema.GroupVersionKind, error) {
 	default:
 		return schema.GroupVersionKind{}, fmt.Errorf("不支持的类型%v", o)
 	}
+}
+
+func ParseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
+
+	// 获取单个GVK
+	gvk := getParsedGVK(gvks, versions...)
+
+	// 获取GVR
+	if isBuiltinResource(gvk.Kind) {
+		// 内置资源
+		return getGVR(gvk.Kind)
+	} else {
+		crd, err := GetCRD(gvk.Kind, gvk.Group)
+		if err != nil {
+			return
+		}
+		// 检查CRD是否是Namespaced
+		namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
+		gvr = GetGRVFromCRD(crd)
+	}
+
+	return
 }

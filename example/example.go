@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/kom/applier"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,48 @@ import (
 func Example() {
 	builtInExample()
 	crdExample()
+	YamlApplyDelete()
+}
+func YamlApplyDelete() {
+	yaml := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-config
+  namespace: default
+data:
+  key: value
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+        - name: example-container
+          image: nginx
+`
+	result := applier.Apply(yaml)
+	for _, r := range result {
+		fmt.Println(r)
+	}
+	result = applier.Apply(yaml)
+	for _, r := range result {
+		fmt.Println(r)
+	}
+	result = applier.Delete(yaml)
+	for _, r := range result {
+		fmt.Println(r)
+	}
 }
 func crdExample() {
 

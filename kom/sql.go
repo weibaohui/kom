@@ -94,7 +94,7 @@ func (kom *Kom) PatchType(t types.PatchType) *Kom {
 	tx.Statement.PatchType = t
 	return tx
 }
-func (kom *Kom) Fill(m *unstructured.Unstructured) *Kom {
+func (kom *Kom) fill(m *unstructured.Unstructured) *Kom {
 	tx := kom.getInstance()
 	if tx.Statement.Dest == nil {
 		tx.Error = fmt.Errorf("请先执行Get()、List()等方法")

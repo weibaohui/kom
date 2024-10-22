@@ -87,14 +87,14 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 		s.GVR, s.Namespaced = getGVR(gvk.Kind)
 
 	} else {
-		crd, err := getCRD(gvk.Kind, gvk.Group)
+		crd, err := GetCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			s.Error = err
 			return s
 		}
 		// 检查CRD是否是Namespaced
 		s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		s.GVR = getGRVFromCRD(crd)
+		s.GVR = GetGRVFromCRD(crd)
 
 	}
 

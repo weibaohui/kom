@@ -33,6 +33,10 @@ func Create(ctx context.Context, kom *kom.Kom) error {
 	var res *unstructured.Unstructured
 
 	if namespaced {
+		if ns == "" {
+			ns = "default"
+			unstructuredObj.SetNamespace(ns)
+		}
 		res, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Create(ctx, unstructuredObj, metav1.CreateOptions{})
 	} else {
 		res, err = stmt.DynamicClient.Resource(gvr).Create(ctx, unstructuredObj, metav1.CreateOptions{})

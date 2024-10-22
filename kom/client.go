@@ -34,7 +34,7 @@ func Init() *Kom {
 }
 
 // InitConnection 在主入口处进行初始化
-func InitConnection(path string) {
+func InitConnection(path string) *Kom {
 	klog.V(2).Infof("k8s Client init")
 	kom = &Kom{clone: 1}
 
@@ -92,7 +92,7 @@ func InitConnection(path string) {
 
 	// 提取crdList
 	crdList, _ = kom.ListResources(context.TODO(), "CustomResourceDefinition", "")
-
+	return kom
 }
 
 func getKubeConfig(path string) (*rest.Config, error) {
