@@ -1,4 +1,4 @@
-package Poder
+package poder
 
 import (
 	"bytes"
