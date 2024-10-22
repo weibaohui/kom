@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/weibaohui/kom/utils"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,10 +27,10 @@ type Statement struct {
 	GVK           schema.GroupVersionKind
 	Namespaced    bool
 	ListOptions   []metav1.ListOptions
-	Context       context.Context
-	Client        *kubernetes.Clientset
+	Context       context.Context       `json:"-"`
+	Client        *kubernetes.Clientset `json:"-"`
 	Config        *rest.Config
-	DynamicClient dynamic.Interface
+	DynamicClient dynamic.Interface `json:"-"`
 	Dest          interface{}
 	PatchType     types.PatchType
 	PatchData     string
@@ -55,10 +54,6 @@ func (s *Statement) setGVR(gvr schema.GroupVersionResource) *Statement {
 func (s *Statement) SetDest(dest interface{}) *Statement {
 	s.Dest = dest
 	return s
-}
-
-func (s *Statement) String() string {
-	return utils.ToJSON(s)
 }
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {

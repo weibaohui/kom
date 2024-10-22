@@ -9,15 +9,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2"
 )
 
 // List todo 删除这个ctx参数，ctx从statement中获取
 func List(kom *kom.Kom) error {
-	if klog.V(6).Enabled() {
-		json := kom.Statement.String()
-		klog.V(6).Infof("DefaultCB List %s", json)
-	}
 
 	stmt := kom.Statement
 	gvr := stmt.GVR

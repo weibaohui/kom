@@ -5,14 +5,9 @@ import (
 
 	"github.com/weibaohui/kom/kom"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
 )
 
 func Delete(kom *kom.Kom) error {
-	if klog.V(8).Enabled() {
-		json := kom.Statement.String()
-		klog.V(8).Infof("DefaultCB Delete %s", json)
-	}
 
 	stmt := kom.Statement
 	gvr := stmt.GVR

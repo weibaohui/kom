@@ -6,15 +6,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2"
 )
 
 func Update(kom *kom.Kom) error {
-	if klog.V(8).Enabled() {
-		json := kom.Statement.String()
-		klog.V(8).Infof("DefaultCB Update %s", json)
-	}
-
 	stmt := kom.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
