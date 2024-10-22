@@ -27,9 +27,9 @@ func (kom *Kom) ListResources(ctx context.Context, kind string, ns string, opts 
 
 	var list *unstructured.UnstructuredList
 	if namespaced {
-		list, err = kom.dynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
+		list, err = kom.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
-		list, err = kom.dynamicClient.Resource(gvr).List(ctx, listOptions)
+		list, err = kom.DynamicClient.Resource(gvr).List(ctx, listOptions)
 	}
 	if err != nil {
 		return nil, err

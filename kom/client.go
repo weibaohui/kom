@@ -23,8 +23,8 @@ type Kom struct {
 	Client        *kubernetes.Clientset
 	Statement     *Statement
 	Error         error
-	config        *rest.Config
-	dynamicClient dynamic.Interface
+	Config        *rest.Config
+	DynamicClient dynamic.Interface
 	callbacks     *callbacks
 	clone         int
 }
@@ -53,15 +53,15 @@ func InitConnection(path string) *Kom {
 	}
 
 	kom.Client = client
-	kom.config = config
-	kom.dynamicClient = dynClient
+	kom.Config = config
+	kom.DynamicClient = dynClient
 
 	// 注册回调参数
 	kom.Statement = &Statement{
 		Context:       context.Background(),
 		Client:        client,
 		DynamicClient: dynClient,
-		config:        config,
+		Config:        config,
 	}
 
 	kom.callbacks = initializeCallbacks(kom)
@@ -116,29 +116,23 @@ func getKubeConfig(path string) (*rest.Config, error) {
 func (kom *Kom) getInstance() *Kom {
 	if kom.clone > 0 {
 		tx := &Kom{Error: kom.Error}
-
-		if kom.clone == 1 {
-			// clone with new statement
-			tx.Statement = &Statement{
-				Context:       kom.Statement.Context,
-				Client:        kom.Statement.Client,
-				DynamicClient: kom.Statement.DynamicClient,
-				config:        kom.Statement.config,
-				ListOptions:   kom.Statement.ListOptions,
-				Namespace:     kom.Statement.Namespace,
-				Namespaced:    kom.Statement.Namespaced,
-				GVR:           kom.Statement.GVR,
-				GVK:           kom.Statement.GVK,
-				Name:          kom.Statement.Name,
-			}
-			tx.callbacks = kom.callbacks
-			tx.Client = kom.Client
-		} else {
-			// with clone statement
-			tx.Statement = kom.Statement.clone()
-			tx.callbacks = kom.callbacks
+		// clone with new statement
+		tx.Statement = &Statement{
+			Context:       kom.Statement.Context,
+			Client:        kom.Statement.Client,
+			DynamicClient: kom.Statement.DynamicClient,
+			Config:        kom.Statement.Config,
+			ListOptions:   kom.Statement.ListOptions,
+			Namespace:     kom.Statement.Namespace,
+			Namespaced:    kom.Statement.Namespaced,
+			GVR:           kom.Statement.GVR,
+			GVK:           kom.Statement.GVK,
+			Name:          kom.Statement.Name,
 		}
-
+		tx.callbacks = kom.callbacks
+		tx.Client = kom.Client
+		tx.Config = kom.Config
+		tx.DynamicClient = kom.DynamicClient
 		return tx
 	}
 
@@ -148,5 +142,5 @@ func (kom *Kom) Callback() *callbacks {
 	return kom.callbacks
 }
 func (kom *Kom) RestConfig() *rest.Config {
-	return kom.config
+	return kom.Config
 }

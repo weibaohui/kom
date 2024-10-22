@@ -30,7 +30,7 @@ type Statement struct {
 	ListOptions   []metav1.ListOptions
 	Context       context.Context
 	Client        *kubernetes.Clientset
-	config        *rest.Config
+	Config        *rest.Config
 	DynamicClient dynamic.Interface
 	Dest          interface{}
 	PatchType     types.PatchType
@@ -59,19 +59,6 @@ func (s *Statement) SetDest(dest interface{}) *Statement {
 
 func (s *Statement) String() string {
 	return utils.ToJSON(s)
-}
-func (s *Statement) clone() *Statement {
-	newStmt := &Statement{
-		Namespace:   s.Namespace,
-		Name:        s.Name,
-		GVR:         s.GVR,
-		GVK:         s.GVK,
-		Namespaced:  s.Namespaced,
-		ListOptions: s.ListOptions,
-		Context:     s.Context,
-	}
-
-	return newStmt
 }
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
