@@ -1,7 +1,6 @@
 package kom
 
 import (
-	"context"
 	"fmt"
 	"sort"
 
@@ -28,7 +27,7 @@ type callbacks struct {
 
 type processor struct {
 	kom       *Kom
-	fns       []func(context.Context, *Kom) error
+	fns       []func(*Kom) error
 	callbacks []*callback
 }
 type callback struct {
@@ -37,7 +36,7 @@ type callback struct {
 	after     string
 	remove    bool
 	replace   bool
-	handler   func(context.Context, *Kom) error
+	handler   func(*Kom) error
 	processor *processor
 }
 
@@ -70,7 +69,7 @@ func (c *callback) Remove(name string) error {
 	return c.processor.compile()
 }
 
-func (c *callback) Replace(name string, fn func(context.Context, *Kom) error) error {
+func (c *callback) Replace(name string, fn func(*Kom) error) error {
 	klog.V(4).Infof("replacing callback `%s` \n", name)
 	c.name = name
 	c.handler = fn
@@ -89,14 +88,14 @@ func (c *callback) After(name string) *callback {
 	return c
 }
 
-func (c *callback) Register(name string, fn func(context.Context, *Kom) error) error {
+func (c *callback) Register(name string, fn func(*Kom) error) error {
 	c.name = name
 	c.handler = fn
 	c.processor.callbacks = append(c.processor.callbacks, c)
 	return c.processor.compile()
 }
 
-func (p *processor) Get(name string) func(context.Context, *Kom) error {
+func (p *processor) Get(name string) func(*Kom) error {
 	for i := len(p.callbacks) - 1; i >= 0; i-- {
 		if v := p.callbacks[i]; v.name == name && !v.remove {
 			return v.handler
@@ -109,13 +108,13 @@ func (p *processor) Remove(name string) error {
 	return (&callback{processor: p}).Remove(name)
 }
 
-func (p *processor) Replace(name string, fn func(context.Context, *Kom) error) error {
+func (p *processor) Replace(name string, fn func(*Kom) error) error {
 	return (&callback{processor: p}).Replace(name, fn)
 }
 
-func (p *processor) Execute(ctx context.Context, k8s *Kom) error {
+func (p *processor) Execute(k8s *Kom) error {
 	for _, f := range p.fns {
-		err := f(ctx, k8s)
+		err := f(k8s)
 		if err != nil {
 			return err
 		}
@@ -131,7 +130,7 @@ func (p *processor) After(name string) *callback {
 	return &callback{after: name, processor: p}
 }
 
-func (p *processor) Register(name string, fn func(context.Context, *Kom) error) error {
+func (p *processor) Register(name string, fn func(*Kom) error) error {
 	return (&callback{processor: p}).Register(name, fn)
 }
 
@@ -155,7 +154,7 @@ func (p *processor) compile() (err error) {
 	}
 	return
 }
-func sortCallbacks(cs []*callback) (fns []func(context.Context, *Kom) error, err error) {
+func sortCallbacks(cs []*callback) (fns []func(*Kom) error, err error) {
 	var (
 		names, sorted []string
 		sortCallback  func(*callback) error

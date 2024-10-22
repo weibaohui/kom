@@ -49,37 +49,37 @@ func (kom *Kom) Get(dest interface{}) *Kom {
 	tx := kom.getInstance()
 	// 设置目标对象为 obj 的指针
 	tx.Statement.Dest = dest
-	tx.Error = tx.Callback().Get().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().Get().Execute(tx)
 	return tx
 }
 func (kom *Kom) List(dest interface{}, opt ...metav1.ListOptions) *Kom {
 	tx := kom.getInstance()
 	tx.Statement.ListOptions = opt
 	tx.Statement.Dest = dest
-	tx.Error = tx.Callback().List().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().List().Execute(tx)
 	return tx
 }
 func (kom *Kom) Create(dest interface{}) *Kom {
 	tx := kom.getInstance()
 	tx.Statement.Dest = dest
-	tx.Error = tx.Callback().Create().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().Create().Execute(tx)
 	return tx
 }
 func (kom *Kom) Update(dest interface{}) *Kom {
 	tx := kom.getInstance()
 	tx.Statement.Dest = dest
-	tx.Error = tx.Callback().Update().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().Update().Execute(tx)
 	return tx
 }
 func (kom *Kom) Delete() *Kom {
 	tx := kom.getInstance()
-	tx.Error = tx.Callback().Delete().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().Delete().Execute(tx)
 	return tx
 }
 func (kom *Kom) Patch(dest interface{}) *Kom {
 	tx := kom.getInstance()
 	tx.Statement.Dest = dest
-	tx.Error = tx.Callback().Patch().Execute(tx.Statement.Context, tx)
+	tx.Error = tx.Callback().Patch().Execute(tx)
 	return tx
 }
 func (kom *Kom) PatchData(data string) *Kom {

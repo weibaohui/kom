@@ -1,8 +1,6 @@
 package callbacks
 
 import (
-	"context"
-
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +9,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func Create(ctx context.Context, kom *kom.Kom) error {
+func Create(kom *kom.Kom) error {
 	if klog.V(8).Enabled() {
 		json := kom.Statement.String()
 		klog.V(8).Infof("DefaultCB Create %s", json)
@@ -21,7 +19,7 @@ func Create(ctx context.Context, kom *kom.Kom) error {
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
-	ctx = stmt.Context
+	ctx := stmt.Context
 
 	// 将 obj 转换为 Unstructured
 	unstructuredObj := &unstructured.Unstructured{}

@@ -1,7 +1,6 @@
 package callbacks
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/weibaohui/kom/kom"
@@ -12,7 +11,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func Get(ctx context.Context, kom *kom.Kom) error {
+func Get(kom *kom.Kom) error {
 	if klog.V(8).Enabled() {
 		json := kom.Statement.String()
 		klog.V(8).Infof("DefaultCB Get %s", json)
@@ -23,7 +22,8 @@ func Get(ctx context.Context, kom *kom.Kom) error {
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
 	name := stmt.Name
-	ctx = stmt.Context
+	ctx := stmt.Context
+
 	var res *unstructured.Unstructured
 	var err error
 	if name == "" {

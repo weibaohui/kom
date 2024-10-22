@@ -1,7 +1,6 @@
 package callbacks
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 
@@ -14,7 +13,7 @@ import (
 )
 
 // List todo 删除这个ctx参数，ctx从statement中获取
-func List(ctx context.Context, kom *kom.Kom) error {
+func List(kom *kom.Kom) error {
 	if klog.V(6).Enabled() {
 		json := kom.Statement.String()
 		klog.V(6).Infof("DefaultCB List %s", json)
@@ -24,7 +23,8 @@ func List(ctx context.Context, kom *kom.Kom) error {
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
-	ctx = stmt.Context
+	ctx := stmt.Context
+
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
 	if len(opts) > 0 {
