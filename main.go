@@ -4,13 +4,13 @@ import (
 	"flag"
 
 	"github.com/weibaohui/kom/example"
-	"github.com/weibaohui/kom/starter"
+	"github.com/weibaohui/kom/kom_starter"
 	"k8s.io/klog/v2"
 )
 
 func main() {
 	klog.InitFlags(nil)
 	flag.Set("v", "2")
-	starter.Init()
+	kom_starter.Init()
 	example.Example()
 }

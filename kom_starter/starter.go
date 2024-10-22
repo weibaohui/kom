@@ -1,4 +1,4 @@
-package starter
+package kom_starter
 
 import (
 	"os"
@@ -18,8 +18,13 @@ func Init() {
 	}
 	// 初始化kubectl 连接
 	kom.InitConnection(defaultKubeConfig)
-
 	callbacks.RegisterDefaultCallbacks()
+	doc.Instance()
+}
+func InitWithConfig(path string) {
 
+	// 初始化kubectl 连接
+	kom.InitConnection(path)
+	callbacks.RegisterDefaultCallbacks()
 	doc.Instance()
 }
