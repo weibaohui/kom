@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -265,6 +266,9 @@ spec:
 		result := applier.Instance().WithContext(context.TODO()).Apply(yamlStr)
 		for _, str := range result {
 			fmt.Println(str)
+			if strings.Contains(str, "err") {
+				t.Fatalf("Apply Pod error: %v", str)
+			}
 		}
 	})
 
@@ -293,7 +297,9 @@ spec:
 				}
 				t.Fatalf("Error reading stream: %v", err)
 			}
-			fmt.Println(line)
+			if !strings.Contains(line, "A") {
+				t.Fatalf("日志读取测试失败,应该包含A。%s", line)
+			}
 		}
 	})
 
@@ -301,6 +307,9 @@ spec:
 		result := applier.Instance().WithContext(context.TODO()).Delete(yamlStr)
 		for _, str := range result {
 			fmt.Println(str)
+			if strings.Contains(str, "err") {
+				t.Fatalf("Cleanup error: %v", str)
+			}
 		}
 	})
 }
