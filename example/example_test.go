@@ -119,6 +119,7 @@ spec:
 	})
 
 	t.Run("Create CR", func(t *testing.T) {
+		time.Sleep(5 * time.Second)
 		var crontab = unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "stable.example.com/v1",
