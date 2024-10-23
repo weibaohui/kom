@@ -141,7 +141,7 @@ spec:
 			Namespace(crontab.GetNamespace()).
 			Create(&crontab).Error
 		if err != nil {
-			t.Fatalf("CRD Create error: %v", err)
+			t.Errorf("CRD Create error: %v", err)
 		}
 	})
 
@@ -154,7 +154,7 @@ spec:
 			Namespace("default").
 			Get(&crontab).Error
 		if err != nil {
-			t.Fatalf("CRD Get error: %v", err)
+			t.Errorf("CRD Get error: %v", err)
 		}
 	})
 
@@ -166,7 +166,7 @@ spec:
 			Namespace("default").
 			List(&crontabList).Error
 		if err != nil {
-			t.Fatalf("CRD List error: %v", err)
+			t.Errorf("CRD List error: %v", err)
 		}
 		fmt.Printf("CRD List count %d\n", len(crontabList))
 	})
@@ -179,7 +179,7 @@ spec:
 			Namespace("default").
 			Delete().Error
 		if err != nil {
-			t.Fatalf("CRD Delete error: %v", err)
+			t.Errorf("CRD Delete error: %v", err)
 		}
 	})
 }
