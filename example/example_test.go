@@ -120,7 +120,7 @@ spec:
 	})
 
 	t.Run("Create CR", func(t *testing.T) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 		var crontab = unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "stable.example.com/v1",
@@ -143,7 +143,7 @@ spec:
 			Namespace(crontab.GetNamespace()).
 			Create(&crontab).Error
 		if err != nil {
-			fmt.Printf("CRD Create error: %v", err)
+			fmt.Printf("CRD Create error: %v\n", err)
 		}
 	})
 
@@ -156,7 +156,7 @@ spec:
 			Namespace("default").
 			Get(&crontab).Error
 		if err != nil {
-			fmt.Printf("CRD Get error: %v", err)
+			fmt.Printf("CRD Get error: %v\n", err)
 		}
 	})
 
@@ -168,7 +168,7 @@ spec:
 			Namespace("default").
 			List(&crontabList).Error
 		if err != nil {
-			fmt.Printf("CRD List error: %v", err)
+			fmt.Printf("CRD List error: %v\n", err)
 		}
 		fmt.Printf("CRD List count %d\n", len(crontabList))
 	})
@@ -273,7 +273,7 @@ spec:
 	})
 
 	t.Run("Get Pod Logs", func(t *testing.T) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 		// 进行后续的测试逻辑
 		t.Log("Waited for 5 seconds")
 		options := corev1.PodLogOptions{
