@@ -37,7 +37,7 @@ jobs:
           curl -sfL https://get.k3s.io | sh -
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-          sudo systemctl start k3s
+          sudo k3s server &
           sudo kubectl get nodes
           sudo k3s kubectl get node
 
