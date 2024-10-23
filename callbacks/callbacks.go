@@ -4,23 +4,30 @@ import (
 	"github.com/weibaohui/kom/kom"
 )
 
-func RegisterDefaultCallbacks() {
+func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) {
 
-	queryCallback := kom.Init().Callback().Get()
-	_ = queryCallback.Register("kom:get", Get)
+	all := clusters.All()
+	for _, c := range all {
+		// 为每一个集群进行注册
+		k := c.Kom
 
-	listCallback := kom.Init().Callback().List()
-	_ = listCallback.Register("kom:list", List)
+		queryCallback := k.Callback().Get()
+		_ = queryCallback.Register("kom:get", Get)
 
-	createCallback := kom.Init().Callback().Create()
-	_ = createCallback.Register("kom:create", Create)
+		listCallback := k.Callback().List()
+		_ = listCallback.Register("kom:list", List)
 
-	updateCallback := kom.Init().Callback().Update()
-	_ = updateCallback.Register("kom:update", Update)
+		createCallback := k.Callback().Create()
+		_ = createCallback.Register("kom:create", Create)
 
-	patchCallback := kom.Init().Callback().Patch()
-	_ = patchCallback.Register("kom:patch", Patch)
+		updateCallback := k.Callback().Update()
+		_ = updateCallback.Register("kom:update", Update)
 
-	deleteCallback := kom.Init().Callback().Delete()
-	_ = deleteCallback.Register("kom:delete", Delete)
+		patchCallback := k.Callback().Patch()
+		_ = patchCallback.Register("kom:patch", Patch)
+
+		deleteCallback := k.Callback().Delete()
+		_ = deleteCallback.Register("kom:delete", Delete)
+	}
+
 }

@@ -1,28 +1,23 @@
-package doc
+package docer
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/weibaohui/kom/kom"
+	"github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
+
+type Docer struct {
+	Docs *Docs
+}
 
 var trees []TreeNode
 
 type Docs struct {
 	Trees []TreeNode
-}
-
-func Instance() *Docs {
-	d := &Docs{}
-	if len(trees) == 0 {
-		initDoc()
-	}
-	d.Trees = trees
-	return d
 }
 
 // TreeNode 表示树形结构的节点
@@ -229,21 +224,14 @@ func printTree(node *TreeNode, level int) {
 	}
 }
 
-func initDoc() {
+func InitTrees(schema *openapi_v2.Document) *Docs {
 	definitionsMap = make(map[string]SchemaDefinition)
 
-	// 获取 OpenAPI Schema
-	openAPISchema, err := kom.Init().Client.DiscoveryClient.OpenAPISchema()
-	if err != nil {
-		klog.V(2).Infof("Error fetching OpenAPI schema: %v\n", err)
-		return
-	}
-
 	// 将 OpenAPI Schema 转换为 JSON 字符串
-	schemaBytes, err := json.Marshal(openAPISchema)
+	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
 		klog.V(2).Infof("Error marshaling OpenAPI schema to JSON: %v\n", err)
-		return
+		return nil
 	}
 	// os.WriteFile("def.json", schemaBytes, 0644)
 	// 打印部分 Schema 以供调试
@@ -253,7 +241,7 @@ func initDoc() {
 	err = json.Unmarshal(schemaBytes, root)
 	if err != nil {
 		klog.V(2).Infof("Error unmarshaling OpenAPI schema: %v\n", err)
-		return
+		return nil
 	}
 	definitionList := root.Definitions.AdditionalProperties
 
@@ -299,6 +287,10 @@ func initDoc() {
 	for _, item := range trees {
 		uniqueID(&item)
 	}
+
+	return &Docs{
+		Trees: trees,
+	}
 }
 func loadArrayItems(node *TreeNode) {
 
@@ -306,7 +298,7 @@ func loadArrayItems(node *TreeNode) {
 
 		ref := node.Items.Schema[0].Ref
 		if !strings.Contains(ref, "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps") {
-			refNode := Instance().FetchByRef(ref)
+			refNode := FetchByRef(ref)
 			node.Children = refNode.Children
 		}
 	}
@@ -328,7 +320,7 @@ func loadChild(item *TreeNode) {
 	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 
 	if item.Ref != "" && len(item.Children) > 0 && item.Children[0].ID == name {
-		refNode := Instance().FetchByRef(item.Ref)
+		refNode := FetchByRef(item.Ref)
 		item.Children[0] = refNode
 	}
 	for i := range item.Children {
@@ -347,10 +339,10 @@ func (d *Docs) ListNames() {
 		klog.V(2).Infof(tree.ID)
 	}
 }
-func (d *Docs) FetchByRef(ref string) *TreeNode {
+func FetchByRef(ref string) *TreeNode {
 	// #/definitions/io.k8s.api.core.v1.PodSpec
 	id := strings.TrimPrefix(ref, "#/definitions/")
-	for _, tree := range d.Trees {
+	for _, tree := range trees {
 		if tree.ID == id {
 			// 为了避免多个node引用同一个节点，需要深拷贝
 			// 否则会有相同的value，前端显示会有点显示错位

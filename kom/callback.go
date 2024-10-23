@@ -7,19 +7,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func initializeCallbacks(kom *Kom) *callbacks {
-	return &callbacks{
-		processors: map[string]*processor{
-			"get":    {kom: kom},
-			"patch":  {kom: kom},
-			"create": {kom: kom},
-			"update": {kom: kom},
-			"delete": {kom: kom},
-			"list":   {kom: kom},
-		},
-	}
-}
-
 // callbacks kom callbacks manager
 type callbacks struct {
 	processors map[string]*processor
@@ -38,6 +25,19 @@ type callback struct {
 	replace   bool
 	handler   func(*Kom) error
 	processor *processor
+}
+
+func (k *Kom) initializeCallbacks() *callbacks {
+	return &callbacks{
+		processors: map[string]*processor{
+			"get":    {kom: k},
+			"patch":  {kom: k},
+			"create": {kom: k},
+			"update": {kom: k},
+			"delete": {kom: k},
+			"list":   {kom: k},
+		},
+	}
 }
 
 func (cs *callbacks) Create() *processor {

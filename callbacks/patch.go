@@ -27,9 +27,9 @@ func Patch(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		res, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	} else {
-		res, err = stmt.DynamicClient.Resource(gvr).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	}
 	if err != nil {
 		return err

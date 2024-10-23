@@ -27,6 +27,11 @@ func Instance() *Poder {
 		Kom: kom.Init(),
 	}
 }
+func Cluster(id string) *Poder {
+	return &Poder{
+		Kom: kom.Clusters().GetById(id).Kom,
+	}
+}
 func (p *Poder) WithContext(ctx context.Context) *Poder {
 	p.Kom = p.Kom.WithContext(ctx)
 	return p
@@ -44,7 +49,7 @@ func (p *Poder) ContainerName(name string) *Poder {
 	return p
 }
 func (p *Poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
-	return p.Kom.Client.CoreV1().Pods(p.Kom.Statement.Namespace).GetLogs(name, opts)
+	return p.Kom.Client().CoreV1().Pods(p.Kom.Statement.Namespace).GetLogs(name, opts)
 }
 
 // PodFileNode 文件节点结构
@@ -61,7 +66,7 @@ type PodFileNode struct {
 // GetFileList  获取容器中指定路径的文件和目录列表
 func (p *Poder) GetFileList(path string) ([]*PodFileNode, error) {
 	cmd := []string{"ls", "-l", path}
-	req := p.Kom.Client.CoreV1().RESTClient().
+	req := p.Kom.Client().CoreV1().RESTClient().
 		Get().
 		Namespace(p.Kom.Statement.Namespace).
 		Resource("pods").
@@ -99,7 +104,7 @@ func (p *Poder) DownloadFile(filePath string) ([]byte, error) {
 	cmd := []string{"cat", filePath}
 	klog.V(8).Infof("DownloadFile %s", filePath)
 
-	req := p.Kom.Client.CoreV1().RESTClient().
+	req := p.Kom.Client().CoreV1().RESTClient().
 		Get().
 		Namespace(p.Kom.Statement.Namespace).
 		Resource("pods").
@@ -163,7 +168,7 @@ func (p *Poder) UploadFile(destPath string, file multipart.File) error {
 
 	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", destPath)}
 
-	req := p.Kom.Client.CoreV1().RESTClient().
+	req := p.Kom.Client().CoreV1().RESTClient().
 		Get().
 		Namespace(p.Kom.Statement.Namespace).
 		Resource("pods").
@@ -235,7 +240,7 @@ func (p *Poder) SaveFile(path string, context string) error {
 
 	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", path)}
 
-	req := p.Kom.Client.CoreV1().RESTClient().
+	req := p.Kom.Client().CoreV1().RESTClient().
 		Get().
 		Namespace(p.Kom.Statement.Namespace).
 		Resource("pods").

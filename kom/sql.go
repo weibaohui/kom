@@ -11,89 +11,89 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (kom *Kom) WithContext(ctx context.Context) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) WithContext(ctx context.Context) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Context = ctx
 	return tx
 }
-func (kom *Kom) Resource(obj runtime.Object) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Resource(obj runtime.Object) *Kom {
+	tx := k.getInstance()
 	tx.Statement.ParseFromRuntimeObj(obj)
 	return tx
 }
-func (kom *Kom) Namespace(ns string) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Namespace(ns string) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Namespace = ns
 	return tx
 }
-func (kom *Kom) Name(name string) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Name(name string) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Name = name
 	return tx
 }
 
-func (kom *Kom) CRD(group string, version string, kind string) *Kom {
+func (k *Kom) CRD(group string, version string, kind string) *Kom {
 	gvk := schema.GroupVersionKind{
 		Group:   group,
 		Version: version,
 		Kind:    kind,
 	}
-	kom.Statement.ParseGVKs([]schema.GroupVersionKind{
+	k.Statement.ParseGVKs([]schema.GroupVersionKind{
 		gvk,
 	})
 
-	return kom
+	return k
 }
 
-func (kom *Kom) Get(dest interface{}) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Get(dest interface{}) *Kom {
+	tx := k.getInstance()
 	// 设置目标对象为 obj 的指针
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Get().Execute(tx)
 	return tx
 }
-func (kom *Kom) List(dest interface{}, opt ...metav1.ListOptions) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) List(dest interface{}, opt ...metav1.ListOptions) *Kom {
+	tx := k.getInstance()
 	tx.Statement.ListOptions = opt
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().List().Execute(tx)
 	return tx
 }
-func (kom *Kom) Create(dest interface{}) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Create(dest interface{}) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Create().Execute(tx)
 	return tx
 }
-func (kom *Kom) Update(dest interface{}) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Update(dest interface{}) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Update().Execute(tx)
 	return tx
 }
-func (kom *Kom) Delete() *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Delete() *Kom {
+	tx := k.getInstance()
 	tx.Error = tx.Callback().Delete().Execute(tx)
 	return tx
 }
-func (kom *Kom) Patch(dest interface{}) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) Patch(dest interface{}) *Kom {
+	tx := k.getInstance()
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Patch().Execute(tx)
 	return tx
 }
-func (kom *Kom) PatchData(data string) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) PatchData(data string) *Kom {
+	tx := k.getInstance()
 	tx.Statement.PatchData = data
 	return tx
 }
-func (kom *Kom) PatchType(t types.PatchType) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) PatchType(t types.PatchType) *Kom {
+	tx := k.getInstance()
 	tx.Statement.PatchType = t
 	return tx
 }
-func (kom *Kom) fill(m *unstructured.Unstructured) *Kom {
-	tx := kom.getInstance()
+func (k *Kom) fill(m *unstructured.Unstructured) *Kom {
+	tx := k.getInstance()
 	if tx.Statement.Dest == nil {
 		tx.Error = fmt.Errorf("请先执行Get()、List()等方法")
 	}
@@ -101,5 +101,5 @@ func (kom *Kom) fill(m *unstructured.Unstructured) *Kom {
 	if dest, ok := tx.Statement.Dest.(*unstructured.Unstructured); ok {
 		*m = *dest
 	}
-	return kom
+	return k
 }

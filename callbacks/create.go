@@ -30,9 +30,9 @@ func Create(kom *kom.Kom) error {
 			ns = "default"
 			unstructuredObj.SetNamespace(ns)
 		}
-		res, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Create(ctx, unstructuredObj, metav1.CreateOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Create(ctx, unstructuredObj, metav1.CreateOptions{})
 	} else {
-		res, err = stmt.DynamicClient.Resource(gvr).Create(ctx, unstructuredObj, metav1.CreateOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Create(ctx, unstructuredObj, metav1.CreateOptions{})
 	}
 
 	if err != nil {

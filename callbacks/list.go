@@ -41,9 +41,9 @@ func List(kom *kom.Kom) error {
 	var err error
 
 	if namespaced {
-		list, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, listOptions)
+		list, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
-		list, err = stmt.DynamicClient.Resource(gvr).List(ctx, listOptions)
+		list, err = stmt.Kom.DynamicClient().Resource(gvr).List(ctx, listOptions)
 	}
 	if err != nil {
 		return err

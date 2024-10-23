@@ -22,9 +22,9 @@ func Delete(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
 	} else {
-		err = stmt.DynamicClient.Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
+		err = stmt.Kom.DynamicClient().Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
 	}
 
 	if err != nil {

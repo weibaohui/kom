@@ -95,7 +95,7 @@ spec:
                   type: string
                 replicas:
                   type: integer
-  # 可以是 Namespaced 或 Cluster
+  # 可以是 Namespaced 或 ClusterInst
   scope: Namespaced
   names:
     # 名称的复数形式，用于 URL：/apis/<组>/<版本>/<名称的复数形式>
@@ -107,7 +107,7 @@ spec:
     # shortNames 允许你在命令行使用较短的字符串来匹配资源
     shortNames:
     - ct`
-	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	result := applier.Cluster("default").WithContext(context.TODO()).Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}

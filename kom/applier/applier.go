@@ -20,6 +20,12 @@ func Instance() *Applier {
 		Kom: kom.Init(),
 	}
 }
+func Cluster(id string) *Applier {
+	return &Applier{
+		Kom: kom.Clusters().GetById(id).Kom,
+	}
+}
+
 func (a *Applier) WithContext(ctx context.Context) *Applier {
 	a.Kom = a.Kom.WithContext(ctx)
 	return a
@@ -68,7 +74,7 @@ func (a *Applier) createOrUpdateCRD(obj *unstructured.Unstructured) string {
 		return fmt.Sprintf("YAML 缺少必要的 Group, Version 或 Kind")
 	}
 
-	_, namespaced := kom.ParseGVK2GVR([]schema.GroupVersionKind{gvk})
+	_, namespaced := a.Kom.ParseGVK2GVR([]schema.GroupVersionKind{gvk})
 
 	ns := obj.GetNamespace()
 	name := obj.GetName()

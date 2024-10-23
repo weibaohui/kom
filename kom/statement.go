@@ -9,32 +9,27 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 )
 
 type StatementType string
 
 type Statement struct {
-	Error         error
-	RowsAffected  int64
-	Statement     *Statement
-	Namespace     string
-	Name          string
-	GVR           schema.GroupVersionResource
-	GVK           schema.GroupVersionKind
-	Namespaced    bool
-	ListOptions   []metav1.ListOptions
-	Context       context.Context       `json:"-"`
-	Client        *kubernetes.Clientset `json:"-"`
-	Config        *rest.Config
-	DynamicClient dynamic.Interface `json:"-"`
-	Dest          interface{}
-	PatchType     types.PatchType
-	PatchData     string
-	clean         bool // 移除管理字段
+	Kom          *Kom
+	Error        error
+	RowsAffected int64
+	Statement    *Statement
+	Namespace    string
+	Name         string
+	GVR          schema.GroupVersionResource
+	GVK          schema.GroupVersionKind
+	Namespaced   bool
+	ListOptions  []metav1.ListOptions
+	Context      context.Context `json:"-"`
+	Dest         interface{}
+	PatchType    types.PatchType
+	PatchData    string
+	clean        bool // 移除管理字段
 }
 
 func (s *Statement) SetNamespace(ns string) *Statement {
@@ -65,12 +60,12 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	s.GVK = gvk
 
 	// 获取GVR
-	if isBuiltinResource(gvk.Kind) {
+	if s.Kom.isBuiltinResource(gvk.Kind) {
 		// 内置资源
-		s.GVR, s.Namespaced = getGVR(gvk.Kind)
+		s.GVR, s.Namespaced = s.Kom.getGVR(gvk.Kind)
 
 	} else {
-		crd, err := GetCRD(gvk.Kind, gvk.Group)
+		crd, err := s.Kom.GetCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			s.Error = err
 			return s

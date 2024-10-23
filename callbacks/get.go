@@ -26,9 +26,9 @@ func Get(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		res, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 	} else {
-		res, err = stmt.DynamicClient.Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Get(ctx, name, metav1.GetOptions{})
 	}
 
 	if err != nil {

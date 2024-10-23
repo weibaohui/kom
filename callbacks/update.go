@@ -27,9 +27,9 @@ func Update(kom *kom.Kom) error {
 	var res *unstructured.Unstructured
 
 	if namespaced {
-		res, err = stmt.DynamicClient.Resource(gvr).Namespace(ns).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
 	} else {
-		res, err = stmt.DynamicClient.Resource(gvr).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
+		res, err = stmt.Kom.DynamicClient().Resource(gvr).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
 	}
 
 	if err != nil {

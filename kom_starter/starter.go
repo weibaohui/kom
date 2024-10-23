@@ -6,7 +6,6 @@ import (
 
 	"github.com/weibaohui/kom/callbacks"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/kom/doc"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -16,15 +15,17 @@ func Init() {
 	if defaultKubeConfig == "" {
 		defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	}
-	// 初始化kubectl 连接
-	kom.InitConnection(defaultKubeConfig)
-	callbacks.RegisterDefaultCallbacks()
-	doc.Instance()
+	_, _ = kom.Clusters().InitInCluster()
+	_, _ = kom.Clusters().InitByPathWithID(defaultKubeConfig, "default")
+	callbacks.RegisterDefaultCallbacks(kom.Clusters())
+	kom.Clusters().Show()
 }
 func InitWithConfig(path string) {
+	_, _ = kom.Clusters().InitInCluster()
 
 	// 初始化kubectl 连接
-	kom.InitConnection(path)
-	callbacks.RegisterDefaultCallbacks()
-	doc.Instance()
+	_, _ = kom.Clusters().InitByPathWithID(path, "default")
+	callbacks.RegisterDefaultCallbacks(kom.Clusters())
+	kom.Clusters().Show()
+
 }
