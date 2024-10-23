@@ -58,6 +58,8 @@ func (s *Statement) SetDest(dest interface{}) *Statement {
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
 
+	s.GVR = schema.GroupVersionResource{}
+	s.GVK = schema.GroupVersionKind{}
 	// 获取单个GVK
 	gvk := GetParsedGVK(gvks, versions...)
 	s.GVK = gvk
