@@ -181,7 +181,7 @@ spec:
 			Namespace("default").
 			Delete().Error
 		if err != nil {
-			fmt.Printf("CRD Delete error: %v", err)
+			fmt.Printf("CRD Delete error: %v\n", err)
 		}
 	})
 }
