@@ -42,4 +42,6 @@ jobs:
           sudo k3s kubectl get node
 
     - name: Run Tests
-      run: go test -v ./...
+      run: |
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          go test -v ./...
