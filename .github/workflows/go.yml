@@ -39,6 +39,7 @@ jobs:
           sudo chmod 644 /etc/rancher/k3s/k3s.yaml
           sudo k3s server &
           kubectl get nodes
+          sudo k3s kubectl get node
 
     - name: Run Tests
       run: go test -v ./...
