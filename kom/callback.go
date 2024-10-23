@@ -112,9 +112,9 @@ func (p *processor) Replace(name string, fn func(*Kom) error) error {
 	return (&callback{processor: p}).Replace(name, fn)
 }
 
-func (p *processor) Execute(k8s *Kom) error {
+func (p *processor) Execute(kom *Kom) error {
 	for _, f := range p.fns {
-		err := f(k8s)
+		err := f(kom)
 		if err != nil {
 			return err
 		}
