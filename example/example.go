@@ -67,7 +67,50 @@ spec:
 	}
 }
 func crdExample() {
-
+	yaml := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  # 名字必需与下面的 spec 字段匹配，并且格式为 '<名称的复数形式>.<组名>'
+  name: crontabs.stable.example.com
+spec:
+  # 组名称，用于 REST API: /apis/<组>/<版本>
+  group: stable.example.com
+  # 列举此 CustomResourceDefinition 所支持的版本
+  versions:
+    - name: v1
+      # 每个版本都可以通过 served 标志来独立启用或禁止
+      served: true
+      # 其中一个且只有一个版本必需被标记为存储版本
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                cronSpec:
+                  type: string
+                image:
+                  type: string
+                replicas:
+                  type: integer
+  # 可以是 Namespaced 或 Cluster
+  scope: Namespaced
+  names:
+    # 名称的复数形式，用于 URL：/apis/<组>/<版本>/<名称的复数形式>
+    plural: crontabs
+    # 名称的单数形式，作为命令行使用时和显示时的别名
+    singular: crontab
+    # kind 通常是单数形式的驼峰命名（CamelCased）形式。你的资源清单会使用这一形式。
+    kind: CronTab
+    # shortNames 允许你在命令行使用较短的字符串来匹配资源
+    shortNames:
+    - ct`
+	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
 	var crontab unstructured.Unstructured
 	crontab = unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -83,17 +126,8 @@ func crdExample() {
 			},
 		},
 	}
-	// 删除CRD
+
 	err := kom.Init().
-		WithContext(context.TODO()).
-		CRD("stable.example.com", "v1", "CronTab").
-		Name(crontab.GetName()).
-		Namespace(crontab.GetNamespace()).
-		Delete().Error
-	if err != nil {
-		klog.Errorf("CronTab Delete(&item) error :%v", err)
-	}
-	err = kom.Init().
 		WithContext(context.TODO()).
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
@@ -155,19 +189,85 @@ func crdExample() {
 	if err != nil {
 		klog.Errorf("CronTab Patch(&item) error :%v", err)
 	}
+	// 删除CRD
+	err = kom.Init().
+		WithContext(context.TODO()).
+		CRD("stable.example.com", "v1", "CronTab").
+		Name(crontab.GetName()).
+		Namespace(crontab.GetNamespace()).
+		Delete().Error
+	if err != nil {
+		klog.Errorf("CronTab Delete(&item) error :%v", err)
+	}
 }
 func builtInExample() {
+	yaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+`
+	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
 	item := v1.Deployment{}
 	err := kom.Init().
 		WithContext(context.TODO()).
 		Resource(&item).
 		Namespace("default").
-		Name("ci-755702-codexxx").
+		Name("nginx").
 		Get(&item).Error
 	if err != nil {
 		klog.Errorf("Deployment Get(&item) error :%v", err)
 	}
 	fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
+	applier.Instance().Delete(yaml)
 
 	createItem := v1.Deployment{
 
@@ -309,9 +409,14 @@ spec:
     image: alpine
     name: container-b
 `
-	_ = applier.Instance().WithContext(context.TODO()).Delete(yaml)
-	_ = applier.Instance().WithContext(context.TODO()).Apply(yaml)
-
+	result := applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	result = applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
 	time.Sleep(time.Second * 5)
 	options := corev1.PodLogOptions{
 		Container: "container-b",
@@ -319,7 +424,7 @@ spec:
 	podLogs := poder.Instance().WithContext(context.TODO()).
 		Namespace("default").
 		Name("random-char-pod-1").
-		GetLogs("random-char-pod", &options)
+		GetLogs("random-char-pod-1", &options)
 	logStream, err := podLogs.Stream(context.TODO())
 	if err != nil {
 		fmt.Println("Error getting pod logs:", err)
@@ -338,7 +443,9 @@ spec:
 		}
 		fmt.Println(line)
 	}
-
-	_ = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	result = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
 
 }
