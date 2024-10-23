@@ -156,7 +156,7 @@ func (c *ClusterInstances) Default() *ClusterInst {
 
 func (c *ClusterInstances) Show() {
 	klog.Infof("Show Clusters\n")
-	for k, _ := range c.clusters {
-		klog.Infof("%s\n", k)
+	for k, v := range c.clusters {
+		klog.Infof("%s=%s\n", k, v.Config.Host)
 	}
 }
