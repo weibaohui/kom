@@ -4,7 +4,7 @@ import (
 	"github.com/weibaohui/kom/kom"
 )
 
-func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) {
+func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 	all := clusters.All()
 	for _, c := range all {
@@ -30,4 +30,5 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) {
 		_ = deleteCallback.Register("kom:delete", Delete)
 	}
 
+	return nil
 }

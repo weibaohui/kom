@@ -15,17 +15,17 @@ func Init() {
 	if defaultKubeConfig == "" {
 		defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	}
+	kom.Clusters().SetCallbackRegisterFunc(callbacks.RegisterDefaultCallbacks)
 	_, _ = kom.Clusters().InitInCluster()
 	_, _ = kom.Clusters().InitByPathWithID(defaultKubeConfig, "default")
-	callbacks.RegisterDefaultCallbacks(kom.Clusters())
 	kom.Clusters().Show()
 }
 func InitWithConfig(path string) {
 	_, _ = kom.Clusters().InitInCluster()
 
+	kom.Clusters().SetCallbackRegisterFunc(callbacks.RegisterDefaultCallbacks)
 	// 初始化kubectl 连接
 	_, _ = kom.Clusters().InitByPathWithID(path, "default")
-	callbacks.RegisterDefaultCallbacks(kom.Clusters())
 	kom.Clusters().Show()
 
 }

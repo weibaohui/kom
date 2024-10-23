@@ -16,7 +16,8 @@ import (
 var clusterInstances *ClusterInstances
 
 type ClusterInstances struct {
-	clusters map[string]*ClusterInst
+	clusters             map[string]*ClusterInst
+	callbackRegisterFunc func(clusters *ClusterInstances) func() // 用来注册回调参数的回调方法
 }
 type ClusterInst struct {
 	ID            string
@@ -44,6 +45,9 @@ func (c *ClusterInstances) InitInCluster() (*Kom, error) {
 		return nil, fmt.Errorf("InCluster Error %v", err)
 	}
 	return c.InitByConfigWithID(config, "InCluster")
+}
+func (c *ClusterInstances) SetCallbackRegisterFunc(callback func(clusters *ClusterInstances) func()) {
+	c.callbackRegisterFunc = callback
 }
 func (c *ClusterInstances) InitByPath(path string) (*Kom, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
@@ -99,6 +103,9 @@ func (c *ClusterInstances) InitByConfigWithID(config *rest.Config, id string) (*
 		cluster.crdList = kom.initializeCRDList()
 		cluster.callbacks = kom.initializeCallbacks()
 		cluster.Docs = docer.InitTrees(kom.GetOpenAPISchema())
+		if c.callbackRegisterFunc != nil {
+			c.callbackRegisterFunc(Clusters())
+		}
 		return kom, nil
 	}
 }

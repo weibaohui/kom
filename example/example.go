@@ -20,10 +20,11 @@ import (
 )
 
 func Example() {
-	builtInExample()
-	crdExample()
-	YamlApplyDelete()
-	PodLogs()
+	MultiCluster()
+	// builtInExample()
+	// crdExample()
+	// YamlApplyDelete()
+	// PodLogs()
 }
 func YamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -448,4 +449,31 @@ spec:
 		fmt.Println(str)
 	}
 
+}
+
+func MultiCluster() {
+	_, err := kom.Clusters().InitByPathWithID("/Users/weibh/.kube/orb", "orb")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_, err = kom.Clusters().InitByPathWithID("/Users/weibh/.kube/docker", "docker")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	kom.Clusters().Show()
+	var pods []corev1.Pod
+	err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("orb pods count=%v\n", len(pods))
+	err = kom.Cluster("docker").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("docker pods count=%v\n", len(pods))
 }
