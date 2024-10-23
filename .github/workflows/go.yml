@@ -43,5 +43,4 @@ jobs:
 
     - name: Run Tests
       run: |
-          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           go test -v ./...
