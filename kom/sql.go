@@ -76,22 +76,15 @@ func (k *Kubectl) Delete() *Kubectl {
 	tx.Error = tx.Callback().Delete().Execute(tx)
 	return tx
 }
-func (k *Kubectl) Patch(dest interface{}) *Kubectl {
+func (k *Kubectl) Patch(dest interface{}, pt types.PatchType, data string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
+	tx.Statement.PatchData = data
+	tx.Statement.PatchType = pt
 	tx.Error = tx.Callback().Patch().Execute(tx)
 	return tx
 }
-func (k *Kubectl) PatchData(data string) *Kubectl {
-	tx := k.getInstance()
-	tx.Statement.PatchData = data
-	return tx
-}
-func (k *Kubectl) PatchType(t types.PatchType) *Kubectl {
-	tx := k.getInstance()
-	tx.Statement.PatchType = t
-	return tx
-}
+
 func (k *Kubectl) fill(m *unstructured.Unstructured) *Kubectl {
 	tx := k.getInstance()
 	if tx.Statement.Dest == nil {

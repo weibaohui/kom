@@ -177,9 +177,7 @@ spec:
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
-		PatchData(patchData).
-		PatchType(types.MergePatchType).
-		Patch(&crontab).Error
+		Patch(&crontab, types.MergePatchType, patchData).Error
 
 	if err != nil {
 		klog.Errorf("CronTab Patch(&item) error :%v", err)
@@ -333,9 +331,7 @@ spec:
 		Get(&createItem).Error
 	err = kom.DefaultCluster().
 		Resource(&createItem).
-		PatchData(patchData).
-		PatchType(types.MergePatchType).
-		Patch(&createItem).Error
+		Patch(&createItem, types.MergePatchType, patchData).Error
 	if err != nil {
 		klog.Errorf("Deployment Patch(&item) error :%v", err)
 	}
@@ -397,6 +393,7 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
+	time.Sleep(time.Second * 5)
 	result = kom.DefaultCluster().Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
@@ -405,7 +402,6 @@ spec:
 	options := corev1.PodLogOptions{
 		Container: "container-b",
 	}
-
 	podLogs := kom.DefaultCluster().Poder().
 		Namespace("default").
 		Name("random-char-pod-1").
