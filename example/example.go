@@ -20,11 +20,11 @@ import (
 )
 
 func Example() {
-	// MultiCluster()
 	builtInExample()
 	crdExample()
 	YamlApplyDelete()
 	// PodLogs()
+	// MultiCluster()
 }
 func YamlApplyDelete() {
 	yaml := `apiVersion: v1
