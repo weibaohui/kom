@@ -160,6 +160,10 @@ func (c *ClusterInstances) Default() *ClusterInst {
 func (c *ClusterInstances) Show() {
 	klog.Infof("Show Clusters\n")
 	for k, v := range c.clusters {
+		if v.versionInfo == nil {
+			klog.Infof("%s=nil\n", k)
+			continue
+		}
 		klog.Infof("%s[%s,%s.%s]=%s\n", k, v.versionInfo.Platform, v.versionInfo.Major, v.versionInfo.Minor, v.Config.Host)
 	}
 }

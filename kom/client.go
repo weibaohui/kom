@@ -3,6 +3,7 @@ package kom
 import (
 	"context"
 
+	"github.com/weibaohui/kom/kom/docer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -83,4 +84,8 @@ func (k *Kom) APIResources() []*metav1.APIResource {
 func (k *Kom) CRDList() []*unstructured.Unstructured {
 	cluster := Clusters().GetById(k.ID)
 	return cluster.crdList
+}
+func (k *Kom) Docs() *docer.Docs {
+	cluster := Clusters().GetById(k.ID)
+	return cluster.Docs
 }

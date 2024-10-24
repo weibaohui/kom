@@ -20,13 +20,14 @@ import (
 )
 
 func Example() {
+	doc()
 	builtInExample()
 	crdExample()
-	YamlApplyDelete()
-	// PodLogs()
-	// MultiCluster()
+	yamlApplyDelete()
+	podLogs()
+	multiCluster()
 }
-func YamlApplyDelete() {
+func yamlApplyDelete() {
 	yaml := `apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -388,7 +389,7 @@ spec:
 	}
 }
 
-func PodLogs() {
+func podLogs() {
 	yaml := `apiVersion: v1
 kind: Pod
 metadata:
@@ -451,7 +452,7 @@ spec:
 
 }
 
-func MultiCluster() {
+func multiCluster() {
 	_, err := kom.Clusters().InitByPathWithID("/Users/weibh/.kube/orb", "orb")
 	if err != nil {
 		fmt.Println(err)
@@ -476,4 +477,9 @@ func MultiCluster() {
 		return
 	}
 	fmt.Printf("docker pods count=%v\n", len(pods))
+}
+
+func doc() {
+	docs := kom.Init().Docs()
+	docs.ListNames()
 }
