@@ -102,7 +102,7 @@ func (c *ClusterInstances) InitByConfigWithID(config *rest.Config, id string) (*
 		cluster.apiResources = kom.initializeAPIResources()
 		cluster.crdList = kom.initializeCRDList()
 		cluster.callbacks = kom.initializeCallbacks()
-		cluster.Docs = docer.InitTrees(kom.GetOpenAPISchema())
+		cluster.Docs = docer.InitTrees(kom.getOpenAPISchema())
 		if c.callbackRegisterFunc != nil {
 			c.callbackRegisterFunc(Clusters())
 		}

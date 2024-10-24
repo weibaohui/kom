@@ -15,7 +15,7 @@ import (
 // if err != nil {
 // log.Fatalf("Error getting server version: %s", err.Error())
 // }
-func (k *Kom) GetOpenAPISchema() *openapi_v2.Document {
+func (k *Kom) getOpenAPISchema() *openapi_v2.Document {
 	openAPISchema, err := k.Client().DiscoveryClient.OpenAPISchema()
 	if err != nil {
 		klog.V(2).Infof("Error fetching OpenAPI schema: %v\n", err)
