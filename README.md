@@ -28,32 +28,6 @@ go get github.com/weibaohui/kom
 
 ### 1. 基本示例
 
-该示例演示了如何使用 `kom` 管理 Kubernetes 资源。
-
-```go
-package example
-
-import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/kom/applier"
-	"github.com/weibaohui/kom/kom/poder"
-	"github.com/weibaohui/kom/utils"
-	v1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-func Example() {
-	builtInExample()
-	crdExample()
-	YamlApplyDelete()
-	PodLogs()
-}
-```
 
 ### 2. YAML 应用与删除
 
@@ -263,7 +237,7 @@ func PodLogs() {
 	yaml := `apiVersion: v1
 kind: Pod
 metadata:
-  name: random-char-pod-1
+  name: random-char-pod
   namespace: default
 spec:
   containers:
@@ -276,7 +250,7 @@ spec:
 
 	time.Sleep(5 * time.Second)
 	options := corev1.PodLogOptions{Container: "container-b"}
-	podLogs := poder.Instance().WithContext(context.TODO()).Namespace("default").Name("random-char-pod-1").GetLogs("random-char-pod", &options)
+	podLogs := poder.Instance().WithContext(context.TODO()).Namespace("default").Name("random-char-pod").GetLogs("random-char-pod", &options)
 	logStream, err := podLogs.Stream(context.TODO())
 	if err != nil {
 		fmt.Println("Error getting pod logs:", err)
