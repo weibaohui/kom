@@ -136,7 +136,7 @@ spec:
 			},
 		}
 
-		err := kom.Init().
+		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").
 			Name(crontab.GetName()).
@@ -149,7 +149,7 @@ spec:
 
 	t.Run("Get CR", func(t *testing.T) {
 		var crontab unstructured.Unstructured
-		err := kom.Init().
+		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").
 			Name("test-crontab").
@@ -162,7 +162,7 @@ spec:
 
 	t.Run("List CR", func(t *testing.T) {
 		var crontabList []unstructured.Unstructured
-		err := kom.Init().
+		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").
 			Namespace("default").
@@ -174,7 +174,7 @@ spec:
 	})
 
 	t.Run("Delete CR", func(t *testing.T) {
-		err := kom.Init().
+		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").
 			Name("test-crontab").
@@ -219,7 +219,7 @@ spec:
 
 	t.Run("Get Deployment", func(t *testing.T) {
 		item := v1.Deployment{}
-		err := kom.Init().
+		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			Resource(&item).
 			Namespace("default").
