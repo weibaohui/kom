@@ -6,6 +6,11 @@
 `kom` 是一个用于 Kubernetes 操作的工具，提供了一系列功能来管理 Kubernetes 资源，包括创建、更新、删除和获取资源。这个项目支持多种 Kubernetes 资源类型的操作，并能够处理自定义资源定义（CRD）。
 通过使用 `kom`，你可以轻松地进行资源的增删改查和日志获取以及操作POD内文件等动作。
 
+## **特点**
+1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等。
+2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
+3. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
+
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
 1. **下载**：从 [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m) 下载最新版本。
