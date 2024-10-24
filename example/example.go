@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/kom/applier"
-	"github.com/weibaohui/kom/kom/poder"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,15 +53,15 @@ spec:
         - name: example-container
           image: nginx
 `
-	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	result := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}
-	result = applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	result = kom.DefaultCluster().Applier().Apply(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}
-	result = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	result = kom.DefaultCluster().Applier().Delete(yaml)
 	for _, r := range result {
 		fmt.Println(r)
 	}
@@ -97,7 +95,7 @@ spec:
                   type: string
                 replicas:
                   type: integer
-  # 可以是 Namespaced 或 ClusterInst
+  # 可以是 Namespaced 或 clusterInst
   scope: Namespaced
   names:
     # 名称的复数形式，用于 URL：/apis/<组>/<版本>/<名称的复数形式>
@@ -109,7 +107,7 @@ spec:
     # shortNames 允许你在命令行使用较短的字符串来匹配资源
     shortNames:
     - ct`
-	result := applier.Cluster("default").WithContext(context.TODO()).Apply(yaml)
+	result := kom.Cluster("default").Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
@@ -129,8 +127,7 @@ spec:
 		},
 	}
 
-	err := kom.Init().
-		WithContext(context.TODO()).
+	err := kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -138,8 +135,7 @@ spec:
 	if err != nil {
 		fmt.Printf("CRD Get %v\n", err)
 	}
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -149,8 +145,7 @@ spec:
 	}
 
 	var crontabList []unstructured.Unstructured
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Namespace(crontab.GetNamespace()).
 		List(&crontabList).Error
@@ -170,8 +165,7 @@ spec:
         }
     }
 }`
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -179,8 +173,7 @@ spec:
 	if err != nil {
 		klog.Errorf("CronTab Get(&item) error :%v", err)
 	}
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -192,8 +185,7 @@ spec:
 		klog.Errorf("CronTab Patch(&item) error :%v", err)
 	}
 	// 删除CRD
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -254,13 +246,12 @@ spec:
             port:
               number: 80
 `
-	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	result := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
 	item := v1.Deployment{}
-	err := kom.Init().
-		WithContext(context.TODO()).
+	err := kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
 		Name("nginx").
@@ -269,8 +260,7 @@ spec:
 		klog.Errorf("Deployment Get(&item) error :%v", err)
 	}
 	fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
-	applier.Instance().Delete(yaml)
-
+	kom.DefaultCluster().Applier().Delete(yaml)
 	createItem := v1.Deployment{
 
 		ObjectMeta: metav1.ObjectMeta{
@@ -301,15 +291,13 @@ spec:
 			},
 		},
 	}
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Create(&createItem).Error
 	if err != nil {
 		klog.Errorf("Deployment Create(&item) error :%v", err)
 	}
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
 		Name(createItem.Name).
@@ -321,8 +309,7 @@ spec:
 		createItem.Spec.Template.Annotations = map[string]string{}
 	}
 	createItem.Spec.Template.Annotations["kom.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Update(&createItem).Error
 	if err != nil {
@@ -339,14 +326,12 @@ spec:
         }
     }
 }`
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
 		Name(createItem.Name).
 		Get(&createItem).Error
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		PatchData(patchData).
 		PatchType(types.MergePatchType).
@@ -354,16 +339,14 @@ spec:
 	if err != nil {
 		klog.Errorf("Deployment Patch(&item) error :%v", err)
 	}
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
 		Name(createItem.Name).
 		Delete().Error
 
 	var items []v1.Deployment
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
 		List(&items).Error
@@ -375,8 +358,7 @@ spec:
 		fmt.Printf("List Deployment  Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
 	}
 
-	err = kom.Init().
-		WithContext(context.TODO()).
+	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
 		List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
@@ -411,11 +393,11 @@ spec:
     image: alpine
     name: container-b
 `
-	result := applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	result := kom.DefaultCluster().Applier().Delete(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
-	result = applier.Instance().WithContext(context.TODO()).Apply(yaml)
+	result = kom.DefaultCluster().Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
@@ -423,7 +405,8 @@ spec:
 	options := corev1.PodLogOptions{
 		Container: "container-b",
 	}
-	podLogs := poder.Instance().WithContext(context.TODO()).
+
+	podLogs := kom.DefaultCluster().Poder().
 		Namespace("default").
 		Name("random-char-pod-1").
 		GetLogs("random-char-pod-1", &options)
@@ -445,7 +428,7 @@ spec:
 		}
 		fmt.Println(line)
 	}
-	result = applier.Instance().WithContext(context.TODO()).Delete(yaml)
+	result = kom.DefaultCluster().Applier().Delete(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
@@ -453,12 +436,12 @@ spec:
 }
 
 func multiCluster() {
-	_, err := kom.Clusters().InitByPathWithID("/Users/weibh/.kube/orb", "orb")
+	_, err := kom.Clusters().RegisterByPathWithID("/Users/weibh/.kube/orb", "orb")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	_, err = kom.Clusters().InitByPathWithID("/Users/weibh/.kube/docker", "docker")
+	_, err = kom.Clusters().RegisterByPathWithID("/Users/weibh/.kube/docker", "docker")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -480,6 +463,6 @@ func multiCluster() {
 }
 
 func doc() {
-	docs := kom.Init().Docs()
+	docs := kom.DefaultCluster().Status().Docs()
 	docs.ListNames()
 }
