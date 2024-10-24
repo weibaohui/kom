@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/kom/applier"
-	"github.com/weibaohui/kom/kom/poder"
 	"github.com/weibaohui/kom/kom_starter"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +34,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 func TestYamlApplyDelete(t *testing.T) {
-	yamlStr := `apiVersion: v1
+	yaml := `apiVersion: v1
 kind: ConfigMap
 metadata:
   name: example-config
@@ -66,7 +64,7 @@ spec:
 
 	// Apply the YAML
 	t.Run("Apply Resources", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Apply(yamlStr)
+		result := kom.DefaultCluster().Applier().Apply(yaml)
 		for _, r := range result {
 			fmt.Println(r)
 		}
@@ -74,7 +72,7 @@ spec:
 
 	// Delete the resources
 	t.Run("Delete Resources", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Delete(yamlStr)
+		result := kom.DefaultCluster().Applier().Delete(yaml)
 		for _, r := range result {
 			fmt.Println(r)
 		}
@@ -82,7 +80,7 @@ spec:
 }
 
 func TestCrdExample(t *testing.T) {
-	yamlStr := `apiVersion: apiextensions.k8s.io/v1
+	yaml := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: crontabs.stable.example.com
@@ -113,7 +111,7 @@ spec:
 `
 
 	t.Run("Apply CRD", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Apply(yamlStr)
+		result := kom.DefaultCluster().Applier().Apply(yaml)
 		for _, str := range result {
 			fmt.Println(str)
 		}
@@ -187,7 +185,7 @@ spec:
 }
 
 func TestBuiltInExample(t *testing.T) {
-	yamlStr := `apiVersion: apps/v1
+	yaml := `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx
@@ -211,7 +209,7 @@ spec:
 `
 
 	t.Run("Apply Built-in Resources", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Apply(yamlStr)
+		result := kom.DefaultCluster().Applier().Apply(yaml)
 		for _, str := range result {
 			fmt.Println(str)
 		}
@@ -232,7 +230,7 @@ spec:
 	})
 
 	t.Run("Delete Built-in Resources", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Delete(yamlStr)
+		result := kom.DefaultCluster().Applier().Delete(yaml)
 		for _, str := range result {
 			fmt.Println(str)
 		}
@@ -240,7 +238,7 @@ spec:
 }
 
 func TestPodLogs(t *testing.T) {
-	yamlStr := `apiVersion: v1
+	yaml := `apiVersion: v1
 kind: Pod
 metadata:
   name: random-char-pod-1
@@ -263,7 +261,7 @@ spec:
 `
 
 	t.Run("Apply Pod", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Apply(yamlStr)
+		result := kom.DefaultCluster().Applier().Apply(yaml)
 		for _, str := range result {
 			fmt.Println(str)
 			if strings.Contains(str, "err") {
@@ -279,7 +277,7 @@ spec:
 		options := corev1.PodLogOptions{
 			Container: "container-b",
 		}
-		podLogs := poder.Instance().WithContext(context.TODO()).
+		podLogs := kom.DefaultCluster().Poder().
 			Namespace("default").
 			Name("random-char-pod-1").
 			GetLogs("random-char-pod-1", &options)
@@ -304,7 +302,7 @@ spec:
 	})
 
 	t.Run("Cleanup Pod", func(t *testing.T) {
-		result := applier.Instance().WithContext(context.TODO()).Delete(yamlStr)
+		result := kom.DefaultCluster().Applier().Delete(yaml)
 		for _, str := range result {
 			fmt.Println(str)
 			if strings.Contains(str, "err") {
