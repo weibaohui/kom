@@ -6,6 +6,7 @@ import (
 	"github.com/weibaohui/kom/kom/docer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -29,6 +30,7 @@ type ClusterInst struct {
 	crdList       []*unstructured.Unstructured // 当前k8s已注册资源
 	callbacks     *callbacks
 	Docs          *docer.Docs
+	versionInfo   *version.Info
 }
 
 func Clusters() *ClusterInstances {
@@ -102,6 +104,7 @@ func (c *ClusterInstances) InitByConfigWithID(config *rest.Config, id string) (*
 		cluster.apiResources = kom.initializeAPIResources()
 		cluster.crdList = kom.initializeCRDList()
 		cluster.callbacks = kom.initializeCallbacks()
+		cluster.versionInfo = kom.initializeServerVersion()
 		cluster.Docs = docer.InitTrees(kom.getOpenAPISchema())
 		if c.callbackRegisterFunc != nil {
 			c.callbackRegisterFunc(Clusters())
@@ -157,6 +160,6 @@ func (c *ClusterInstances) Default() *ClusterInst {
 func (c *ClusterInstances) Show() {
 	klog.Infof("Show Clusters\n")
 	for k, v := range c.clusters {
-		klog.Infof("%s=%s\n", k, v.Config.Host)
+		klog.Infof("%s[%s,%s.%s]=%s\n", k, v.versionInfo.Platform, v.versionInfo.Major, v.versionInfo.Minor, v.Config.Host)
 	}
 }
