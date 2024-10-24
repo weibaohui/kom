@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	kom.Clusters().SetCallbackRegisterFunc(callbacks.RegisterDefaultCallbacks)
+	kom.Clusters().SetRegisterCallbackFunc(callbacks.RegisterDefaultCallbacks)
 	klog.Infof("Register RegisterDefaultCallbacks func  to clusters")
 }
 
@@ -21,15 +21,15 @@ func Init() {
 	if defaultKubeConfig == "" {
 		defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	}
-	_, _ = kom.Clusters().InitInCluster()
-	_, _ = kom.Clusters().InitByPathWithID(defaultKubeConfig, "default")
+	_, _ = kom.Clusters().RegisterInCluster()
+	_, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default")
 	kom.Clusters().Show()
 }
 func InitWithConfig(path string) {
-	_, _ = kom.Clusters().InitInCluster()
+	_, _ = kom.Clusters().RegisterInCluster()
 
 	// 初始化kubectl 连接
-	_, _ = kom.Clusters().InitByPathWithID(path, "default")
+	_, _ = kom.Clusters().RegisterByPathWithID(path, "default")
 	kom.Clusters().Show()
 
 }

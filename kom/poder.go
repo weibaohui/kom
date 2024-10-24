@@ -1,15 +1,13 @@
-package poder
+package kom
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"strings"
 
-	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -17,39 +15,25 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type Poder struct {
-	Kom           *kom.Kom
+type poder struct {
+	kubectl       *Kubectl
 	containerName string
 }
 
-func Instance() *Poder {
-	return &Poder{
-		Kom: kom.Init(),
-	}
-}
-func Cluster(id string) *Poder {
-	return &Poder{
-		Kom: kom.Clusters().GetById(id).Kom,
-	}
-}
-func (p *Poder) WithContext(ctx context.Context) *Poder {
-	p.Kom = p.Kom.WithContext(ctx)
+func (p *poder) Namespace(ns string) *poder {
+	p.kubectl = p.kubectl.Namespace(ns)
 	return p
 }
-func (p *Poder) Namespace(ns string) *Poder {
-	p.Kom = p.Kom.Namespace(ns)
+func (p *poder) Name(name string) *poder {
+	p.kubectl = p.kubectl.Name(name)
 	return p
 }
-func (p *Poder) Name(name string) *Poder {
-	p.Kom = p.Kom.Name(name)
-	return p
-}
-func (p *Poder) ContainerName(name string) *Poder {
+func (p *poder) ContainerName(name string) *poder {
 	p.containerName = name
 	return p
 }
-func (p *Poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
-	return p.Kom.Client().CoreV1().Pods(p.Kom.Statement.Namespace).GetLogs(name, opts)
+func (p *poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
+	return p.kubectl.Client().CoreV1().Pods(p.kubectl.Statement.Namespace).GetLogs(name, opts)
 }
 
 // PodFileNode 文件节点结构
@@ -64,13 +48,13 @@ type PodFileNode struct {
 }
 
 // GetFileList  获取容器中指定路径的文件和目录列表
-func (p *Poder) GetFileList(path string) ([]*PodFileNode, error) {
+func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
 	cmd := []string{"ls", "-l", path}
-	req := p.Kom.Client().CoreV1().RESTClient().
+	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
-		Namespace(p.Kom.Statement.Namespace).
+		Namespace(p.kubectl.Statement.Namespace).
 		Resource("pods").
-		Name(p.Kom.Statement.Name).
+		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
 		Param("container", p.containerName).
 		Param("command", cmd[0]).
@@ -81,7 +65,7 @@ func (p *Poder) GetFileList(path string) ([]*PodFileNode, error) {
 		Param("stdout", "true").
 		Param("stderr", "true")
 
-	executor, err := remotecommand.NewSPDYExecutor(p.Kom.RestConfig(), "POST", req.URL())
+	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
 	if err != nil {
 		return nil, fmt.Errorf("error creating executor: %v", err)
 	}
@@ -100,15 +84,15 @@ func (p *Poder) GetFileList(path string) ([]*PodFileNode, error) {
 }
 
 // DownloadFile 从指定容器下载文件
-func (p *Poder) DownloadFile(filePath string) ([]byte, error) {
+func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 	cmd := []string{"cat", filePath}
 	klog.V(8).Infof("DownloadFile %s", filePath)
 
-	req := p.Kom.Client().CoreV1().RESTClient().
+	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
-		Namespace(p.Kom.Statement.Namespace).
+		Namespace(p.kubectl.Statement.Namespace).
 		Resource("pods").
-		Name(p.Kom.Statement.Name).
+		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
 		Param("container", p.containerName).
 		Param("command", cmd[0]).
@@ -118,7 +102,7 @@ func (p *Poder) DownloadFile(filePath string) ([]byte, error) {
 		Param("stdout", "true").
 		Param("stderr", "true")
 
-	executor, err := remotecommand.NewSPDYExecutor(p.Kom.RestConfig(), "POST", req.URL())
+	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
 	if err != nil {
 		return nil, fmt.Errorf("error creating executor: %v", err)
 	}
@@ -142,7 +126,7 @@ func (p *Poder) DownloadFile(filePath string) ([]byte, error) {
 }
 
 // UploadFile 将文件上传到指定容器
-func (p *Poder) UploadFile(destPath string, file multipart.File) error {
+func (p *poder) UploadFile(destPath string, file multipart.File) error {
 	// 创建临时文件
 	tempFile, err := os.CreateTemp("", "upload-*")
 	if err != nil {
@@ -168,11 +152,11 @@ func (p *Poder) UploadFile(destPath string, file multipart.File) error {
 
 	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", destPath)}
 
-	req := p.Kom.Client().CoreV1().RESTClient().
+	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
-		Namespace(p.Kom.Statement.Namespace).
+		Namespace(p.kubectl.Statement.Namespace).
 		Resource("pods").
-		Name(p.Kom.Statement.Name).
+		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
 		Param("container", p.containerName).
 		Param("tty", "false").
@@ -183,7 +167,7 @@ func (p *Poder) UploadFile(destPath string, file multipart.File) error {
 		Param("stdout", "true").
 		Param("stderr", "true")
 
-	executor, err := remotecommand.NewSPDYExecutor(p.Kom.RestConfig(), "POST", req.URL())
+	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
 	if err != nil {
 		return fmt.Errorf("error creating executor: %v", err)
 	}
@@ -213,7 +197,7 @@ func (p *Poder) UploadFile(destPath string, file multipart.File) error {
 	return nil
 }
 
-func (p *Poder) SaveFile(path string, context string) error {
+func (p *poder) SaveFile(path string, context string) error {
 
 	// 创建临时文件
 	tempFile, err := os.CreateTemp("", "upload-*")
@@ -240,11 +224,11 @@ func (p *Poder) SaveFile(path string, context string) error {
 
 	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", path)}
 
-	req := p.Kom.Client().CoreV1().RESTClient().
+	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
-		Namespace(p.Kom.Statement.Namespace).
+		Namespace(p.kubectl.Statement.Namespace).
 		Resource("pods").
-		Name(p.Kom.Statement.Name).
+		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
 		Param("container", p.containerName).
 		Param("tty", "false").
@@ -255,7 +239,7 @@ func (p *Poder) SaveFile(path string, context string) error {
 		Param("stdout", "true").
 		Param("stderr", "true")
 
-	executor, err := remotecommand.NewSPDYExecutor(p.Kom.RestConfig(), "POST", req.URL())
+	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
 	if err != nil {
 		return fmt.Errorf("error creating executor: %v", err)
 	}

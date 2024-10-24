@@ -10,9 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func Get(kom *kom.Kom) error {
+func Get(k *kom.Kubectl) error {
 
-	stmt := kom.Statement
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -26,9 +26,9 @@ func Get(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 	} else {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Get(ctx, name, metav1.GetOptions{})
 	}
 
 	if err != nil {

@@ -12,13 +12,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type StatementType string
-
 type Statement struct {
-	Kom          *Kom
+	*Kubectl
 	Error        error
 	RowsAffected int64
-	Statement    *Statement
 	Namespace    string
 	Name         string
 	GVR          schema.GroupVersionResource
@@ -56,23 +53,23 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	s.GVR = schema.GroupVersionResource{}
 	s.GVK = schema.GroupVersionKind{}
 	// 获取单个GVK
-	gvk := GetParsedGVK(gvks, versions...)
+	gvk := getParsedGVK(gvks, versions...)
 	s.GVK = gvk
 
 	// 获取GVR
-	if s.Kom.isBuiltinResource(gvk.Kind) {
+	if s.Kubectl.isBuiltinResource(gvk.Kind) {
 		// 内置资源
-		s.GVR, s.Namespaced = s.Kom.getGVR(gvk.Kind)
+		s.GVR, s.Namespaced = s.Kubectl.getGVR(gvk.Kind)
 
 	} else {
-		crd, err := s.Kom.GetCRD(gvk.Kind, gvk.Group)
+		crd, err := s.Kubectl.getCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			s.Error = err
 			return s
 		}
 		// 检查CRD是否是Namespaced
 		s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		s.GVR = GetGRVFromCRD(crd)
+		s.GVR = getGRVFromCRD(crd)
 
 	}
 

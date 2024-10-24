@@ -7,14 +7,14 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// callbacks kom callbacks manager
+// callbacks km callbacks manager
 type callbacks struct {
 	processors map[string]*processor
 }
 
 type processor struct {
-	kom       *Kom
-	fns       []func(*Kom) error
+	km        *Kubectl
+	fns       []func(*Kubectl) error
 	callbacks []*callback
 }
 type callback struct {
@@ -23,19 +23,19 @@ type callback struct {
 	after     string
 	remove    bool
 	replace   bool
-	handler   func(*Kom) error
+	handler   func(*Kubectl) error
 	processor *processor
 }
 
-func (k *Kom) initializeCallbacks() *callbacks {
+func (k *Kubectl) initializeCallbacks() *callbacks {
 	return &callbacks{
 		processors: map[string]*processor{
-			"get":    {kom: k},
-			"patch":  {kom: k},
-			"create": {kom: k},
-			"update": {kom: k},
-			"delete": {kom: k},
-			"list":   {kom: k},
+			"get":    {km: k},
+			"patch":  {km: k},
+			"create": {km: k},
+			"update": {km: k},
+			"delete": {km: k},
+			"list":   {km: k},
 		},
 	}
 }
@@ -69,7 +69,7 @@ func (c *callback) Remove(name string) error {
 	return c.processor.compile()
 }
 
-func (c *callback) Replace(name string, fn func(*Kom) error) error {
+func (c *callback) Replace(name string, fn func(*Kubectl) error) error {
 	klog.V(4).Infof("replacing callback `%s` \n", name)
 	c.name = name
 	c.handler = fn
@@ -88,14 +88,14 @@ func (c *callback) After(name string) *callback {
 	return c
 }
 
-func (c *callback) Register(name string, fn func(*Kom) error) error {
+func (c *callback) Register(name string, fn func(*Kubectl) error) error {
 	c.name = name
 	c.handler = fn
 	c.processor.callbacks = append(c.processor.callbacks, c)
 	return c.processor.compile()
 }
 
-func (p *processor) Get(name string) func(*Kom) error {
+func (p *processor) Get(name string) func(*Kubectl) error {
 	for i := len(p.callbacks) - 1; i >= 0; i-- {
 		if v := p.callbacks[i]; v.name == name && !v.remove {
 			return v.handler
@@ -108,11 +108,11 @@ func (p *processor) Remove(name string) error {
 	return (&callback{processor: p}).Remove(name)
 }
 
-func (p *processor) Replace(name string, fn func(*Kom) error) error {
+func (p *processor) Replace(name string, fn func(*Kubectl) error) error {
 	return (&callback{processor: p}).Replace(name, fn)
 }
 
-func (p *processor) Execute(kom *Kom) error {
+func (p *processor) Execute(kom *Kubectl) error {
 	for _, f := range p.fns {
 		err := f(kom)
 		if err != nil {
@@ -130,7 +130,7 @@ func (p *processor) After(name string) *callback {
 	return &callback{after: name, processor: p}
 }
 
-func (p *processor) Register(name string, fn func(*Kom) error) error {
+func (p *processor) Register(name string, fn func(*Kubectl) error) error {
 	return (&callback{processor: p}).Register(name, fn)
 }
 
@@ -154,7 +154,7 @@ func (p *processor) compile() (err error) {
 	}
 	return
 }
-func sortCallbacks(cs []*callback) (fns []func(*Kom) error, err error) {
+func sortCallbacks(cs []*callback) (fns []func(*Kubectl) error, err error) {
 	var (
 		names, sorted []string
 		sortCallback  func(*callback) error

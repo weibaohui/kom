@@ -1,4 +1,4 @@
-package docer
+package doc
 
 import (
 	"encoding/json"
@@ -9,10 +9,6 @@ import (
 	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
-
-type Docer struct {
-	Docs *Docs
-}
 
 var trees []TreeNode
 

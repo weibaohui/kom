@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func Update(kom *kom.Kom) error {
-	stmt := kom.Statement
+func Update(k *kom.Kubectl) error {
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -27,9 +27,9 @@ func Update(kom *kom.Kom) error {
 	var res *unstructured.Unstructured
 
 	if namespaced {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
 	} else {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
 	}
 
 	if err != nil {

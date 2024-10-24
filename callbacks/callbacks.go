@@ -6,10 +6,10 @@ import (
 
 func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
-	all := clusters.All()
+	all := clusters.AllClusters()
 	for _, c := range all {
 		// 为每一个集群进行注册
-		k := c.Kom
+		k := c.Kubectl
 
 		queryCallback := k.Callback().Get()
 		_ = queryCallback.Register("kom:get", Get)

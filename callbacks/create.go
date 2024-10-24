@@ -8,9 +8,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func Create(kom *kom.Kom) error {
+func Create(k *kom.Kubectl) error {
 
-	stmt := kom.Statement
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -30,9 +30,9 @@ func Create(kom *kom.Kom) error {
 			ns = "default"
 			unstructuredObj.SetNamespace(ns)
 		}
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Create(ctx, unstructuredObj, metav1.CreateOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Create(ctx, unstructuredObj, metav1.CreateOptions{})
 	} else {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Create(ctx, unstructuredObj, metav1.CreateOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Create(ctx, unstructuredObj, metav1.CreateOptions{})
 	}
 
 	if err != nil {

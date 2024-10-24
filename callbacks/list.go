@@ -12,9 +12,9 @@ import (
 )
 
 // List todo 删除这个ctx参数，ctx从statement中获取
-func List(kom *kom.Kom) error {
+func List(k *kom.Kubectl) error {
 
-	stmt := kom.Statement
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -41,9 +41,9 @@ func List(kom *kom.Kom) error {
 	var err error
 
 	if namespaced {
-		list, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
+		list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
-		list, err = stmt.Kom.DynamicClient().Resource(gvr).List(ctx, listOptions)
+		list, err = stmt.Kubectl.DynamicClient().Resource(gvr).List(ctx, listOptions)
 	}
 	if err != nil {
 		return err

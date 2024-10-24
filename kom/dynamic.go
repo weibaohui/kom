@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (k *Kom) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
+func (k *Kubectl) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
 	gvr, namespaced := k.getGVR(kind)
 	if gvr.Empty() {
 		return nil, fmt.Errorf("不支持的资源类型: %s", kind)
@@ -45,8 +45,8 @@ func (k *Kom) ListResources(ctx context.Context, kind string, ns string, opts ..
 // 从k8s API接口中获取的值
 // 如果同时存在多个version，则返回第一个
 // 因此也有可能version不对
-func (k *Kom) getGVR(kind string) (gvr schema.GroupVersionResource, namespaced bool) {
-	apiResources := k.APIResources()
+func (k *Kubectl) getGVR(kind string) (gvr schema.GroupVersionResource, namespaced bool) {
+	apiResources := k.Status().APIResources()
 	for _, resource := range apiResources {
 		if resource.Kind == kind {
 			version := resource.Version
@@ -73,8 +73,8 @@ func (k *Kom) getGVR(kind string) (gvr schema.GroupVersionResource, namespaced b
 // 返回值:
 //
 //	bool: 如果kind是内置资源种类之一，则返回true；否则返回false。
-func (k *Kom) isBuiltinResource(kind string) bool {
-	apiResources := k.APIResources()
+func (k *Kubectl) isBuiltinResource(kind string) bool {
+	apiResources := k.Status().APIResources()
 	for _, list := range apiResources {
 		if list.Kind == kind {
 			return true
@@ -82,9 +82,9 @@ func (k *Kom) isBuiltinResource(kind string) bool {
 	}
 	return false
 }
-func (k *Kom) GetCRD(kind string, group string) (*unstructured.Unstructured, error) {
+func (k *Kubectl) getCRD(kind string, group string) (*unstructured.Unstructured, error) {
 
-	crdList := k.CRDList()
+	crdList := k.Status().CRDList()
 	for _, crd := range crdList {
 		spec, found, err := unstructured.NestedMap(crd.Object, "spec")
 		if err != nil || !found {
@@ -106,28 +106,28 @@ func (k *Kom) GetCRD(kind string, group string) (*unstructured.Unstructured, err
 	return nil, fmt.Errorf("crd %s.%s not found", kind, group)
 }
 
-func (k *Kom) ParseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
+func (k *Kubectl) parseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
 	// 获取单个GVK
-	gvk := GetParsedGVK(gvks, versions...)
+	gvk := getParsedGVK(gvks, versions...)
 
 	// 获取GVR
 	if k.isBuiltinResource(gvk.Kind) {
 		// 内置资源
 		return k.getGVR(gvk.Kind)
 	} else {
-		crd, err := k.GetCRD(gvk.Kind, gvk.Group)
+		crd, err := k.getCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			return
 		}
 		// 检查CRD是否是Namespaced
 		namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		gvr = GetGRVFromCRD(crd)
+		gvr = getGRVFromCRD(crd)
 	}
 
 	return
 }
 
-func GetParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
+func getParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
 	if len(gvks) == 0 {
 		return schema.GroupVersionKind{}
 	}
@@ -166,7 +166,7 @@ func getGVKFromObj(obj interface{}) (schema.GroupVersionKind, error) {
 	}
 }
 
-func GetGRVFromCRD(crd *unstructured.Unstructured) schema.GroupVersionResource {
+func getGRVFromCRD(crd *unstructured.Unstructured) schema.GroupVersionResource {
 	// 提取 GVR
 	group := crd.Object["spec"].(map[string]interface{})["group"].(string)
 	version := crd.Object["spec"].(map[string]interface{})["versions"].([]interface{})[0].(map[string]interface{})["name"].(string)

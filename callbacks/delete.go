@@ -7,9 +7,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Delete(kom *kom.Kom) error {
+func Delete(k *kom.Kubectl) error {
 
-	stmt := kom.Statement
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -22,9 +22,9 @@ func Delete(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
 	} else {
-		err = stmt.Kom.DynamicClient().Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
+		err = stmt.Kubectl.DynamicClient().Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
 	}
 
 	if err != nil {

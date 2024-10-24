@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func Patch(kom *kom.Kom) error {
-	stmt := kom.Statement
+func Patch(k *kom.Kubectl) error {
+	stmt := k.Statement
 	gvr := stmt.GVR
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
@@ -27,9 +27,9 @@ func Patch(kom *kom.Kom) error {
 		return err
 	}
 	if namespaced {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	} else {
-		res, err = stmt.Kom.DynamicClient().Resource(gvr).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
+		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	}
 	if err != nil {
 		return err

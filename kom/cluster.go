@@ -3,7 +3,7 @@ package kom
 import (
 	"fmt"
 
-	"github.com/weibaohui/kom/kom/docer"
+	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/version"
@@ -17,20 +17,20 @@ import (
 var clusterInstances *ClusterInstances
 
 type ClusterInstances struct {
-	clusters             map[string]*ClusterInst
+	clusters             map[string]*clusterInst
 	callbackRegisterFunc func(clusters *ClusterInstances) func() // 用来注册回调参数的回调方法
 }
-type ClusterInst struct {
+type clusterInst struct {
 	ID            string
-	Kom           *Kom
+	Kubectl       *Kubectl
 	Client        *kubernetes.Clientset
 	Config        *rest.Config
 	DynamicClient *dynamic.DynamicClient
 	apiResources  []*metav1.APIResource        // 当前k8s已注册资源
 	crdList       []*unstructured.Unstructured // 当前k8s已注册资源
 	callbacks     *callbacks
-	Docs          *docer.Docs
-	versionInfo   *version.Info
+	docs          *doc.Docs
+	serverVersion *version.Info
 }
 
 func Clusters() *ClusterInstances {
@@ -38,97 +38,97 @@ func Clusters() *ClusterInstances {
 }
 func init() {
 	clusterInstances = &ClusterInstances{
-		clusters: make(map[string]*ClusterInst),
+		clusters: make(map[string]*clusterInst),
 	}
 }
-func (c *ClusterInstances) InitInCluster() (*Kom, error) {
+func (c *ClusterInstances) RegisterInCluster() (*Kubectl, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("InCluster Error %v", err)
 	}
-	return c.InitByConfigWithID(config, "InCluster")
+	return c.RegisterByConfigWithID(config, "InCluster")
 }
-func (c *ClusterInstances) SetCallbackRegisterFunc(callback func(clusters *ClusterInstances) func()) {
+func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(clusters *ClusterInstances) func()) {
 	c.callbackRegisterFunc = callback
 }
-func (c *ClusterInstances) InitByPath(path string) (*Kom, error) {
+func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
-		return nil, fmt.Errorf("InitByPath Error %s %v", path, err)
+		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
 	}
-	return c.InitByConfig(config)
+	return c.RegisterByConfig(config)
 }
-func (c *ClusterInstances) InitByPathWithID(path string, id string) (*Kom, error) {
+func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
-		return nil, fmt.Errorf("InitByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
+		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
 	}
-	return c.InitByConfigWithID(config, id)
+	return c.RegisterByConfigWithID(config, id)
 }
-func (c *ClusterInstances) InitByConfig(config *rest.Config) (*Kom, error) {
+func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 	host := config.Host
 
-	return c.InitByConfigWithID(config, host)
+	return c.RegisterByConfigWithID(config, host)
 }
-func (c *ClusterInstances) InitByConfigWithID(config *rest.Config, id string) (*Kom, error) {
+func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 
 	cluster, exists := clusterInstances.clusters[id]
 	if exists {
-		return cluster.Kom, nil
+		return cluster.Kubectl, nil
 	} else {
 		// key 不存在，进行初始化
-		kom := InitConnectionByConfig(config, id)
-		cluster = &ClusterInst{
-			ID:     id,
-			Kom:    kom,
-			Config: config,
+		kom := initKom(config, id)
+		cluster = &clusterInst{
+			ID:      id,
+			Kubectl: kom,
+			Config:  config,
 		}
 		clusterInstances.clusters[id] = cluster
 
 		client, err := kubernetes.NewForConfig(config)
 		if err != nil {
-			return nil, fmt.Errorf("InitByConfigWithID Error %s %v", id, err)
+			return nil, fmt.Errorf("RegisterByConfigWithID Error %s %v", id, err)
 		}
 		dynamicClient, err := dynamic.NewForConfig(config)
 		if err != nil {
-			return nil, fmt.Errorf("InitByConfigWithID Error %s %v", id, err)
+			return nil, fmt.Errorf("RegisterByConfigWithID Error %s %v", id, err)
 		}
 		cluster.Client = client
 		cluster.DynamicClient = dynamicClient
 		cluster.apiResources = kom.initializeAPIResources()
 		cluster.crdList = kom.initializeCRDList()
 		cluster.callbacks = kom.initializeCallbacks()
-		cluster.versionInfo = kom.initializeServerVersion()
-		cluster.Docs = docer.InitTrees(kom.getOpenAPISchema())
+		cluster.serverVersion = kom.initializeServerVersion()
+		cluster.docs = doc.InitTrees(kom.getOpenAPISchema())
 		if c.callbackRegisterFunc != nil {
 			c.callbackRegisterFunc(Clusters())
 		}
 		return kom, nil
 	}
 }
-func (c *ClusterInstances) GetById(id string) *ClusterInst {
+func (c *ClusterInstances) GetClusterById(id string) *clusterInst {
 	cluster, exists := c.clusters[id]
 	if !exists {
 		return nil
 	}
 	return cluster
 }
-func (c *ClusterInstances) All() map[string]*ClusterInst {
+func (c *ClusterInstances) AllClusters() map[string]*clusterInst {
 	return c.clusters
 }
 
-// Default 返回一个默认的 ClusterInst 实例。
+// DefaultCluster 返回一个默认的 clusterInst 实例。
 // 当 clusters 列表为空时，返回 nil。
 // 首先尝试返回 ID 为 "InCluster" 的实例，如果不存在，
 // 则尝试返回 ID 为 "default" 的实例。
 // 如果上述两个实例都不存在，则返回 clusters 列表中的任意一个实例。
-func (c *ClusterInstances) Default() *ClusterInst {
+func (c *ClusterInstances) DefaultCluster() *clusterInst {
 	// 检查 clusters 列表是否为空
 	if len(c.clusters) == 0 {
 		return nil
@@ -160,10 +160,10 @@ func (c *ClusterInstances) Default() *ClusterInst {
 func (c *ClusterInstances) Show() {
 	klog.Infof("Show Clusters\n")
 	for k, v := range c.clusters {
-		if v.versionInfo == nil {
+		if v.serverVersion == nil {
 			klog.Infof("%s=nil\n", k)
 			continue
 		}
-		klog.Infof("%s[%s,%s.%s]=%s\n", k, v.versionInfo.Platform, v.versionInfo.Major, v.versionInfo.Minor, v.Config.Host)
+		klog.Infof("%s[%s,%s.%s]=%s\n", k, v.serverVersion.Platform, v.serverVersion.Major, v.serverVersion.Minor, v.Config.Host)
 	}
 }
