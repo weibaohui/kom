@@ -20,10 +20,10 @@ import (
 )
 
 func Example() {
-	MultiCluster()
-	// builtInExample()
-	// crdExample()
-	// YamlApplyDelete()
+	// MultiCluster()
+	builtInExample()
+	crdExample()
+	YamlApplyDelete()
 	// PodLogs()
 }
 func YamlApplyDelete() {
