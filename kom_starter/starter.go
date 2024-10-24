@@ -4,16 +4,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/weibaohui/kom/callbacks"
+	_ "github.com/weibaohui/kom/callbacks"
 	"github.com/weibaohui/kom/kom"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/klog/v2"
 )
-
-func init() {
-	kom.Clusters().SetRegisterCallbackFunc(callbacks.RegisterDefaultCallbacks)
-	klog.Infof("Register RegisterDefaultCallbacks func  to clusters")
-}
 
 func Init() {
 

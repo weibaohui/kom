@@ -2,8 +2,13 @@ package callbacks
 
 import (
 	"github.com/weibaohui/kom/kom"
+	"k8s.io/klog/v2"
 )
 
+func init() {
+	kom.Clusters().SetRegisterCallbackFunc(RegisterDefaultCallbacks)
+	klog.Infof("Register RegisterDefaultCallbacks func  to clusters")
+}
 func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 	all := clusters.AllClusters()
