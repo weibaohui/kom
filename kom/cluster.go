@@ -83,10 +83,10 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		return cluster.Kubectl, nil
 	} else {
 		// key 不存在，进行初始化
-		kom := initKom(config, id)
+		k := initKubectl(config, id)
 		cluster = &clusterInst{
 			ID:      id,
-			Kubectl: kom,
+			Kubectl: k,
 			Config:  config,
 		}
 		clusterInstances.clusters[id] = cluster
@@ -101,15 +101,15 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		}
 		cluster.Client = client
 		cluster.DynamicClient = dynamicClient
-		cluster.apiResources = kom.initializeAPIResources()
-		cluster.crdList = kom.initializeCRDList()
-		cluster.callbacks = kom.initializeCallbacks()
-		cluster.serverVersion = kom.initializeServerVersion()
-		cluster.docs = doc.InitTrees(kom.getOpenAPISchema())
+		cluster.apiResources = k.initializeAPIResources()
+		cluster.crdList = k.initializeCRDList()
+		cluster.callbacks = k.initializeCallbacks()
+		cluster.serverVersion = k.initializeServerVersion()
+		cluster.docs = doc.InitTrees(k.getOpenAPISchema())
 		if c.callbackRegisterFunc != nil {
 			c.callbackRegisterFunc(Clusters())
 		}
-		return kom, nil
+		return k, nil
 	}
 }
 func (c *ClusterInstances) GetClusterById(id string) *clusterInst {

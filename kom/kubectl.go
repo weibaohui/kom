@@ -23,9 +23,9 @@ func DefaultCluster() *Kubectl {
 func Cluster(id string) *Kubectl {
 	return Clusters().GetClusterById(id).Kubectl
 }
-func initKom(config *rest.Config, id string) *Kubectl {
-	klog.V(2).Infof("k8s Client initKom")
-	klog.V(2).Infof("服务器地址：%s\n", config.Host)
+func initKubectl(config *rest.Config, id string) *Kubectl {
+	klog.V(2).Infof("")
+	klog.V(2).Infof("k8s init 服务器地址：%s\n", config.Host)
 
 	k := &Kubectl{ID: id, clone: 1}
 
