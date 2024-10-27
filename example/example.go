@@ -24,6 +24,8 @@ func Example() {
 	yamlApplyDelete()
 	podLogs()
 	multiCluster()
+	newEventList()
+	coreEventList()
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -461,4 +463,31 @@ func multiCluster() {
 func doc() {
 	docs := kom.DefaultCluster().Status().Docs()
 	docs.ListNames()
+}
+
+func newEventList() {
+	var list []corev1.Event
+	err := kom.DefaultCluster().CRD("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
+	if err != nil {
+		fmt.Printf("events.k8s.io list err %v\n", err)
+	}
+	if len(list) > 0 {
+		json := utils.ToJSON(list[0])
+		fmt.Printf("events.k8s.io item json \n %s \n", json)
+	} else {
+		fmt.Printf("events.k8s.io list count %v\n", len(list))
+	}
+}
+func coreEventList() {
+	var list []corev1.Event
+	err := kom.DefaultCluster().CRD("", "v1", "Event").Namespace("default").List(&list).Error
+	if err != nil {
+		fmt.Printf("core events list err %v\n", err)
+	}
+	if len(list) > 0 {
+		json := utils.ToJSON(list[0])
+		fmt.Printf("core events item json \n %s \n", json)
+	} else {
+		fmt.Printf("core events list count %v\n", len(list))
+	}
 }

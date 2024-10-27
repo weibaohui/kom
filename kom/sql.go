@@ -38,6 +38,7 @@ func (k *Kubectl) CRD(group string, version string, kind string) *Kubectl {
 		Version: version,
 		Kind:    kind,
 	}
+	k.Statement.forceCRD = true
 	k.Statement.ParseGVKs([]schema.GroupVersionKind{
 		gvk,
 	})

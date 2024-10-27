@@ -60,6 +60,22 @@ func (k *Kubectl) getGVR(kind string) (gvr schema.GroupVersionResource, namespac
 	}
 	return schema.GroupVersionResource{}, false
 }
+func (k *Kubectl) getGVRByGVK(gvk schema.GroupVersionKind) (gvr schema.GroupVersionResource, namespaced bool) {
+	apiResources := k.Status().APIResources()
+	for _, resource := range apiResources {
+		if resource.Kind == gvk.Kind &&
+			resource.Version == gvk.Version &&
+			resource.Group == gvk.Group {
+			gvr = schema.GroupVersionResource{
+				Group:    resource.Group,
+				Version:  resource.Version,
+				Resource: resource.Name, // 通常是 Kind 的复数形式
+			}
+			return gvr, resource.Namespaced
+		}
+	}
+	return schema.GroupVersionResource{}, false
+}
 
 // isBuiltinResource 检查给定的资源种类是否为内置资源。
 // 该函数通过遍历apiResources列表，对比每个列表项的Kind属性与给定的kind参数是否匹配。
