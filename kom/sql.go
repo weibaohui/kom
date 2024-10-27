@@ -33,12 +33,15 @@ func (k *Kubectl) Name(name string) *Kubectl {
 }
 
 func (k *Kubectl) CRD(group string, version string, kind string) *Kubectl {
+	return k.GVK(group, version, kind)
+}
+func (k *Kubectl) GVK(group string, version string, kind string) *Kubectl {
 	gvk := schema.GroupVersionKind{
 		Group:   group,
 		Version: version,
 		Kind:    kind,
 	}
-	k.Statement.forceCRD = true
+	k.Statement.useCustomGVK = true
 	k.Statement.ParseGVKs([]schema.GroupVersionKind{
 		gvk,
 	})

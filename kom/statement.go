@@ -28,7 +28,7 @@ type Statement struct {
 	PatchType    types.PatchType
 	PatchData    string
 	clean        bool // 移除管理字段
-	forceCRD     bool // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
+	useCustomGVK bool // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
 }
 
 func (s *Statement) SetNamespace(ns string) *Statement {
@@ -61,13 +61,13 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	// 获取GVR
 	if s.Kubectl.isBuiltinResource(gvk.Kind) {
 		// 内置资源
-		if s.forceCRD {
+		if s.useCustomGVK {
 			// 设置了CRD，带有version
 			s.GVR, s.Namespaced = s.Kubectl.getGVRByGVK(gvk)
 		} else {
 			s.GVR, s.Namespaced = s.Kubectl.getGVR(gvk.Kind)
 		}
-		klog.V(6).Infof("forceCRD=%v \n GVR=%v \n GVK=%v", s.forceCRD, s.GVR, s.GVK)
+		klog.V(6).Infof("useCustomGVK=%v \n GVR=%v \n GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
 	} else {
 		crd, err := s.Kubectl.getCRD(gvk.Kind, gvk.Group)
 		if err != nil {
