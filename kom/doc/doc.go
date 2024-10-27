@@ -379,5 +379,6 @@ func (d *Docs) FetchByGVK(apiVersion, kind string) *TreeNode {
 	if node == nil {
 		node = d.Fetch(kind)
 	}
+	klog.V(6).Infof("fetch node %s%s,ID:%s", apiVersion, kind, node.ID)
 	return node
 }
