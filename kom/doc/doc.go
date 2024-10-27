@@ -2,7 +2,6 @@ package doc
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/google/gnostic-models/openapiv2"
@@ -28,6 +27,9 @@ type TreeNode struct {
 	Items           Items       `json:"items,omitempty"`
 	VendorExtension interface{} `json:"vendor_extension,omitempty"`
 	Children        []*TreeNode `json:"children,omitempty"`
+	group           string      // 从ID中尝试解析GVK，方便查询，不一定准确
+	version         string      // 从ID中尝试解析GVK，方便查询
+	kind            string      // 从ID中尝试解析GVK，方便查询
 }
 
 // SchemaDefinition 表示根定义
@@ -118,6 +120,26 @@ func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
 
 	return buildTree(def), nil
 }
+func parseID(id string) (group, version, kind string) {
+	parts := strings.Split(id, ".")
+	if len(parts) < 3 {
+		return "", "", "" // 不足三个部分，无法解析
+	}
+
+	kind = parts[len(parts)-1]    // 最后一段是 Kind
+	version = parts[len(parts)-2] // 倒数第二段是 Version
+
+	if len(parts) > 3 { // 判断是否有 Group 部分
+		groupParts := parts[:len(parts)-2] // Group 是前面的部分
+		group = groupParts[len(groupParts)-1]
+	}
+	if group == "core" {
+		// core 在书写yaml时不需要写，但是解析出来还是有core，这里做一下处理
+		group = ""
+	}
+
+	return group, version, kind
+}
 
 // buildTree 根据 SchemaDefinition 构建 TreeNode
 func buildTree(def SchemaDefinition) TreeNode {
@@ -135,6 +157,7 @@ func buildTree(def SchemaDefinition) TreeNode {
 		children = append(children, buildPropertyNode(prop))
 	}
 
+	group, version, kind := parseID(def.Name)
 	return TreeNode{
 		ID:          def.Name,
 		Label:       label,
@@ -142,6 +165,9 @@ func buildTree(def SchemaDefinition) TreeNode {
 		Description: def.Value.Description,
 		Type:        nodeType,
 		Children:    children,
+		group:       group,
+		version:     version,
+		kind:        kind,
 	}
 }
 
@@ -333,7 +359,7 @@ func uniqueID(item *TreeNode) {
 
 func (d *Docs) ListNames() {
 	for _, tree := range d.Trees {
-		klog.Infof("tree info %s,%s", tree.Label, tree.Value)
+		klog.Infof("tree info ID: %s\tLabel:%s\t\n解析GVK=[%s,%s,%s]", tree.ID, tree.Label, tree.group, tree.version, tree.kind)
 	}
 }
 func FetchByRef(ref string) *TreeNode {
@@ -362,23 +388,52 @@ func (d *Docs) Fetch(kind string) *TreeNode {
 // com.example.stable.v1.CronTabList
 // apiVersion: stable.example.com/v1
 // kind: CronTab
-func (d *Docs) FetchByGVK(apiVersion, kind string) *TreeNode {
+func (d *Docs) FetchByGVK(apiVersion, kind string) (node *TreeNode) {
 	// 先从 apiVersion+kind 查找，如果找不到再从 kind 查找
 	// 采用HasSuffix来匹配,因为内置资源的apiVersion会省略前面的io.k8s.api.core等类似的前缀
 	// "id": "io.k8s.api.core.v1.Namespace",
-	var node *TreeNode
-	apiVersion = strings.ReplaceAll(apiVersion, "/", ".")
-	id := fmt.Sprintf("%s.%s", apiVersion, kind)
-	for _, tree := range d.Trees {
-		if strings.HasSuffix(tree.ID, id) {
-			node = &tree
-			continue
+	// group：events.k8s.io =>io.k8s.api.events.v1.Event
+	// group""=>io.k8s.api.core.v1.Event
+	var group string
+	var version string
+	if !strings.Contains(apiVersion, "/") {
+		group = ""
+		version = apiVersion
+	} else {
+		parts := strings.Split(apiVersion, "/")
+		if len(parts) == 2 {
+			group = parts[0]
+			version = parts[1]
+			if strings.Contains(group, ".") {
+				ps := strings.Split(group, ".")
+				group = ps[0]
+			}
+
 		}
 	}
 
-	if node == nil {
-		node = d.Fetch(kind)
+	for _, tree := range d.Trees {
+		if tree.version == version && tree.kind == kind && tree.group == group {
+			node = &tree
+			klog.V(6).Infof("[%s:%s]=>[%s,%s,%s]find node ID:%s \tBy GVK(%s,%s,%s)", apiVersion, kind, group, version, kind, tree.ID, tree.group, tree.version, tree.kind)
+			return
+		}
 	}
-	klog.V(6).Infof("fetch node %s%s,ID:%s", apiVersion, kind, node.ID)
+	for _, tree := range d.Trees {
+		if tree.version == version && tree.kind == kind {
+			node = &tree
+			klog.V(6).Infof("[%s:%s]=>[%s,%s,%s]find node ID:%s \tBy KV(%s,%s)", apiVersion, kind, group, version, kind, tree.ID, tree.version, tree.kind)
+			return
+		}
+	}
+	for _, tree := range d.Trees {
+		if tree.kind == kind {
+			node = &tree
+			klog.V(6).Infof("[%s:%s]=>[%s,%s,%s]find node ID:%s \tBy K(%s)", apiVersion, kind, group, version, kind, tree.ID, tree.kind)
+			return
+		}
+	}
+	node = d.Fetch(kind)
+	klog.V(6).Infof("[%s:%s]=>[%s,%s,%s]find node ID:%s \tBy FetchKind(%s)", apiVersion, kind, group, version, kind, node.ID, node.kind)
 	return node
 }
