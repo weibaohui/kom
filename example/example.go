@@ -467,7 +467,7 @@ func doc() {
 
 func newEventList() {
 	var list []corev1.Event
-	err := kom.DefaultCluster().CRD("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
+	err := kom.DefaultCluster().GVK("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
 	if err != nil {
 		fmt.Printf("events.k8s.io list err %v\n", err)
 	}
@@ -480,7 +480,7 @@ func newEventList() {
 }
 func coreEventList() {
 	var list []corev1.Event
-	err := kom.DefaultCluster().CRD("", "v1", "Event").Namespace("default").List(&list).Error
+	err := kom.DefaultCluster().GVK("", "v1", "Event").Namespace("default").List(&list).Error
 	if err != nil {
 		fmt.Printf("core events list err %v\n", err)
 	}
