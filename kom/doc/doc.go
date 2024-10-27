@@ -121,6 +121,7 @@ func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
 
 // buildTree 根据 SchemaDefinition 构建 TreeNode
 func buildTree(def SchemaDefinition) TreeNode {
+	// todo 应该使用GVK作为
 	labelParts := strings.Split(def.Name, ".")
 	label := labelParts[len(labelParts)-1]
 
@@ -362,18 +363,21 @@ func (d *Docs) Fetch(kind string) *TreeNode {
 // apiVersion: stable.example.com/v1
 // kind: CronTab
 func (d *Docs) FetchByGVK(apiVersion, kind string) *TreeNode {
-	// 先从kind查找，如果找不到，再从apiVersion+kind查找
-	// 应采用HasSuffix来匹配,因为内置资源的apiVersion会省略前面的io.k8s.api.core等类似的前缀
+	// 先从 apiVersion+kind 查找，如果找不到再从 kind 查找
+	// 采用HasSuffix来匹配,因为内置资源的apiVersion会省略前面的io.k8s.api.core等类似的前缀
 	// "id": "io.k8s.api.core.v1.Namespace",
-	node := d.Fetch(kind)
-	if node == nil {
-		strings.ReplaceAll(apiVersion, "/", ".")
-		id := fmt.Sprintf("%s.%s", apiVersion, kind)
-		for _, tree := range d.Trees {
-			if strings.HasSuffix(tree.ID, id) {
-				return &tree
-			}
+	var node *TreeNode
+	apiVersion = strings.ReplaceAll(apiVersion, "/", ".")
+	id := fmt.Sprintf("%s.%s", apiVersion, kind)
+	for _, tree := range d.Trees {
+		if strings.HasSuffix(tree.ID, id) {
+			node = &tree
+			continue
 		}
+	}
+
+	if node == nil {
+		node = d.Fetch(kind)
 	}
 	return node
 }
