@@ -18,7 +18,6 @@ import (
 )
 
 func Example() {
-	doc()
 	builtInExample()
 	crdExample()
 	yamlApplyDelete()
@@ -26,6 +25,9 @@ func Example() {
 	multiCluster()
 	newEventList()
 	coreEventList()
+	doc()
+	fetchDoc1()
+	fetchDoc2()
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -490,4 +492,22 @@ func coreEventList() {
 	} else {
 		fmt.Printf("core events list count %v\n", len(list))
 	}
+}
+func fetchDoc1() {
+	kind := "Event"
+	group := "events.k8s.io"
+	version := "v1"
+	tree := kom.DefaultCluster().Status().Docs().FetchByGVK(fmt.Sprintf("%s/%s", group, version), kind)
+
+	// json := utils.ToJSON(tree)
+	fmt.Printf("[%s/%s:%s]%s\n", group, version, kind, tree.ID)
+}
+func fetchDoc2() {
+	kind := "Event"
+	group := ""
+	version := "v1"
+	tree := kom.DefaultCluster().Status().Docs().FetchByGVK(fmt.Sprintf("%s/%s", group, version), kind)
+
+	// json := utils.ToJSON(tree)
+	fmt.Printf("[%s/%s:%s]%s\n", group, version, kind, tree.ID)
 }
