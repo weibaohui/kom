@@ -27,9 +27,11 @@ type Statement struct {
 	Dest          interface{}
 	PatchType     types.PatchType
 	PatchData     string
-	clean         bool   // 移除管理字段
-	useCustomGVK  bool   // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
-	containerName string // 容器名称，Poder使用
+	clean         bool     // 移除管理字段
+	useCustomGVK  bool     // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
+	ContainerName string   // 容器名称，Poder使用
+	Command       string   // 容器内执行命令，Poder使用
+	Args          []string // 容器内执行命令参数，Poder使用
 }
 
 func (s *Statement) SetNamespace(ns string) *Statement {

@@ -20,7 +20,7 @@ type poder struct {
 }
 
 func (p *poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
-	opts.Container = p.kubectl.Statement.containerName
+	opts.Container = p.kubectl.Statement.ContainerName
 	return p.kubectl.Client().CoreV1().Pods(p.kubectl.Statement.Namespace).GetLogs(name, opts)
 }
 
@@ -37,6 +37,8 @@ type PodFileNode struct {
 
 // GetFileList  获取容器中指定路径的文件和目录列表
 func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
+	klog.V(6).Infof("GetFileList %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+
 	cmd := []string{"ls", "-l", path}
 	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
@@ -44,7 +46,7 @@ func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.kubectl.Statement.containerName).
+		Param("container", p.kubectl.Statement.ContainerName).
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
 		Param("command", cmd[2]).
@@ -73,16 +75,15 @@ func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
 
 // DownloadFile 从指定容器下载文件
 func (p *poder) DownloadFile(filePath string) ([]byte, error) {
+	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	cmd := []string{"cat", filePath}
-	klog.V(6).Infof("DownloadFile %s", filePath)
-
 	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
 		Namespace(p.kubectl.Statement.Namespace).
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.kubectl.Statement.containerName).
+		Param("container", p.kubectl.Statement.ContainerName).
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
 		Param("tty", "false").
@@ -115,6 +116,8 @@ func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 
 // UploadFile 将文件上传到指定容器
 func (p *poder) UploadFile(destPath string, file multipart.File) error {
+	klog.V(6).Infof("UploadFile %s to [%s/%s:%s] \n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+
 	// 创建临时文件
 	tempFile, err := os.CreateTemp("", "upload-*")
 	if err != nil {
@@ -146,7 +149,7 @@ func (p *poder) UploadFile(destPath string, file multipart.File) error {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.kubectl.Statement.containerName).
+		Param("container", p.kubectl.Statement.ContainerName).
 		Param("tty", "false").
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
@@ -186,6 +189,8 @@ func (p *poder) UploadFile(destPath string, file multipart.File) error {
 }
 
 func (p *poder) SaveFile(path string, context string) error {
+	klog.V(6).Infof("SaveFile %s to [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+	klog.V(8).Infof("SaveFile %s \n", context)
 
 	// 创建临时文件
 	tempFile, err := os.CreateTemp("", "upload-*")
@@ -218,7 +223,7 @@ func (p *poder) SaveFile(path string, context string) error {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.kubectl.Statement.containerName).
+		Param("container", p.kubectl.Statement.ContainerName).
 		Param("tty", "false").
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
@@ -255,53 +260,6 @@ func (p *poder) SaveFile(path string, context string) error {
 	}
 
 	return nil
-}
-func (p *poder) ExecuteCommand(command string, args ...string) (stdout []byte, stderr []byte, err error) {
-
-	cmd := []string{command}
-	cmd = append(cmd, args...)
-
-	klog.V(2).Infof("ExecuteCommand %s %v", command, args)
-
-	req := p.kubectl.Client().CoreV1().RESTClient().
-		Get().
-		Namespace(p.kubectl.Statement.Namespace).
-		Resource("pods").
-		Name(p.kubectl.Statement.Name).
-		SubResource("exec").
-		Param("container", p.kubectl.Statement.containerName).
-		Param("command", cmd[0])
-
-	for _, arg := range cmd[1:] {
-		req.Param("command", arg)
-	}
-
-	req.Param("tty", "false").
-		Param("stdin", "false").
-		Param("stdout", "true").
-		Param("stderr", "true")
-
-	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating executor: %v", err)
-	}
-
-	var outBuf bytes.Buffer
-	var errBuf bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdout: &outBuf,
-		Stderr: &errBuf,
-	})
-
-	if err != nil {
-		s := errBuf.String()
-		if strings.Contains(s, "Invalid argument") {
-			return nil, nil, fmt.Errorf("系统参数错误 %v", s)
-		}
-		return nil, nil, fmt.Errorf("error executing command: %v %v", err, s)
-	}
-
-	return outBuf.Bytes(), errBuf.Bytes(), nil
 }
 
 // getFileType 根据文件权限获取文件类型

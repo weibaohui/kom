@@ -28,7 +28,7 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 }
 func (k *Kubectl) ContainerName(c string) *Kubectl {
 	tx := k.getInstance()
-	tx.Statement.containerName = c
+	tx.Statement.ContainerName = c
 	return tx
 }
 func (k *Kubectl) Name(name string) *Kubectl {
@@ -46,12 +46,19 @@ func (k *Kubectl) GVK(group string, version string, kind string) *Kubectl {
 		Version: version,
 		Kind:    kind,
 	}
-	k.Statement.useCustomGVK = true
-	k.Statement.ParseGVKs([]schema.GroupVersionKind{
+	tx := k.getInstance()
+	tx.Statement.useCustomGVK = true
+	tx.Statement.ParseGVKs([]schema.GroupVersionKind{
 		gvk,
 	})
 
-	return k
+	return tx
+}
+func (k *Kubectl) Command(command string, args ...string) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.Command = command
+	tx.Statement.Args = args
+	return tx
 }
 
 func (k *Kubectl) Get(dest interface{}) *Kubectl {
@@ -91,6 +98,12 @@ func (k *Kubectl) Patch(dest interface{}, pt types.PatchType, data string) *Kube
 	tx.Statement.PatchData = data
 	tx.Statement.PatchType = pt
 	tx.Error = tx.Callback().Patch().Execute(tx)
+	return tx
+}
+func (k *Kubectl) ExecuteCommand(dest interface{}) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.Dest = dest
+	tx.Error = tx.Callback().Exec().Execute(tx)
 	return tx
 }
 
