@@ -18,16 +18,16 @@ import (
 )
 
 func Example() {
-	builtInExample()
-	crdExample()
-	yamlApplyDelete()
-	podLogs()
-	multiCluster()
-	newEventList()
-	coreEventList()
-	doc()
-	fetchDoc1()
-	fetchDoc2()
+	// builtInExample()
+	// crdExample()
+	// yamlApplyDelete()
+	// podLogs()
+	// multiCluster()
+	// newEventList()
+	// coreEventList()
+	// doc()
+	// fetchDoc1()
+	// fetchDoc2()
 	podCommand()
 }
 func yamlApplyDelete() {
@@ -407,9 +407,9 @@ spec:
 	options := corev1.PodLogOptions{
 		Container: "container-b",
 	}
-	podLogs := kom.DefaultCluster().Poder().
+	podLogs := kom.DefaultCluster().
 		Namespace("default").
-		Name("random-char-pod-1").
+		Name("random-char-pod-1").ContainerName("container-b").Poder().
 		GetLogs("random-char-pod-1", &options)
 	logStream, err := podLogs.Stream(context.TODO())
 	if err != nil {
@@ -463,9 +463,8 @@ spec:
 	}
 	time.Sleep(time.Second * 10)
 
-	stdout, stderr, err := kom.DefaultCluster().Poder().
-		Namespace("default").
-		Name("random-char-pod").ExecuteCommand("ps", "-ef")
+	stdout, stderr, err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Poder().
+		ExecuteCommand("ps", "-ef")
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
 		if len(stderr) > 0 {
