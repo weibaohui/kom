@@ -112,9 +112,9 @@ func (p *processor) Replace(name string, fn func(*Kubectl) error) error {
 	return (&callback{processor: p}).Replace(name, fn)
 }
 
-func (p *processor) Execute(kom *Kubectl) error {
+func (p *processor) Execute(k *Kubectl) error {
 	for _, f := range p.fns {
-		err := f(kom)
+		err := f(k)
 		if err != nil {
 			return err
 		}
