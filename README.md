@@ -254,38 +254,37 @@ err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&
 ```
 
 
-### 5. Pod 日志获取
+
+### 5. Pod 操作
+#### 获取日志
 ```go
 // 获取Pod日志
-options := corev1.PodLogOptions{
-    Container: "nginx",
-}
-podLogs := kom.DefaultCluster().Poder().Namespace("default").Name("nginx").GetLogs("nginx", &options)
+options := corev1.PodLogOptions{}
+podLogs := kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().GetLogs("nginx", &options)
 logStream, err := podLogs.Stream(context.TODO())
 reader := bufio.NewReader(logStream)
 ```
-### 6. Pod 操作
 #### 执行命令
 ```go
 // 在Pod内执行ps -ef命令
-stdout, stderr, err := kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ExecuteCommand("ps", "-ef")
+stdout, stderr, err := kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ExecuteCommand("ps", "-ef")
 ```
 #### 文件列表
 ```go
 // 获取Pod内/etc文件夹列表
-kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").GetFileList("/etc")
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().GetFileList("/etc")
 ```
 #### 文件下载
 ```go
 // 下载Pod内/etc/hosts文件
-kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").DownloadFile("/etc/hosts")
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DownloadFile("/etc/hosts")
 ```
 #### 文件上传
 ```go
 // 上传文件内容到Pod内/etc/demo.txt文件
-kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").SaveFile("/etc/demo.txt", "txt-context")
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
 ```
-### 7. 集群参数信息
+### 6. 集群参数信息
 ```go
 // 集群文档
 kom.DefaultCluster().Status().Docs()
