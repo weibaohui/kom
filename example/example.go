@@ -57,16 +57,16 @@ spec:
         - name: example-container
           image: nginx
 `
-	result := kom.DefaultCluster().Applier().Apply(yaml)
-	for _, r := range result {
+	results := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, r := range results {
 		fmt.Println(r)
 	}
-	result = kom.DefaultCluster().Applier().Apply(yaml)
-	for _, r := range result {
+	results = kom.DefaultCluster().Applier().Apply(yaml)
+	for _, r := range results {
 		fmt.Println(r)
 	}
-	result = kom.DefaultCluster().Applier().Delete(yaml)
-	for _, r := range result {
+	results = kom.DefaultCluster().Applier().Delete(yaml)
+	for _, r := range results {
 		fmt.Println(r)
 	}
 }
@@ -111,12 +111,12 @@ spec:
     # shortNames 允许你在命令行使用较短的字符串来匹配资源
     shortNames:
     - ct`
-	result := kom.Cluster("default").Applier().Apply(yaml)
+	result := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
-	var crontab unstructured.Unstructured
-	crontab = unstructured.Unstructured{
+	var crontab *unstructured.Unstructured
+	crontab = &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "stable.example.com/v1",
 			"kind":       "CronTab",
@@ -252,7 +252,7 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
-	item := v1.Deployment{}
+	var item v1.Deployment
 	err := kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
