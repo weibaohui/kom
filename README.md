@@ -264,7 +264,12 @@ podLogs := kom.DefaultCluster().Poder().Namespace("default").Name("nginx").GetLo
 logStream, err := podLogs.Stream(context.TODO())
 reader := bufio.NewReader(logStream)
 ```
-### 6. Pod 文件管理
+### 6. Pod 操作
+#### 执行命令
+```go
+// 在Pod内执行ps -ef命令
+stdout, stderr, err := kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ExecuteCommand("ps", "-ef")
+```
 #### 文件列表
 ```go
 // 获取Pod内/etc文件夹列表

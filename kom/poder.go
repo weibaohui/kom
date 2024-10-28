@@ -86,7 +86,7 @@ func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
 // DownloadFile 从指定容器下载文件
 func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 	cmd := []string{"cat", filePath}
-	klog.V(8).Infof("DownloadFile %s", filePath)
+	klog.V(6).Infof("DownloadFile %s", filePath)
 
 	req := p.kubectl.Client().CoreV1().RESTClient().
 		Get().
@@ -267,6 +267,52 @@ func (p *poder) SaveFile(path string, context string) error {
 	}
 
 	return nil
+}
+func (p *poder) ExecuteCommand(command string, args ...string) (stdout []byte, stderr []byte, err error) {
+	cmd := []string{command}
+	cmd = append(cmd, args...)
+
+	klog.V(2).Infof("ExecuteCommand %s %v", command, args)
+
+	req := p.kubectl.Client().CoreV1().RESTClient().
+		Get().
+		Namespace(p.kubectl.Statement.Namespace).
+		Resource("pods").
+		Name(p.kubectl.Statement.Name).
+		SubResource("exec").
+		Param("container", p.containerName).
+		Param("command", cmd[0])
+
+	for _, arg := range cmd[1:] {
+		req.Param("command", arg)
+	}
+
+	req.Param("tty", "false").
+		Param("stdin", "false").
+		Param("stdout", "true").
+		Param("stderr", "true")
+
+	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating executor: %v", err)
+	}
+
+	var outBuf bytes.Buffer
+	var errBuf bytes.Buffer
+	err = executor.Stream(remotecommand.StreamOptions{
+		Stdout: &outBuf,
+		Stderr: &errBuf,
+	})
+
+	if err != nil {
+		s := errBuf.String()
+		if strings.Contains(s, "Invalid argument") {
+			return nil, nil, fmt.Errorf("系统参数错误 %v", s)
+		}
+		return nil, nil, fmt.Errorf("error executing command: %v %v", err, s)
+	}
+
+	return outBuf.Bytes(), errBuf.Bytes(), nil
 }
 
 // getFileType 根据文件权限获取文件类型
