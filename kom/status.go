@@ -52,7 +52,7 @@ func (k *Kubectl) getOpenAPISchema() *openapi_v2.Document {
 }
 
 func (k *Kubectl) initializeCRDList() []*unstructured.Unstructured {
-	crdList, _ := k.ListResources(context.TODO(), "CustomResourceDefinition", "")
+	crdList, _ := k.listResources(context.TODO(), "CustomResourceDefinition", "")
 	return crdList
 }
 func (k *Kubectl) initializeAPIResources() (apiResources []*metav1.APIResource) {
