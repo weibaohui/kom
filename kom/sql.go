@@ -26,6 +26,11 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 	tx.Statement.Namespace = ns
 	return tx
 }
+func (k *Kubectl) ContainerName(c string) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.containerName = c
+	return tx
+}
 func (k *Kubectl) Name(name string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Name = name

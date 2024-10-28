@@ -16,23 +16,11 @@ import (
 )
 
 type poder struct {
-	kubectl       *Kubectl
-	containerName string
+	kubectl *Kubectl
 }
 
-func (p *poder) Namespace(ns string) *poder {
-	p.kubectl = p.kubectl.Namespace(ns)
-	return p
-}
-func (p *poder) Name(name string) *poder {
-	p.kubectl = p.kubectl.Name(name)
-	return p
-}
-func (p *poder) ContainerName(name string) *poder {
-	p.containerName = name
-	return p
-}
 func (p *poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
+	opts.Container = p.kubectl.Statement.containerName
 	return p.kubectl.Client().CoreV1().Pods(p.kubectl.Statement.Namespace).GetLogs(name, opts)
 }
 
@@ -56,7 +44,7 @@ func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.containerName).
+		Param("container", p.kubectl.Statement.containerName).
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
 		Param("command", cmd[2]).
@@ -94,7 +82,7 @@ func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.containerName).
+		Param("container", p.kubectl.Statement.containerName).
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
 		Param("tty", "false").
@@ -158,7 +146,7 @@ func (p *poder) UploadFile(destPath string, file multipart.File) error {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.containerName).
+		Param("container", p.kubectl.Statement.containerName).
 		Param("tty", "false").
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
@@ -230,7 +218,7 @@ func (p *poder) SaveFile(path string, context string) error {
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.containerName).
+		Param("container", p.kubectl.Statement.containerName).
 		Param("tty", "false").
 		Param("command", cmd[0]).
 		Param("command", cmd[1]).
@@ -269,6 +257,7 @@ func (p *poder) SaveFile(path string, context string) error {
 	return nil
 }
 func (p *poder) ExecuteCommand(command string, args ...string) (stdout []byte, stderr []byte, err error) {
+
 	cmd := []string{command}
 	cmd = append(cmd, args...)
 
@@ -280,7 +269,7 @@ func (p *poder) ExecuteCommand(command string, args ...string) (stdout []byte, s
 		Resource("pods").
 		Name(p.kubectl.Statement.Name).
 		SubResource("exec").
-		Param("container", p.containerName).
+		Param("container", p.kubectl.Statement.containerName).
 		Param("command", cmd[0])
 
 	for _, arg := range cmd[1:] {

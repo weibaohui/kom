@@ -15,20 +15,21 @@ import (
 
 type Statement struct {
 	*Kubectl
-	Error        error
-	RowsAffected int64
-	Namespace    string
-	Name         string
-	GVR          schema.GroupVersionResource
-	GVK          schema.GroupVersionKind
-	Namespaced   bool
-	ListOptions  []metav1.ListOptions
-	Context      context.Context `json:"-"`
-	Dest         interface{}
-	PatchType    types.PatchType
-	PatchData    string
-	clean        bool // 移除管理字段
-	useCustomGVK bool // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
+	Error         error
+	RowsAffected  int64
+	Namespace     string
+	Name          string
+	GVR           schema.GroupVersionResource
+	GVK           schema.GroupVersionKind
+	Namespaced    bool
+	ListOptions   []metav1.ListOptions
+	Context       context.Context `json:"-"`
+	Dest          interface{}
+	PatchType     types.PatchType
+	PatchData     string
+	clean         bool   // 移除管理字段
+	useCustomGVK  bool   // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
+	containerName string // 容器名称，Poder使用
 }
 
 func (s *Statement) SetNamespace(ns string) *Statement {
