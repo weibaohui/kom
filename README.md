@@ -31,16 +31,85 @@ go get github.com/weibaohui/kom
 
 以下是一些基本的使用示例。
 
-### 1. 基本示例
-
-
-### 2. YAML 应用与删除
-
-此示例展示了如何应用和删除 YAML 配置。
-
+### 1. 内置资源对象的增删改查示例
+定义一个 Deployment 对象，并通过 kom 进行资源操作。
 ```go
-func YamlApplyDelete() {
-	yaml := `apiVersion: v1
+var item v1.Deployment
+var items []v1.Deployment
+```
+#### 创建某个资源
+```go
+item = v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "default",
+		},
+		Spec: v1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test", Image: "nginx:1.14.2"},
+					},
+				},
+			},
+		},
+	}
+err := kom.DefaultCluster().Resource(&item).Create(&item).Error
+```
+#### Get查询某个资源
+```go
+// 查询 default 命名空间下名为 nginx 的 Deployment
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Get(&item).Error
+```
+#### List查询资源列表
+```go
+// 查询 default 命名空间下的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
+```
+#### 通过Label查询资源列表
+```go
+// 查询 default 命名空间下 标签为 app=nginx 的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+```
+#### 更新资源内容
+```go
+// 更新名为nginx 的 Deployment，增加一个注解
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Get(&item).Error
+if item.Spec.Template.Annotations == nil {
+	item.Spec.Template.Annotations = map[string]string{}
+}
+item.Spec.Template.Annotations["kom.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+err = kom.DefaultCluster().Resource(&item).Update(&item).Error
+```
+#### PATCH 更新资源
+```go
+// 使用 Patch 更新资源,为名为 nginx 的 Deployment 增加一个标签，并设置副本数为5
+patchData := `{
+    "spec": {
+        "replicas": 5
+    },
+    "metadata": {
+        "labels": {
+            "new-label": "new-value"
+        }
+    }
+}`
+err := kom.DefaultCluster().Resource(&item).Patch(&item, types.MergePatchType, patchData).Error
+```
+#### 删除资源
+```go
+// 删除名为 nginx 的 Deployment
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Delete().Error
+```
+#### 通用类型资源的获取（适用于k8s内置类型以及CRD）
+```go
+// 指定GVK获取资源
+var list []corev1.Event
+err := kom.DefaultCluster().GVK("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
+```
+### 2. YAML 创建、更新、删除
+```go
+yaml := `apiVersion: v1
 kind: ConfigMap
 metadata:
   name: example-config
@@ -67,25 +136,61 @@ spec:
         - name: example-container
           image: nginx
 `
-	result := applier.Instance().WithContext(context.TODO()).Apply(yaml)
-	for _, r := range result {
-		fmt.Println(r)
-	}
-	result = applier.Instance().WithContext(context.TODO()).Delete(yaml)
-	for _, r := range result {
-		fmt.Println(r)
-	}
-}
+// 第一次执行Apply为创建，返回每一条资源的执行结果 
+results := kom.DefaultCluster().Applier().Apply(yaml)
+// 第二次执行Apply为更新，返回每一条资源的执行结果
+results = kom.DefaultCluster().Applier().Apply(yaml)
+// 删除，返回每一条资源的执行结果
+results = kom.DefaultCluster().Applier().Delete(yaml)
 ```
 
 ### 3. 自定义资源定义（CRD）
-
-演示如何管理自定义资源定义。
-
+在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
+只不过将对象定义为unstructured.Unstructured，并且需要指定Group、Version、Kind。
+因此可以通过kom.DefaultCluster().GVK(group, version, kind)来替代kom.DefaultCluster().Resource(interface{})
+为方便记忆及使用，kom提供了kom.DefaultCluster().CRD(group, version, kind)来简化操作。
+下面给出操作CRD的示例：
+首先定义一个通用的处理对象，用来接收CRD的返回结果。
 ```go
-func crdExample() {
-	var crontab unstructured.Unstructured
-	crontab = unstructured.Unstructured{
+var item unstructured.Unstructured
+```
+#### 创建CRD
+```go
+yaml := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                cronSpec:
+                  type: string
+                image:
+                  type: string
+                replicas:
+                  type: integer
+  scope: Namespaced
+  names:
+    plural: crontabs
+    singular: crontab
+    kind: CronTab
+    shortNames:
+    - ct`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+```
+#### 创建CRD的CR对象
+```go
+item = unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "stable.example.com/v1",
 			"kind":       "CronTab",
@@ -99,182 +204,90 @@ func crdExample() {
 			},
 		},
 	}
-	// 删除CRD
-	err := kom.Init().WithContext(context.TODO()).CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Delete().Error
-	if err != nil {
-		fmt.Printf("CronTab Delete error: %v\n", err)
-	}
-	// 创建CRD
-	err = kom.Init().WithContext(context.TODO()).CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Create(&crontab).Error
-	if err != nil {
-		fmt.Printf("CRD Create error: %v\n", err)
-	}
-	// 获取CRD
-	err = kom.Init().WithContext(context.TODO()).CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Get(&crontab).Error
-	if err != nil {
-		fmt.Printf("CRD Get error: %v\n", err)
-	}
-}
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(item.GetNamespace()).Name(item.GetName()).Create(&item).Error
+```
+#### Get获取单个CR对象
+```go
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(item.GetName()).Namespace(item.GetNamespace()).Get(&item).Error
+```
+#### List获取CR对象的列表
+```go
+var crontabList []unstructured.Unstructured
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
+```
+#### 更新CR对象
+```go
+patchData := `{
+    "spec": {
+        "image": "patch-image"
+    },
+    "metadata": {
+        "labels": {
+            "new-label": "new-value"
+        }
+    }
+}`
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Patch(&crontab, types.MergePatchType, patchData).Error
+```
+#### 删除CR对象
+```go
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Delete().Error
+```
+### 4. 多集群管理
+#### 注册多集群
+```go
+// 注册InCluster集群，名称为InCluster
+kom.Clusters().RegisterInCluster()
+// 注册两个带名称的集群,分别名为orb和docker-desktop
+kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/orb", "orb")
+kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "docker-desktop")
+```
+#### 显示已注册集群
+```go
+kom.Clusters().Show()
+```
+#### 多集群选择
+```go
+// 选择集群,查询集群内kube-system命名空间下的pod
+var pods []corev1.Pod
+err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
 ```
 
-### 4. 资源的增删改查
 
-以下示例展示了如何进行资源的增删改查操作。
-
-#### 创建资源
-
+### 5. Pod 日志获取
 ```go
-func CreateResource() {
-	item := v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-deploy",
-			Namespace: "default",
-		},
-		Spec: v1.DeploymentSpec{
-			Replicas: utils.Int32Ptr(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "test"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test"},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{Name: "test", Image: "nginx:1.14.2"},
-					},
-				},
-			},
-		},
-	}
-
-	err := kom.Init().WithContext(context.TODO()).Resource(&item).Create(&item).Error
-	if err != nil {
-		fmt.Printf("Deployment Create error: %v\n", err)
-	}
+// 获取Pod日志
+options := corev1.PodLogOptions{
+    Container: "nginx",
 }
+podLogs := kom.DefaultCluster().Poder().Namespace("default").Name("nginx").GetLogs("nginx", &options)
+logStream, err := podLogs.Stream(context.TODO())
+reader := bufio.NewReader(logStream)
 ```
-
-#### 获取资源
-
+### 6. Pod 文件管理
+#### 文件列表
 ```go
-func GetResource() {
-	var item v1.Deployment
-	err := kom.Init().WithContext(context.TODO()).Resource(&item).Namespace("default").Name("test-deploy").Get(&item).Error
-	if err != nil {
-		fmt.Printf("Deployment Get error: %v\n", err)
-	}
-	fmt.Printf("Get Item: %s\n", item.Spec.Template.Spec.Containers[0].Image)
-}
+// 获取Pod内/etc文件夹列表
+kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").GetFileList("/etc")
 ```
-
-#### 更新资源
-
+#### 文件下载
 ```go
-func UpdateResource() {
-	var item v1.Deployment
-	err := kom.Init().WithContext(context.TODO()).Resource(&item).Namespace("default").Name("test-deploy").Get(&item).Error
-	if err == nil {
-		item.Spec.Template.Annotations["kom.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-		err = kom.Init().WithContext(context.TODO()).Resource(&item).Update(&item).Error
-		if err != nil {
-			fmt.Printf("Deployment Update error: %v\n", err)
-		}
-	}
-}
+// 下载Pod内/etc/hosts文件
+kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").DownloadFile("/etc/hosts")
 ```
-
-#### 删除资源
-
+#### 文件上传
 ```go
-func DeleteResource() {
-	var item v1.Deployment
-	err := kom.Init().WithContext(context.TODO()).Resource(&item).Namespace("default").Name("test-deploy").Delete().Error
-	if err != nil {
-		fmt.Printf("Deployment Delete error: %v\n", err)
-	}
-}
+// 上传文件内容到Pod内/etc/demo.txt文件
+kom.DefaultCluster().Poder().Namespace("default").Name("nginx").ContainerName("nginx").SaveFile("/etc/demo.txt", "txt-context")
 ```
-
-### 5. 列表操作
-
-以下是如何列出 Kubernetes 资源的示例。
-
+### 7. 集群参数信息
 ```go
-func ListResources() {
-	var items []v1.Deployment
-	err := kom.Init().WithContext(context.TODO()).Resource(&v1.Deployment{}).Namespace("default").List(&items).Error
-	if err != nil {
-		fmt.Printf("List Error: %v\n", err)
-	}
-	fmt.Printf("List Deployment count: %d\n", len(items))
-	for _, d := range items {
-		fmt.Printf("List Deployment Items: %s, %s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
-	}
-}
-```
-
-#### 使用选项进行列表操作
-
-你可以使用 `ListOptions` 来过滤列表结果。
-
-```go
-func ListWithOptions() {
-	var items []v1.Deployment
-	err := kom.Init().WithContext(context.TODO()).Resource(&v1.Deployment{}).Namespace("default").
-		List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
-	if err != nil {
-		fmt.Printf("List Error: %v\n", err)
-	}
-	fmt.Printf("List Deployment WithLabelSelector app=nginx count: %d\n", len(items))
-	for _, d := range items {
-		fmt.Printf("List Deployment WithLabelSelector Items: %s, %s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
-	}
-}
-```
-
-### 6. Pod 日志获取
-
-获取特定 Pod 的日志。
-
-```go
-func PodLogs() {
-	yaml := `apiVersion: v1
-kind: Pod
-metadata:
-  name: random-char-pod
-  namespace: default
-spec:
-  containers:
-  - name: container-b
-    image: alpine
-    command: ["/bin/sh", "-c", "while true; do echo $(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1); sleep 5; done"]
-`
-	_ = applier.Instance().WithContext(context.TODO()).Delete(yaml)
-	_ = applier.Instance().WithContext(context.TODO()).Apply(yaml)
-
-	time.Sleep(5 * time.Second)
-	options := corev1.PodLogOptions{Container: "container-b"}
-	podLogs := poder.Instance().WithContext(context.TODO()).Namespace("default").Name("random-char-pod").GetLogs("random-char-pod", &options)
-	logStream, err := podLogs.Stream(context.TODO())
-	if err != nil {
-		fmt.Println("Error getting pod logs:", err)
-		return
-	}
-	// 逐行读取日志
-	reader := bufio.NewReader(logStream)
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-
-
-			}
-			fmt.Println("Error reading log:", err)
-			break
-		}
-		fmt.Print(line)
-	}
-}
+// 集群文档
+kom.DefaultCluster().Status().Docs()
+// 集群资源信息
+kom.DefaultCluster().Status().APIResources()
+// 集群已注册CRD列表
+kom.DefaultCluster().Status().CRDList()
+// 集群版本信息
+kom.DefaultCluster().Status().ServerVersion()
 ```
