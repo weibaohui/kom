@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ListOption Functional options for ListResources
+// ListOption Functional options for listResources
 type ListOption func(*metav1.ListOptions)
 
 // WithLabelSelector 设置 LabelSelector
