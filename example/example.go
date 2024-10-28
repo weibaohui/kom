@@ -463,16 +463,16 @@ spec:
 	}
 	time.Sleep(time.Second * 10)
 
-	stdout, stderr, err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Poder().
-		ExecuteCommand("ps", "-ef")
+	var execResult string
+	err := kom.DefaultCluster().Namespace("default").
+		Name("random-char-pod").
+		ContainerName("container").
+		Command("ps", "-ef").
+		ExecuteCommand(&execResult).Error
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
-		if len(stderr) > 0 {
-			fmt.Printf("Standard Error:\n%s", stderr)
-		}
-	} else {
-		fmt.Printf("Standard Output:\n%s", stdout)
 	}
+	fmt.Printf("Standard Output:\n%s", execResult)
 
 	result = kom.DefaultCluster().Applier().Delete(yaml)
 	for _, str := range result {
