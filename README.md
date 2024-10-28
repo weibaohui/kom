@@ -267,7 +267,9 @@ reader := bufio.NewReader(logStream)
 #### 执行命令
 ```go
 // 在Pod内执行ps -ef命令
-stdout, stderr, err := kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ExecuteCommand("ps", "-ef")
+var execResult string
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
+fmt.Printf("execResult: %s", execResult)
 ```
 #### 文件列表
 ```go
