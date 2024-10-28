@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (k *Kubectl) ListResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
+func (k *Kubectl) listResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
 	gvr, namespaced := k.getGVR(kind)
 	if gvr.Empty() {
 		return nil, fmt.Errorf("不支持的资源类型: %s", kind)
