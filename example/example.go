@@ -18,16 +18,17 @@ import (
 )
 
 func Example() {
-	// builtInExample()
-	// crdExample()
-	// yamlApplyDelete()
-	// podLogs()
-	// multiCluster()
-	// newEventList()
-	// coreEventList()
+	builtInExample()
+	crdExample()
+	yamlApplyDelete()
+	podLogs()
+	multiCluster()
+	newEventList()
+	coreEventList()
 	doc()
 	fetchDoc1()
 	fetchDoc2()
+	podCommand()
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -428,6 +429,52 @@ spec:
 		}
 		fmt.Println(line)
 	}
+	result = kom.DefaultCluster().Applier().Delete(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+
+}
+func podCommand() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random-char-pod
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: container
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	time.Sleep(time.Second * 10)
+
+	stdout, stderr, err := kom.DefaultCluster().Poder().
+		Namespace("default").
+		Name("random-char-pod").ExecuteCommand("ps", "-ef")
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+		if len(stderr) > 0 {
+			fmt.Printf("Standard Error:\n%s", stderr)
+		}
+	} else {
+		fmt.Printf("Standard Output:\n%s", stdout)
+	}
+
 	result = kom.DefaultCluster().Applier().Delete(yaml)
 	for _, str := range result {
 		fmt.Println(str)
