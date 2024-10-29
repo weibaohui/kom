@@ -27,8 +27,9 @@ func Example() {
 	// fetchDoc1()
 	// fetchDoc2()
 	// podCommand()
-	podLogs()
+	// podLogs()
 
+	podFileCommand()
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -456,12 +457,12 @@ spec:
 	}
 	time.Sleep(time.Second * 10)
 
-	var execResult string
+	var execResult []byte
 	err := kom.DefaultCluster().Namespace("default").
 		Name("random-char-pod").
 		ContainerName("container").
 		Command("ps", "-ef").
-		ExecuteCommand(&execResult).Error
+		Execute(&execResult).Error
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
 	}
@@ -471,6 +472,53 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
+
+}
+func podFileCommand() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random-char-pod
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: container
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	time.Sleep(time.Second * 1)
+
+	list, err := kom.DefaultCluster().Namespace("default").
+		Name("random-char-pod").
+		ContainerName("container").Poder().GetFileList("/etc")
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
+	for _, tree := range list {
+		fmt.Println(utils.ToJSON(tree))
+	}
+
+	file, err := kom.DefaultCluster().Namespace("default").
+		Name("random-char-pod").
+		ContainerName("container").Poder().DownloadFile("/etc/hosts")
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
+	fmt.Println(string(file))
 
 }
 
