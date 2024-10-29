@@ -36,6 +36,9 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 		execCallback := k.Callback().Exec()
 		_ = execCallback.Register("kom:pod:exec", ExecuteCommand)
+
+		logsCallback := k.Callback().Logs()
+		_ = logsCallback.Register("kom:pod:logs", GetLogs)
 	}
 
 	return nil
