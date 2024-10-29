@@ -32,79 +32,25 @@ type PodFileTree struct {
 func (p *poder) GetFileList(path string) ([]*PodFileTree, error) {
 	klog.V(6).Infof("GetFileList %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
-	cmd := []string{"ls", "-l", path}
-	req := p.kubectl.Client().CoreV1().RESTClient().
-		Get().
-		Namespace(p.kubectl.Statement.Namespace).
-		Resource("pods").
-		Name(p.kubectl.Statement.Name).
-		SubResource("exec").
-		Param("container", p.kubectl.Statement.ContainerName).
-		Param("command", cmd[0]).
-		Param("command", cmd[1]).
-		Param("command", cmd[2]).
-		Param("tty", "false").
-		Param("stdin", "false").
-		Param("stdout", "true").
-		Param("stderr", "true")
-
-	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
-	if err != nil {
-		return nil, fmt.Errorf("error creating executor: %v", err)
-	}
-
-	var stdout bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: os.Stderr,
-	})
-
+	var result []byte
+	err := p.kubectl.Command("ls", "-l", path).Execute(&result).Error
 	if err != nil {
 		return nil, fmt.Errorf("error executing command: %v", err)
 	}
 
-	return parseFileList(path, stdout.String()), nil
+	return parseFileList(path, string(result)), nil
 }
 
 // DownloadFile 从指定容器下载文件
 func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
-	cmd := []string{"cat", filePath}
-	req := p.kubectl.Client().CoreV1().RESTClient().
-		Get().
-		Namespace(p.kubectl.Statement.Namespace).
-		Resource("pods").
-		Name(p.kubectl.Statement.Name).
-		SubResource("exec").
-		Param("container", p.kubectl.Statement.ContainerName).
-		Param("command", cmd[0]).
-		Param("command", cmd[1]).
-		Param("tty", "false").
-		Param("stdin", "false").
-		Param("stdout", "true").
-		Param("stderr", "true")
-
-	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
+	var result []byte
+	err := p.kubectl.Command("cat", filePath).Execute(&result).Error
 	if err != nil {
-		return nil, fmt.Errorf("error creating executor: %v", err)
+		return nil, fmt.Errorf("error executing command: %v", err)
 	}
 
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-
-	if err != nil {
-		s := stderr.String()
-		if strings.Contains(s, "Invalid argument") {
-			return nil, fmt.Errorf("系统参数错误 %v", s)
-		}
-		return nil, fmt.Errorf("error executing command: %v %v", err, s)
-	}
-
-	return stdout.Bytes(), nil
+	return result, nil
 }
 
 // UploadFile 将文件上传到指定容器
@@ -181,6 +127,27 @@ func (p *poder) UploadFile(destPath string, file multipart.File) error {
 	return nil
 }
 
+// SaveFile
+// TODO 要写入文件的字节数据
+//
+//	data := []byte("这是一些字节数据。")
+//
+//	// 创建或打开文件
+//	file, err := os.Create("output.txt")
+//	if err != nil {
+//	    fmt.Println("无法创建文件:", err)
+//	    return
+//	}
+//	defer file.Close() // 确保在函数结束时关闭文件
+//
+//	// 将 []byte 写入文件
+//	_, err = file.Write(data)
+//	if err != nil {
+//	    fmt.Println("写入文件失败:", err)
+//	    return
+//	}
+//
+//	fmt.Println("字节数据已成功写入文件.")
 func (p *poder) SaveFile(path string, context string) error {
 	klog.V(6).Infof("SaveFile %s to [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	klog.V(8).Infof("SaveFile %s \n", context)
@@ -198,6 +165,7 @@ func (p *poder) SaveFile(path string, context string) error {
 	}(tempFile.Name()) // 确保临时文件在函数结束时被删除
 
 	// 将上传的文件内容写入临时文件
+
 	_, err = io.WriteString(tempFile, context)
 	if err != nil {
 		return fmt.Errorf("error writing to temp file: %v", err)
@@ -323,9 +291,14 @@ func parseFileList(path, output string) []*PodFileTree {
 			ModTime:     modTime,
 			IsDir:       fileType == "directory",
 		}
-		if path != "/" {
+		if strings.HasPrefix(name, "/") {
+			node.Path = name
+		} else if path != "/" && path != name {
 			node.Path = fmt.Sprintf("%s/%s", path, name)
+		} else {
+			node.Path = fmt.Sprintf("/%s", name)
 		}
+
 		nodes = append(nodes, &node)
 	}
 
