@@ -16,6 +16,10 @@ func GetLogs(k *kom.Kubectl) error {
 	options.Container = stmt.ContainerName
 	ctx := stmt.Context
 
+	if stmt.ContainerName == "" {
+		return fmt.Errorf("请调用ContainerName()方法设置Pod容器名称")
+	}
+
 	// 使用反射获取 dest 的值
 	destValue := reflect.ValueOf(stmt.Dest)
 
