@@ -9,19 +9,12 @@ import (
 	"strings"
 
 	"github.com/weibaohui/kom/utils"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
 )
 
 type poder struct {
 	kubectl *Kubectl
-}
-
-func (p *poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
-	opts.Container = p.kubectl.Statement.ContainerName
-	return p.kubectl.Client().CoreV1().Pods(p.kubectl.Statement.Namespace).GetLogs(name, opts)
 }
 
 // PodFileTree 文件节点结构
