@@ -35,7 +35,7 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 		_ = deleteCallback.Register("kom:delete", Delete)
 
 		execCallback := k.Callback().Exec()
-		_ = execCallback.Register("kom:exec", ExecuteCommand)
+		_ = execCallback.Register("kom:pod:exec", ExecuteCommand)
 	}
 
 	return nil
