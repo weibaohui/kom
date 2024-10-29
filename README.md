@@ -259,10 +259,9 @@ err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&
 #### 获取日志
 ```go
 // 获取Pod日志
-options := corev1.PodLogOptions{}
-podLogs := kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().GetLogs("nginx", &options)
-logStream, err := podLogs.Stream(context.TODO())
-reader := bufio.NewReader(logStream)
+var stream io.ReadCloser
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
+reader := bufio.NewReader(stream)
 ```
 #### 执行命令
 ```go
