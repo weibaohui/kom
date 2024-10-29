@@ -3,6 +3,7 @@ package callbacks
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/weibaohui/kom/kom"
@@ -19,10 +20,25 @@ func ExecuteCommand(k *kom.Kubectl) error {
 	args := stmt.Args
 	containerName := stmt.ContainerName
 
+	if stmt.ContainerName == "" {
+		return fmt.Errorf("请调用ContainerName()方法设置Pod容器名称")
+	}
+	if stmt.Command == "" {
+		return fmt.Errorf("请调用Command()方法设置命令")
+	}
+
+	// 反射检查
+	destValue := reflect.ValueOf(stmt.Dest)
+
+	// 确保 dest 是一个指向字节切片的指针
+	if !(destValue.Kind() == reflect.Ptr && destValue.Elem().Kind() == reflect.Slice) || destValue.Elem().Type().Elem().Kind() != reflect.Uint8 {
+		return fmt.Errorf("请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s")
+	}
+
 	var err error
 	cmd := []string{command}
 	cmd = append(cmd, args...)
-	klog.V(8).Infof("ExecuteCommand %s %v in [%s/%s:%s]\n", command, args, ns, name, containerName)
+	klog.V(8).Infof("Execute %s %v in [%s/%s:%s]\n", command, args, ns, name, containerName)
 
 	req := k.Client().CoreV1().RESTClient().
 		Get().
@@ -61,13 +77,13 @@ func ExecuteCommand(k *kom.Kubectl) error {
 		}
 		return fmt.Errorf("error executing command: %v %v", err, s)
 	}
-
 	// 将结果写入 tx.Statement.Dest
-	if destStr, ok := k.Statement.Dest.(*string); ok {
-		*destStr = outBuf.String()
-		klog.V(8).Infof("ExecuteCommand result %s", *destStr)
+	if destBytes, ok := k.Statement.Dest.(*[]byte); ok {
+		// 直接使用 outBuf.Bytes() 赋值
+		*destBytes = outBuf.Bytes()
+		klog.V(8).Infof("Execute result %s", *destBytes)
 	} else {
-		return fmt.Errorf("dest is not a *string")
+		return fmt.Errorf("dest is not a *[]byte")
 	}
 	return nil
 }
