@@ -24,8 +24,8 @@ func (p *poder) GetLogs(name string, opts *v1.PodLogOptions) *rest.Request {
 	return p.kubectl.Client().CoreV1().Pods(p.kubectl.Statement.Namespace).GetLogs(name, opts)
 }
 
-// PodFileNode 文件节点结构
-type PodFileNode struct {
+// PodFileTree 文件节点结构
+type PodFileTree struct {
 	Name        string `json:"name"`
 	Type        string `json:"type"` // file or directory
 	Permissions string `json:"permissions"`
@@ -36,7 +36,7 @@ type PodFileNode struct {
 }
 
 // GetFileList  获取容器中指定路径的文件和目录列表
-func (p *poder) GetFileList(path string) ([]*PodFileNode, error) {
+func (p *poder) GetFileList(path string) ([]*PodFileTree, error) {
 	klog.V(6).Infof("GetFileList %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
 	cmd := []string{"ls", "-l", path}
@@ -298,9 +298,9 @@ func getFileType(permissions string) string {
 	return fileType
 }
 
-// parseFileList 解析输出并生成 PodFileNode 列表
-func parseFileList(path, output string) []*PodFileNode {
-	var nodes []*PodFileNode
+// parseFileList 解析输出并生成 PodFileTree 列表
+func parseFileList(path, output string) []*PodFileTree {
+	var nodes []*PodFileTree
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		if line == "" {
@@ -320,8 +320,8 @@ func parseFileList(path, output string) []*PodFileNode {
 
 		fileType := getFileType(permissions)
 
-		// 封装成 PodFileNode
-		node := PodFileNode{
+		// 封装成 PodFileTree
+		node := PodFileTree{
 			Path:        fmt.Sprintf("/%s", name),
 			Name:        name,
 			Type:        fileType,
