@@ -2,7 +2,6 @@ package example
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"time"
@@ -21,14 +20,15 @@ func Example() {
 	// builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
-	// podLogs()
 	// multiCluster()
 	// newEventList()
 	// coreEventList()
 	// doc()
 	// fetchDoc1()
 	// fetchDoc2()
-	podCommand()
+	// podCommand()
+	podLogs()
+
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -376,7 +376,7 @@ func podLogs() {
 	yaml := `apiVersion: v1
 kind: Pod
 metadata:
-  name: random-char-pod-1
+  name: random-char-pod
   namespace: default
 spec:
   containers:
@@ -392,31 +392,24 @@ spec:
     - /bin/sh
     - -c
     image: alpine
-    name: container-b
+    name: container
 `
-	result := kom.DefaultCluster().Applier().Delete(yaml)
+	result := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, str := range result {
 		fmt.Println(str)
 	}
 	time.Sleep(time.Second * 5)
-	result = kom.DefaultCluster().Applier().Apply(yaml)
-	for _, str := range result {
-		fmt.Println(str)
-	}
-	time.Sleep(time.Second * 5)
-	options := corev1.PodLogOptions{
-		Container: "container-b",
-	}
-	podLogs := kom.DefaultCluster().
+	var stream io.ReadCloser
+	err := kom.DefaultCluster().
 		Namespace("default").
-		Name("random-char-pod-1").ContainerName("container-b").Poder().
-		GetLogs("random-char-pod-1", &options)
-	logStream, err := podLogs.Stream(context.TODO())
+		Name("random-char-pod").
+		ContainerName("container").
+		GetLogs(&stream, &corev1.PodLogOptions{}).Error
 	if err != nil {
-		fmt.Println("Error getting pod logs:", err)
+		fmt.Printf("Error getting pod logs:%v\n", err)
 	}
 	// 逐行读取日志并发送到 Channel
-	reader := bufio.NewReader(logStream)
+	reader := bufio.NewReader(stream)
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
