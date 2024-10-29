@@ -274,19 +274,17 @@ spec:
 		time.Sleep(10 * time.Second)
 		// 进行后续的测试逻辑
 		t.Log("Waited for 5 seconds")
-		options := corev1.PodLogOptions{
-			Container: "container-b",
-		}
-		podLogs := kom.DefaultCluster().Poder().
-			Namespace("default").
-			Name("random-char-pod-1").
-			GetLogs("random-char-pod-1", &options)
-		logStream, err := podLogs.Stream(context.TODO())
-		if err != nil {
-			t.Fatalf("Error getting pod logs: %v", err)
-		}
 
-		reader := bufio.NewReader(logStream)
+		var stream io.ReadCloser
+		err := kom.DefaultCluster().
+			Namespace("default").
+			Name("random-char-pod").
+			ContainerName("container").
+			GetLogs(&stream, &corev1.PodLogOptions{}).Error
+		if err != nil {
+			fmt.Printf("Error getting pod logs:%v\n", err)
+		}
+		reader := bufio.NewReader(stream)
 		for {
 			line, err := reader.ReadString('\n')
 			if err != nil {
