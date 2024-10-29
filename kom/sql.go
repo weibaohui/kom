@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,10 +61,17 @@ func (k *Kubectl) Command(command string, args ...string) *Kubectl {
 	tx.Statement.Args = args
 	return tx
 }
+func (k *Kubectl) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.PodLogOptions = opt
+	tx.Statement.PodLogOptions.Container = tx.Statement.ContainerName
+	tx.Statement.Dest = requestPtr
+	tx.Error = tx.Callback().Logs().Execute(tx)
+	return tx
+}
 
 func (k *Kubectl) Get(dest interface{}) *Kubectl {
 	tx := k.getInstance()
-	// 设置目标对象为 obj 的指针
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Get().Execute(tx)
 	return tx

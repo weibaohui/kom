@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,11 +28,12 @@ type Statement struct {
 	Dest          interface{}
 	PatchType     types.PatchType
 	PatchData     string
-	clean         bool     // 移除管理字段
-	useCustomGVK  bool     // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
-	ContainerName string   // 容器名称，Poder使用
-	Command       string   // 容器内执行命令，Poder使用
-	Args          []string // 容器内执行命令参数，Poder使用
+	clean         bool              // 移除管理字段
+	useCustomGVK  bool              // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
+	ContainerName string            // 容器名称，执行获取容器内日志等操作使用
+	Command       string            // 容器内执行命令
+	Args          []string          // 容器内执行命令参数
+	PodLogOptions *v1.PodLogOptions // 获取容器日志使用
 }
 
 func (s *Statement) SetNamespace(ns string) *Statement {
