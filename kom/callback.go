@@ -37,6 +37,7 @@ func (k *Kubectl) initializeCallbacks() *callbacks {
 			"delete": {km: k},
 			"list":   {km: k},
 			"exec":   {km: k},
+			"logs":   {km: k},
 		},
 	}
 }
@@ -63,6 +64,9 @@ func (cs *callbacks) List() *processor {
 }
 func (cs *callbacks) Exec() *processor {
 	return cs.processors["exec"]
+}
+func (cs *callbacks) Logs() *processor {
+	return cs.processors["logs"]
 }
 
 func (c *callback) Remove(name string) error {
