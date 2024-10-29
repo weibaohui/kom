@@ -108,7 +108,9 @@ func (k *Kubectl) Patch(dest interface{}, pt types.PatchType, data string) *Kube
 	tx.Error = tx.Callback().Patch().Execute(tx)
 	return tx
 }
-func (k *Kubectl) ExecuteCommand(dest interface{}) *Kubectl {
+
+// Execute 请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s
+func (k *Kubectl) Execute(dest interface{}) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Exec().Execute(tx)
