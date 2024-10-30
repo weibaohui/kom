@@ -284,6 +284,9 @@ spec:
 		if err != nil {
 			fmt.Printf("Error getting pod logs:%v\n", err)
 		}
+		if stream == nil {
+			return
+		}
 		reader := bufio.NewReader(stream)
 		for {
 			line, err := reader.ReadString('\n')
