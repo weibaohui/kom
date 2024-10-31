@@ -38,6 +38,9 @@ func Create(k *kom.Kubectl) error {
 	if err != nil {
 		return err
 	}
-	utils.RemoveManagedFields(res)
+	stmt.RowsAffected = 1
+	if stmt.RemoveManagedFields {
+		utils.RemoveManagedFields(res)
+	}
 	return nil
 }

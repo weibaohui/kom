@@ -2,11 +2,9 @@ package kom
 
 import (
 	"context"
-	"fmt"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -115,16 +113,4 @@ func (k *Kubectl) Execute(dest interface{}) *Kubectl {
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().Exec().Execute(tx)
 	return tx
-}
-
-func (k *Kubectl) fill(m *unstructured.Unstructured) *Kubectl {
-	tx := k.getInstance()
-	if tx.Statement.Dest == nil {
-		tx.Error = fmt.Errorf("请先执行Get()、List()等方法")
-	}
-	// 确保将数据填充到传入的 m 中
-	if dest, ok := tx.Statement.Dest.(*unstructured.Unstructured); ok {
-		*m = *dest
-	}
-	return k
 }

@@ -17,19 +17,20 @@ import (
 )
 
 func Example() {
-	// builtInExample()
-	// crdExample()
-	// yamlApplyDelete()
-	// multiCluster()
-	// newEventList()
-	// coreEventList()
-	// doc()
-	// fetchDoc1()
-	// fetchDoc2()
-	// podCommand()
-	// podLogs()
+	builtInExample()
+	crdExample()
+	yamlApplyDelete()
+	multiCluster()
+	newEventList()
+	coreEventList()
+	doc()
+	fetchDoc1()
+	fetchDoc2()
+	podCommand()
 
 	podFileCommand()
+	podLogs()
+
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1

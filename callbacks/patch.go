@@ -35,8 +35,10 @@ func Patch(k *kom.Kubectl) error {
 		return err
 	}
 
-	utils.RemoveManagedFields(res)
-
+	stmt.RowsAffected = 1
+	if stmt.RemoveManagedFields {
+		utils.RemoveManagedFields(res)
+	}
 	// 将 unstructured 转换回原始对象
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, stmt.Dest)
 	if err != nil {

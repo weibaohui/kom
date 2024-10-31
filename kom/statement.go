@@ -2,7 +2,6 @@ package kom
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,44 +14,24 @@ import (
 )
 
 type Statement struct {
-	*Kubectl
-	Error         error
-	RowsAffected  int64
-	Namespace     string
-	Name          string
-	GVR           schema.GroupVersionResource
-	GVK           schema.GroupVersionKind
-	Namespaced    bool
-	ListOptions   []metav1.ListOptions
-	Context       context.Context `json:"-"`
-	Dest          interface{}
-	PatchType     types.PatchType
-	PatchData     string
-	clean         bool              // 移除管理字段
-	useCustomGVK  bool              // 如果通过CRD方法设置了GVK，那么就强制使用，不在进行GVK的自动解析
-	ContainerName string            // 容器名称，执行获取容器内日志等操作使用
-	Command       string            // 容器内执行命令
-	Args          []string          // 容器内执行命令参数
-	PodLogOptions *v1.PodLogOptions // 获取容器日志使用
-}
-
-func (s *Statement) SetNamespace(ns string) *Statement {
-	s.Namespace = ns
-	return s
-}
-func (s *Statement) SetName(name string) *Statement {
-	s.Name = name
-	return s
-}
-
-func (s *Statement) setGVR(gvr schema.GroupVersionResource) *Statement {
-	s.GVR = gvr
-	return s
-}
-
-func (s *Statement) SetDest(dest interface{}) *Statement {
-	s.Dest = dest
-	return s
+	*Kubectl                                        // 基础配置
+	RowsAffected        int64                       // 返回受影响的行数
+	Namespace           string                      // 资源所属命名空间
+	Name                string                      // 资源名称
+	GVR                 schema.GroupVersionResource // 资源类型
+	GVK                 schema.GroupVersionKind     // 资源类型
+	Namespaced          bool                        // 是否是命名空间资源
+	ListOptions         []metav1.ListOptions        // 列表查询参数
+	Context             context.Context             `json:"-"` // 上下文
+	Dest                interface{}                 // 返回结果存放对象，一般为结构体指针
+	PatchType           types.PatchType             // PATCH类型
+	PatchData           string                      // PATCH数据
+	RemoveManagedFields bool                        // 是否移除管理字段
+	useCustomGVK        bool                        // 如果通过CRD方法设置了GVK，那么就强制使用，不再进行GVK的自动解析
+	ContainerName       string                      // 容器名称，执行获取容器内日志等操作使用
+	Command             string                      // 容器内执行命令,包括ls、cat以及用户输入的命令
+	Args                []string                    // 容器内执行命令参数
+	PodLogOptions       *v1.PodLogOptions           `json:"-"` // 获取容器日志使用
 }
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
@@ -76,7 +55,6 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	} else {
 		crd, err := s.Kubectl.getCRD(gvk.Kind, gvk.Group)
 		if err != nil {
-			s.Error = err
 			return s
 		}
 		// 检查CRD是否是Namespaced
@@ -92,7 +70,6 @@ func (s *Statement) ParseNsNameFromRuntimeObj(obj runtime.Object) *Statement {
 	// 获取元数据（比如Name和Namespace）
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		s.Error = err
 		return s
 	}
 	s.Name = accessor.GetName()           // 获取资源的名称
@@ -104,7 +81,7 @@ func (s *Statement) ParseGVKFromRuntimeObj(obj runtime.Object) *Statement {
 	// 使用 scheme.Scheme.ObjectKinds() 获取 Kind
 	gvks, _, err := scheme.Scheme.ObjectKinds(obj)
 	if err != nil {
-		s.Error = fmt.Errorf("error getting kind by scheme.Scheme.ObjectKinds : %v", err)
+		klog.V(2).Infof("error getting kind by scheme.Scheme.ObjectKinds : %v", err)
 		return s
 	}
 	s.ParseGVKs(gvks)

@@ -359,7 +359,7 @@ func uniqueID(item *TreeNode) {
 
 func (d *Docs) ListNames() {
 	for _, tree := range d.Trees {
-		klog.Infof("tree info ID: %s\tLabel:%s\t\n解析GVK=[%s,%s,%s]", tree.ID, tree.Label, tree.group, tree.version, tree.kind)
+		klog.Infof("tree info ID: %s\tLabel:%s\t\n Parse GVK=[%s,%s,%s]", tree.ID, tree.Label, tree.group, tree.version, tree.kind)
 	}
 }
 func FetchByRef(ref string) *TreeNode {

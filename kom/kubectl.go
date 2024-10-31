@@ -10,21 +10,15 @@ import (
 )
 
 type Kubectl struct {
-	ID        string
-	Statement *Statement
-	Error     error
+	ID        string     // cluster id
+	Statement *Statement // statement
+	Error     error      // 存放ERROR信息
 
 	clone int
 }
 
-func DefaultCluster() *Kubectl {
-	return Clusters().DefaultCluster().Kubectl
-}
-func Cluster(id string) *Kubectl {
-	return Clusters().GetClusterById(id).Kubectl
-}
+// 初始化 kubectl
 func initKubectl(config *rest.Config, id string) *Kubectl {
-	klog.V(2).Infof("")
 	klog.V(2).Infof("k8s init 服务器地址：%s\n", config.Host)
 
 	k := &Kubectl{ID: id, clone: 1}

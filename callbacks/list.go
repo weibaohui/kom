@@ -55,7 +55,9 @@ func List(k *kom.Kubectl) error {
 
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		utils.RemoveManagedFields(obj)
+		if stmt.RemoveManagedFields {
+			utils.RemoveManagedFields(obj)
+		}
 		// 创建新的指向元素类型的指针
 		newElemPtr := reflect.New(elemType)
 		// unstructured 转换为原始目标类型
@@ -64,6 +66,7 @@ func List(k *kom.Kubectl) error {
 		destValue.Elem().Set(reflect.Append(destValue.Elem(), newElemPtr.Elem()))
 
 	}
+	stmt.RowsAffected = int64(len(list.Items))
 
 	if err != nil {
 		return err

@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// listResources 列出指定资源类型的所有对象
 func (k *Kubectl) listResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
 	gvr, namespaced := k.getGVR(kind)
 	if gvr.Empty() {

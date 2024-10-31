@@ -30,6 +30,6 @@ func Delete(k *kom.Kubectl) error {
 	if err != nil {
 		return err
 	}
-
+	stmt.RowsAffected = 1
 	return nil
 }
