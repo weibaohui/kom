@@ -296,3 +296,51 @@ kom.DefaultCluster().Status().CRDList()
 // 集群版本信息
 kom.DefaultCluster().Status().ServerVersion()
 ```
+### 7.callback机制
+* 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
+* 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
+* 当前支持的callback有：get,list,create,update,patch,delete,exec,logs.
+* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:delete","kom:pod:exec","kom:pod:logs"
+* 支持回调函数排序，默认按注册顺序执行，可以通过kom.DefaultCluster().Callback().After("kom:get")或者.Before("kom:get")设置顺序。
+* 支持删除回调函数，通过kom.DefaultCluster().Callback().Delete("kom:get")
+* 支持替换回调函数，通过kom.DefaultCluster().Callback().Replace("kom:get",cb)
+```go
+// 为Get获取资源注册回调函数
+kom.DefaultCluster().Callback().Get().Register("get", cb)
+// 为List获取资源注册回调函数
+kom.DefaultCluster().Callback().List().Register("list", cb)
+// 为Create创建资源注册回调函数
+kom.DefaultCluster().Callback().Create().Register("create", cb)
+// 为Update更新资源注册回调函数
+kom.DefaultCluster().Callback().Update().Register("update", cb)
+// 为Patch更新资源注册回调函数
+kom.DefaultCluster().Callback().Patch().Register("patch", cb)
+// 为Delete删除资源注册回调函数
+kom.DefaultCluster().Callback().Delete().Register("delete", cb)
+// 为Exec Pod内执行命令注册回调函数
+kom.DefaultCluster().Callback().Exec().Register("exec", cb)
+// 为Logs获取日志注册回调函数
+kom.DefaultCluster().Callback().Logs().Register("logs", cb)
+// 删除回调函数
+kom.DefaultCluster().Callback().Get().Delete("get")
+// 替换回调函数
+kom.DefaultCluster().Callback().Get().Replace("get", cb)
+// 指定回调函数执行顺序，在内置的回调函数执行完之后再执行
+kom.DefaultCluster().Callback().After("kom:get").Register("get", cb)
+// 指定回调函数执行顺序，在内置的回调函数执行之前先执行
+// 案例1.在Create创建资源前，进行权限检查，没有权限则返回error，后续创建动作将不再执行
+// 案例2.在List获取资源列表后，进行特定的资源筛选，从列表(Statement.Dest)中删除不符合要求的资源，然后返回给用户
+kom.DefaultCluster().Callback().Before("kom:create").Register("create", cb)
+
+// 自定义回调函数
+func cb(k *kom.Kubectl) error {
+    stmt := k.Statement
+    gvr := stmt.GVR
+    ns := stmt.Namespace
+    name := stmt.Name
+    // 打印信息
+    fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
+    return nil
+	// return fmt.Errorf("error") 返回error将阻止后续cb的执行
+}
+```
