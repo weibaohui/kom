@@ -17,6 +17,7 @@ import (
 )
 
 func Example() {
+	callbacks()
 	builtInExample()
 	crdExample()
 	yamlApplyDelete()
@@ -31,6 +32,20 @@ func Example() {
 	podFileCommand()
 	podLogs()
 
+}
+func callbacks() {
+	_ = kom.DefaultCluster().Callback().Get().Register("get", GetCB)
+}
+func GetCB(k *kom.Kubectl) error {
+
+	stmt := k.Statement
+	gvr := stmt.GVR
+	ns := stmt.Namespace
+	name := stmt.Name
+
+	// 打印信息
+	fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
+	return nil
 }
 func yamlApplyDelete() {
 	yaml := `apiVersion: v1
@@ -255,6 +270,7 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
+	time.Sleep(10 * time.Second)
 	var item v1.Deployment
 	err := kom.DefaultCluster().
 		Resource(&item).
@@ -263,6 +279,7 @@ spec:
 		Get(&item).Error
 	if err != nil {
 		klog.Errorf("Deployment Get(&item) error :%v", err)
+		return
 	}
 	fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
 	kom.DefaultCluster().Applier().Delete(yaml)
