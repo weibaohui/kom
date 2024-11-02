@@ -264,6 +264,7 @@ err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Contain
 reader := bufio.NewReader(stream)
 ```
 #### 执行命令
+在Pod内执行命令，需要指定容器名称，并且会触发Exec()类型的callbacks。
 ```go
 // 在Pod内执行ps -ef命令
 var execResult string
@@ -273,7 +274,7 @@ fmt.Printf("execResult: %s", execResult)
 #### 文件列表
 ```go
 // 获取Pod内/etc文件夹列表
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().GetFileList("/etc")
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ListFiles("/etc")
 ```
 #### 文件下载
 ```go
@@ -284,6 +285,7 @@ kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").P
 ```go
 // 上传文件内容到Pod内/etc/demo.txt文件
 kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", "txt-context")
 ```
 ### 6. 集群参数信息
 ```go
