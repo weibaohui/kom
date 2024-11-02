@@ -19,6 +19,7 @@ func ExecuteCommand(k *kom.Kubectl) error {
 	command := stmt.Command
 	args := stmt.Args
 	containerName := stmt.ContainerName
+	ctx := stmt.Context
 
 	if stmt.ContainerName == "" {
 		return fmt.Errorf("请调用ContainerName()方法设置Pod容器名称")
@@ -54,7 +55,7 @@ func ExecuteCommand(k *kom.Kubectl) error {
 	}
 
 	req.Param("tty", "false").
-		Param("stdin", "false").
+		Param("stdin", fmt.Sprintf("%v", stmt.Stdin != nil)).
 		Param("stdout", "true").
 		Param("stderr", "true")
 
@@ -65,10 +66,14 @@ func ExecuteCommand(k *kom.Kubectl) error {
 
 	var outBuf bytes.Buffer
 	var errBuf bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
+	options := remotecommand.StreamOptions{
 		Stdout: &outBuf,
 		Stderr: &errBuf,
-	})
+	}
+	if stmt.Stdin != nil {
+		options.Stdin = stmt.Stdin
+	}
+	err = executor.StreamWithContext(ctx, options)
 
 	if err != nil {
 		s := errBuf.String()
