@@ -343,6 +343,7 @@ func cb(k *kom.Kubectl) error {
     name := stmt.Name
     // 打印信息
     fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
+    fmt.Printf("Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
     return nil
 	// return fmt.Errorf("error") 返回error将阻止后续cb的执行
 }
