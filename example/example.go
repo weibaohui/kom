@@ -18,23 +18,24 @@ import (
 
 func Example() {
 	callbacks()
-	builtInExample()
-	crdExample()
-	yamlApplyDelete()
-	multiCluster()
-	newEventList()
-	coreEventList()
-	doc()
-	fetchDoc1()
-	fetchDoc2()
-	podCommand()
-
-	podFileCommand()
-	podLogs()
+	// builtInExample()
+	// crdExample()
+	// yamlApplyDelete()
+	// multiCluster()
+	// newEventList()
+	// coreEventList()
+	// doc()
+	// fetchDoc1()
+	// fetchDoc2()
+	// podCommand()
+	podUploadFile()
+	// podFileCommand()
+	// podLogs()
 
 }
 func callbacks() {
 	_ = kom.DefaultCluster().Callback().Get().Register("get", GetCB)
+	_ = kom.DefaultCluster().Callback().Exec().Register("get", GetCB)
 }
 func GetCB(k *kom.Kubectl) error {
 
@@ -45,6 +46,7 @@ func GetCB(k *kom.Kubectl) error {
 
 	// 打印信息
 	fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
+	fmt.Printf("Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
 	return nil
 }
 func yamlApplyDelete() {
@@ -522,7 +524,7 @@ spec:
 
 	list, err := kom.DefaultCluster().Namespace("default").
 		Name("random-char-pod").
-		ContainerName("container").Poder().GetFileList("/etc")
+		ContainerName("container").Poder().ListFiles("/etc")
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
 	}
@@ -537,6 +539,54 @@ spec:
 		klog.Errorf("Error executing command: %v", err)
 	}
 	fmt.Println(string(file))
+
+}
+
+func podUploadFile() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random-char-pod
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: container
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	time.Sleep(time.Second * 1)
+
+	context := utils.RandNLengthString(20)
+	fmt.Printf("将%s写入/etc/xyz\n", context)
+	err := kom.DefaultCluster().Namespace("default").
+		Name("random-char-pod").
+		ContainerName("container").Poder().
+		SaveFile("/etc/xyz", context)
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
+
+	file, err := kom.DefaultCluster().Namespace("default").
+		Name("random-char-pod").
+		ContainerName("container").Poder().DownloadFile("/etc/xyz")
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
+	fmt.Printf("从/etc/xyz读取到%s\n", string(file))
 
 }
 
