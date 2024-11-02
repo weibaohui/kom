@@ -186,7 +186,7 @@ spec:
     kind: CronTab
     shortNames:
     - ct`
-	result := kom.DefaultCluster().Applier().Apply(yaml)
+result := kom.DefaultCluster().Applier().Apply(yaml)
 ```
 #### 创建CRD的CR对象
 ```go
