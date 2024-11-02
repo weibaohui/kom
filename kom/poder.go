@@ -1,15 +1,11 @@
 package kom
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
 	"strings"
 
 	"github.com/weibaohui/kom/utils"
-	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
 )
 
@@ -28,9 +24,9 @@ type PodFileTree struct {
 	IsDir       bool   `json:"isDir"` // 指示是否
 }
 
-// GetFileList  获取容器中指定路径的文件和目录列表
-func (p *poder) GetFileList(path string) ([]*PodFileTree, error) {
-	klog.V(6).Infof("GetFileList %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+// ListFiles  获取容器中指定路径的文件和目录列表
+func (p *poder) ListFiles(path string) ([]*PodFileTree, error) {
+	klog.V(6).Infof("ListFiles %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
 	var result []byte
 	err := p.kubectl.Command("ls", "-l", path).Execute(&result).Error
@@ -57,73 +53,14 @@ func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 func (p *poder) UploadFile(destPath string, file multipart.File) error {
 	klog.V(6).Infof("UploadFile %s to [%s/%s:%s] \n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
-	// 创建临时文件
-	tempFile, err := os.CreateTemp("", "upload-*")
+	var result []byte
+	err := p.kubectl.
+		Stdin(file).
+		Command("sh", "-c", fmt.Sprintf("cat > %s", destPath)).
+		Execute(&result).Error
 	if err != nil {
-		return fmt.Errorf("error creating temp file: %v", err)
+		return fmt.Errorf("error executing command: %v", err)
 	}
-	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
-			klog.V(6).Infof("remve %s error:%v", name, err)
-		}
-	}(tempFile.Name()) // 确保临时文件在函数结束时被删除
-
-	// 将上传的文件内容写入临时文件
-	_, err = io.Copy(tempFile, file)
-	if err != nil {
-		return fmt.Errorf("error writing to temp file: %v", err)
-	}
-
-	// 确保文件关闭
-	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("error closing temp file: %v", err)
-	}
-
-	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", destPath)}
-
-	req := p.kubectl.Client().CoreV1().RESTClient().
-		Get().
-		Namespace(p.kubectl.Statement.Namespace).
-		Resource("pods").
-		Name(p.kubectl.Statement.Name).
-		SubResource("exec").
-		Param("container", p.kubectl.Statement.ContainerName).
-		Param("tty", "false").
-		Param("command", cmd[0]).
-		Param("command", cmd[1]).
-		Param("command", cmd[2]).
-		Param("stdin", "true").
-		Param("stdout", "true").
-		Param("stderr", "true")
-
-	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
-	if err != nil {
-		return fmt.Errorf("error creating executor: %v", err)
-	}
-
-	// 打开本地文件进行传输
-	readFile, err := os.Open(tempFile.Name())
-	if err != nil {
-		return fmt.Errorf("error opening file: %v", err)
-	}
-	defer func(readFile *os.File) {
-		err := readFile.Close()
-		if err != nil {
-			klog.V(6).Infof("readFile.Close() error:%v", err)
-		}
-	}(readFile)
-	var stdout, stderr bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdin:  readFile,
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error executing command: %v: %s", err, stderr.String())
-	}
-
 	return nil
 }
 
@@ -148,78 +85,18 @@ func (p *poder) UploadFile(destPath string, file multipart.File) error {
 //	}
 //
 //	fmt.Println("字节数据已成功写入文件.")
-func (p *poder) SaveFile(path string, context string) error {
-	klog.V(6).Infof("SaveFile %s to [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+func (p *poder) SaveFile(destPath string, context string) error {
+	klog.V(6).Infof("SaveFile %s to [%s/%s:%s]\n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	klog.V(8).Infof("SaveFile %s \n", context)
 
-	// 创建临时文件
-	tempFile, err := os.CreateTemp("", "upload-*")
+	var result []byte
+	err := p.kubectl.
+		Stdin(strings.NewReader(context)).
+		Command("sh", "-c", fmt.Sprintf("cat > %s", destPath)).
+		Execute(&result).Error
 	if err != nil {
-		return fmt.Errorf("error creating temp file: %v", err)
+		return fmt.Errorf("error executing command: %v", err)
 	}
-	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
-			klog.V(6).Infof("remve %s error:%v", name, err)
-		}
-	}(tempFile.Name()) // 确保临时文件在函数结束时被删除
-
-	// 将上传的文件内容写入临时文件
-
-	_, err = io.WriteString(tempFile, context)
-	if err != nil {
-		return fmt.Errorf("error writing to temp file: %v", err)
-	}
-
-	// 确保文件关闭
-	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("error closing temp file: %v", err)
-	}
-
-	cmd := []string{"sh", "-c", fmt.Sprintf("cat > %s", path)}
-
-	req := p.kubectl.Client().CoreV1().RESTClient().
-		Get().
-		Namespace(p.kubectl.Statement.Namespace).
-		Resource("pods").
-		Name(p.kubectl.Statement.Name).
-		SubResource("exec").
-		Param("container", p.kubectl.Statement.ContainerName).
-		Param("tty", "false").
-		Param("command", cmd[0]).
-		Param("command", cmd[1]).
-		Param("command", cmd[2]).
-		Param("stdin", "true").
-		Param("stdout", "true").
-		Param("stderr", "true")
-
-	executor, err := remotecommand.NewSPDYExecutor(p.kubectl.RestConfig(), "POST", req.URL())
-	if err != nil {
-		return fmt.Errorf("error creating executor: %v", err)
-	}
-
-	// 打开本地文件进行传输
-	file, err := os.Open(tempFile.Name())
-	if err != nil {
-		return fmt.Errorf("error opening file: %v", err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			klog.V(6).Infof("file.Close() error:%v", err)
-		}
-	}(file)
-	var stdout, stderr bytes.Buffer
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdin:  file,
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error executing command: %v: %s", err, stderr.String())
-	}
-
 	return nil
 }
 
