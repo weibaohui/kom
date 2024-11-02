@@ -2,6 +2,7 @@ package kom
 
 import (
 	"context"
+	"io"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -32,6 +33,7 @@ type Statement struct {
 	Command             string                      // 容器内执行命令,包括ls、cat以及用户输入的命令
 	Args                []string                    // 容器内执行命令参数
 	PodLogOptions       *v1.PodLogOptions           `json:"-"` // 获取容器日志使用
+	Stdin               io.Reader                   `json:"-"` // 设置输入
 }
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
