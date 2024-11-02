@@ -285,7 +285,8 @@ kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").P
 ```go
 // 上传文件内容到Pod内/etc/demo.txt文件
 kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", "txt-context")
+// multipart.File 类型文件直接上传到Pod内
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", multipart.File)
 ```
 ### 6. 集群参数信息
 ```go
