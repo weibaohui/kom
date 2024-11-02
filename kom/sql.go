@@ -2,6 +2,7 @@ package kom
 
 import (
 	"context"
+	"io"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,6 +58,11 @@ func (k *Kubectl) Command(command string, args ...string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Command = command
 	tx.Statement.Args = args
+	return tx
+}
+func (k *Kubectl) Stdin(reader io.Reader) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.Stdin = reader
 	return tx
 }
 func (k *Kubectl) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *Kubectl {
