@@ -587,7 +587,11 @@ spec:
 		klog.Errorf("Error executing command: %v", err)
 	}
 	fmt.Printf("从/etc/xyz读取到%s\n", string(file))
-
+	//
+	// err = kom.DefaultCluster().Namespace("default").
+	// 	Name("random-char-pod").
+	// 	ContainerName("container").Poder().
+	// 	UploadFile("/etc/xyz", context)
 }
 
 func multiCluster() {

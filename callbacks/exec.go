@@ -3,10 +3,13 @@ package callbacks
 import (
 	"bytes"
 	"fmt"
+	"net/url"
 	"reflect"
 	"strings"
 
 	"github.com/weibaohui/kom/kom"
+	"k8s.io/apimachinery/pkg/util/httpstream"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
 )
@@ -42,7 +45,7 @@ func ExecuteCommand(k *kom.Kubectl) error {
 	klog.V(8).Infof("Execute %s %v in [%s/%s:%s]\n", command, args, ns, name, containerName)
 
 	req := k.Client().CoreV1().RESTClient().
-		Get().
+		Post().
 		Namespace(ns).
 		Resource("pods").
 		Name(name).
@@ -59,7 +62,7 @@ func ExecuteCommand(k *kom.Kubectl) error {
 		Param("stdout", "true").
 		Param("stderr", "true")
 
-	executor, err := remotecommand.NewSPDYExecutor(k.RestConfig(), "POST", req.URL())
+	executor, err := createExecutor(req.URL(), k.RestConfig())
 	if err != nil {
 		return fmt.Errorf("error creating executor: %v", err)
 	}
@@ -91,4 +94,25 @@ func ExecuteCommand(k *kom.Kubectl) error {
 		return fmt.Errorf("dest is not a *[]byte")
 	}
 	return nil
+}
+
+func createExecutor(url *url.URL, config *rest.Config) (remotecommand.Executor, error) {
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", url)
+	if err != nil {
+		return nil, err
+	}
+	// Fallback executor is default, unless feature flag is explicitly disabled.
+	// WebSocketExecutor must be "GET" method as described in RFC 6455 Sec. 4.1 (page 17).
+	websocketExec, err := remotecommand.NewWebSocketExecutor(config, "GET", url.String())
+	if err != nil {
+		return nil, err
+	}
+	exec, err = remotecommand.NewFallbackExecutor(websocketExec, exec, func(err error) bool {
+		return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return exec, nil
 }
