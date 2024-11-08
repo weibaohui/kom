@@ -1,8 +1,11 @@
 package kom
 
 import (
+	"archive/tar"
+	"bytes"
 	"fmt"
-	"mime/multipart"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/weibaohui/kom/utils"
@@ -50,18 +53,50 @@ func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 }
 
 // UploadFile 将文件上传到指定容器
-func (p *poder) UploadFile(destPath string, file multipart.File) error {
+func (p *poder) UploadFile(destPath string, file *os.File) error {
 	klog.V(6).Infof("UploadFile %s to [%s/%s:%s] \n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
+	// 读取并压缩文件内容
+	var buf bytes.Buffer
+	if err := createTar(file, &buf); err != nil {
+		panic(err.Error())
+	}
 	var result []byte
 	err := p.kubectl.
-		Stdin(file).
-		Command("sh", "-c", fmt.Sprintf("cat > %s", destPath)).
+		Stdin(&buf).
+		Command("tar", "-xmf", "-", "-C", destPath).
 		Execute(&result).Error
 	if err != nil {
 		return fmt.Errorf("error executing command: %v", err)
 	}
 	return nil
+}
+
+// createTar 创建一个 tar 格式的压缩文件
+func createTar(file *os.File, buf *bytes.Buffer) error {
+	// 创建 tar writer
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
+
+	// 获取文件信息
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	// 添加文件头信息
+	hdr := &tar.Header{
+		Name: stat.Name(),
+		Mode: int64(stat.Mode()),
+		Size: stat.Size(),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+
+	// 将文件内容写入到 tar
+	_, err = io.Copy(tw, file)
+	return err
 }
 
 // SaveFile
