@@ -3,7 +3,6 @@ package callbacks
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/url"
 	"reflect"
 	"strings"
@@ -70,51 +69,24 @@ func ExecuteCommand(k *kom.Kubectl) error {
 
 	var outBuf bytes.Buffer
 	var errBuf bytes.Buffer
-	options := remotecommand.StreamOptions{
+	options := &remotecommand.StreamOptions{
 		Stdout: &outBuf,
 		Stderr: &errBuf,
+		Tty:    false,
 	}
 	if stmt.Stdin != nil {
 		options.Stdin = stmt.Stdin
-		totalBytes := []byte{}
-		for {
-			// 重置缓冲区
-			outBuf.Reset()
-			errBuf.Reset()
-
-			// 读取并传输下一个块,1M 每次
-			chunk := make([]byte, 1024*1024)
-			_, err := options.Stdin.Read(chunk)
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return fmt.Errorf("error reading input: %v", err)
-			}
-			options.Stdin = bytes.NewReader(chunk)
-
-			err = executor.StreamWithContext(ctx, options)
-			if err != nil {
-				s := errBuf.String()
-				if strings.Contains(s, "Invalid argument") {
-					return fmt.Errorf("系统参数错误 %v", s)
-				}
-				return fmt.Errorf("error executing command: %v %v", err, s)
-			}
-
-			totalBytes = append(totalBytes, outBuf.Bytes()...)
-			klog.V(8).Infof("Chunk result: %d bytes", len(outBuf.Bytes()))
-		}
-	} else {
-		err = executor.StreamWithContext(ctx, options)
-		if err != nil {
-			s := errBuf.String()
-			if strings.Contains(s, "Invalid argument") {
-				return fmt.Errorf("系统参数错误 %v", s)
-			}
-			return fmt.Errorf("error executing command: %v %v", err, s)
-		}
 	}
+	err = executor.StreamWithContext(ctx, *options)
+	if err != nil {
+		s := errBuf.String()
+		klog.V(8).Infof("Error executing command: %v", err)
+		if strings.Contains(s, "Invalid argument") {
+			return fmt.Errorf("系统参数错误 %v", s)
+		}
+		return fmt.Errorf("error executing command: %v %v", err, s)
+	}
+
 	// 将结果写入 tx.Statement.Dest
 	if destBytes, ok := k.Statement.Dest.(*[]byte); ok {
 		// 直接使用 outBuf.Bytes() 赋值
