@@ -20,3 +20,5 @@ crashlytics-build.properties
 fabric.properties
 /k8sorm
 /tmp/
+/bin/
+/test
