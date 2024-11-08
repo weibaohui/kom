@@ -16,11 +16,13 @@ type poder struct {
 	kubectl *Kubectl
 }
 
-// PodFileTree 文件节点结构
-type PodFileTree struct {
+// FileInfo 文件节点结构
+type FileInfo struct {
 	Name        string `json:"name"`
 	Type        string `json:"type"` // file or directory
 	Permissions string `json:"permissions"`
+	Owner       string `json:"owner"`
+	Group       string `json:"group"`
 	Size        int64  `json:"size"`
 	ModTime     string `json:"modTime"`
 	Path        string `json:"path"`  // 存储路径
@@ -28,7 +30,7 @@ type PodFileTree struct {
 }
 
 // ListFiles  获取容器中指定路径的文件和目录列表
-func (p *poder) ListFiles(path string) ([]*PodFileTree, error) {
+func (p *poder) ListFiles(path string) ([]*FileInfo, error) {
 	klog.V(6).Infof("ListFiles %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
 	var result []byte
@@ -171,15 +173,16 @@ func getFileType(permissions string) string {
 	return fileType
 }
 
-// parseFileList 解析输出并生成 PodFileTree 列表
-func parseFileList(path, output string) []*PodFileTree {
-	var nodes []*PodFileTree
+// parseFileList 解析输出并生成 FileInfo 列表
+func parseFileList(path, output string) []*FileInfo {
+	var nodes []*FileInfo
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
 		parts := strings.Fields(line)
+		klog.V(6).Infof("parseFileList path %s %s\n", path, line)
 		if len(parts) < 9 {
 			continue // 不完整的行
 		}
@@ -187,17 +190,21 @@ func parseFileList(path, output string) []*PodFileTree {
 		permissions := parts[0]
 		name := parts[8]
 		size := parts[4]
+		owner := parts[2]
+		group := parts[3]
 		modTime := strings.Join(parts[5:8], " ")
 
 		// 判断文件类型
 
 		fileType := getFileType(permissions)
 
-		// 封装成 PodFileTree
-		node := PodFileTree{
+		// 封装成 FileInfo
+		node := FileInfo{
 			Path:        fmt.Sprintf("/%s", name),
 			Name:        name,
 			Type:        fileType,
+			Owner:       owner,
+			Group:       group,
 			Permissions: permissions,
 			Size:        utils.ToInt64(size),
 			ModTime:     modTime,
