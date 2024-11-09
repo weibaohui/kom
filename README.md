@@ -118,6 +118,36 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").D
 var list []corev1.Event
 err := kom.DefaultCluster().GVK("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
 ```
+#### Watch资源变更
+```go
+var watcher watch.Interface
+var pod corev1.Pod
+err := kom.DefaultCluster().Resource(&pod).Namespace("default").Watch(&watcher).Error
+if err != nil {
+	fmt.Printf("Create Watcher Error %v", err)
+	return err
+}
+go func() {
+	defer watcher.Stop()
+
+	for event := range watcher.ResultChan() {
+		err := kom.Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
+		if err != nil {
+			fmt.Printf("无法将对象转换为 *v1.Pod 类型: %v", err)
+			return
+		}
+		// 处理事件
+		switch event.Type {
+		case watch.Added:
+			fmt.Printf("Added Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+		case watch.Modified:
+			fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+		case watch.Deleted:
+			fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+		}
+	}
+}()
+```
 ### 2. YAML 创建、更新、删除
 ```go
 yaml := `apiVersion: v1
