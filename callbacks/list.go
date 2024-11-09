@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// List todo 删除这个ctx参数，ctx从statement中获取
 func List(k *kom.Kubectl) error {
 
 	stmt := k.Statement
