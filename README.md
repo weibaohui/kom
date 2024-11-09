@@ -79,6 +79,7 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, me
 #### 通过Field查询资源列表
 ```go
 // 查询 default 命名空间下 标签为 metadata.name=test-deploy 的 Deployment 列表
+// filedSelector 一般支持原生的字段定义。如metadata.name,metadata.namespace,metadata.labels,metadata.annotations,metadata.creationTimestamp,spec.nodeName,spec.serviceAccountName,spec.schedulerName,status.phase,status.hostIP,status.podIP,status.qosClass,spec.containers.name等字段
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
 ```
 #### 更新资源内容
