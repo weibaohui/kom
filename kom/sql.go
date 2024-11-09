@@ -93,6 +93,13 @@ func (k *Kubectl) Create(dest interface{}) *Kubectl {
 	tx.Error = tx.Callback().Create().Execute(tx)
 	return tx
 }
+func (k *Kubectl) Watch(dest interface{}, opt ...metav1.ListOptions) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.ListOptions = opt
+	tx.Statement.Dest = dest
+	tx.Error = tx.Callback().Watch().Execute(tx)
+	return tx
+}
 func (k *Kubectl) Update(dest interface{}) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
