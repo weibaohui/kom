@@ -22,6 +22,9 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 		listCallback := k.Callback().List()
 		_ = listCallback.Register("kom:list", List)
 
+		watchCallback := k.Callback().Watch()
+		_ = watchCallback.Register("kom:watch", Watch)
+
 		createCallback := k.Callback().Create()
 		_ = createCallback.Register("kom:create", Create)
 
