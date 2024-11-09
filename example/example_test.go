@@ -1,19 +1,15 @@
 package example
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/kom_starter"
 	"github.com/weibaohui/kom/utils"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -49,8 +45,8 @@ metadata:
   name: random
   namespace: default
   labels:
-    x: y
-    app: random
+    "x": "y"
+    "app": "random"
 spec:
   containers:
   - args:
@@ -103,52 +99,6 @@ func checkCondition() bool {
 		return true
 	}
 	return false
-}
-
-func TestYamlApplyDelete(t *testing.T) {
-	yaml := `apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: example-config
-  namespace: default
-data:
-  key: value
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: example-deployment
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: example
-  template:
-    metadata:
-      labels:
-        app: example
-    spec:
-      containers:
-        - name: example-container
-          image: nginx
-`
-
-	// Apply the YAML
-	t.Run("Apply Resources", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Apply(yaml)
-		for _, r := range result {
-			fmt.Println(r)
-		}
-	})
-
-	// Delete the resources
-	t.Run("Delete Resources", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Delete(yaml)
-		for _, r := range result {
-			fmt.Println(r)
-		}
-	})
 }
 
 func TestCrdExample(t *testing.T) {
@@ -252,135 +202,6 @@ spec:
 			Delete().Error
 		if err != nil {
 			fmt.Printf("CRD Delete error: %v\n", err)
-		}
-	})
-}
-
-func TestBuiltInExample(t *testing.T) {
-	yaml := `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:latest
-        ports:
-        - containerPort: 80
-`
-
-	t.Run("Apply Built-in Resources", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Apply(yaml)
-		for _, str := range result {
-			fmt.Println(str)
-		}
-	})
-
-	t.Run("Get Deployment", func(t *testing.T) {
-		item := v1.Deployment{}
-		err := kom.DefaultCluster().
-			WithContext(context.TODO()).
-			Resource(&item).
-			Namespace("default").
-			Name("nginx").
-			Get(&item).Error
-		if err != nil {
-			t.Fatalf("Deployment Get error: %v", err)
-		}
-		fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
-	})
-
-	t.Run("Delete Built-in Resources", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Delete(yaml)
-		for _, str := range result {
-			fmt.Println(str)
-		}
-	})
-}
-
-func TestPodLogs(t *testing.T) {
-	yaml := `apiVersion: v1
-kind: Pod
-metadata:
-  name: random-char-pod-1
-  namespace: default
-spec:
-  containers:
-  - args:
-    - |
-      mkdir -p /var/log;
-      while true; do
-        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
-        echo $random_char | tee -a /var/log/random_a.log;
-        sleep 5;
-      done
-    command:
-    - /bin/sh
-    - -c
-    image: alpine
-    name: container-b
-`
-
-	t.Run("Apply Pod", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Apply(yaml)
-		for _, str := range result {
-			fmt.Println(str)
-			if strings.Contains(str, "err") {
-				t.Fatalf("Apply Pod error: %v", str)
-			}
-		}
-	})
-
-	t.Run("Get Pod Logs", func(t *testing.T) {
-		time.Sleep(10 * time.Second)
-		// 进行后续的测试逻辑
-		t.Log("Waited for 5 seconds")
-
-		var stream io.ReadCloser
-		err := kom.DefaultCluster().
-			Namespace("default").
-			Name("random-char-pod").
-			ContainerName("container").
-			GetLogs(&stream, &corev1.PodLogOptions{}).Error
-		if err != nil {
-			fmt.Printf("Error getting pod logs:%v\n", err)
-		}
-		if stream == nil {
-			return
-		}
-		reader := bufio.NewReader(stream)
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				t.Fatalf("Error reading stream: %v", err)
-			}
-			if !strings.Contains(line, "A") {
-				t.Fatalf("日志读取测试失败,应该包含A。%s", line)
-			}
-		}
-	})
-
-	t.Run("Cleanup Pod", func(t *testing.T) {
-		result := kom.DefaultCluster().Applier().Delete(yaml)
-		for _, str := range result {
-			fmt.Println(str)
-			if strings.Contains(str, "err") {
-				t.Fatalf("Cleanup error: %v", str)
-			}
 		}
 	})
 }

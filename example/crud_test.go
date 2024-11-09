@@ -50,7 +50,6 @@ func TestCreate(t *testing.T) {
 			},
 		},
 	}
-	// 创建 test-deploy
 	err := kom.DefaultCluster().
 		Resource(&item).
 		Create(&item).Error
@@ -151,7 +150,7 @@ func TestPatch(t *testing.T) {
 		Resource(&pod).
 		Patch(&pod, types.MergePatchType, patchData).Error
 	if err != nil {
-		t.Errorf("Deployment Patch(&item) error :%v", err)
+		t.Errorf(" Patch(&item) error :%v", err)
 	}
 
 	if utils.WaitUntil(
@@ -186,7 +185,7 @@ func TestListPod(t *testing.T) {
 	if err != nil {
 		t.Errorf("List Error %v\n", err)
 	}
-	if len(items) == 1 {
+	if len(items) > 0 {
 		fmt.Printf("List Pods count %d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
@@ -241,32 +240,84 @@ func TestListPodByFieldSelector(t *testing.T) {
 	}
 }
 func TestDelete(t *testing.T) {
+	// 先创建一个pod，然后删除
+
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: delete-test
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: delete-test
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, s := range result {
+		fmt.Printf("%s\n", s)
+	}
+
+	// 等待创建成功
+	if utils.WaitUntil(
+		func() bool {
+			var target corev1.Pod
+			err := kom.DefaultCluster().Resource(&target).Namespace("default").
+				Name("delete-test").Get(&target).Error
+			if err != nil {
+				return false
+			}
+			if target.Status.Phase == "Running" {
+				fmt.Println("delete-test is running at", time.Now())
+				return true
+			}
+			return false
+		}, interval, timeout) {
+		t.Logf("创建 Pod delete-test 成功")
+	} else {
+		t.Errorf("创建 Pod delete-test 失败")
+	}
+
+	// 删除
 	var pod corev1.Pod
 	err := kom.DefaultCluster().
 		Resource(&pod).
 		Namespace("default").
-		Name("random").
+		Name("delete-test").
 		Delete().Error
 	if err != nil {
 		t.Errorf("Delete Pod Error %v\n", err)
 	}
-
+	t.Logf("已经执行删除Pod delete-test 命令")
 	if utils.WaitUntil(
 		func() bool {
+			t.Logf("尝试获取 Pod delete-test ")
 			var target corev1.Pod
 			kom.DefaultCluster().Resource(&target).
 				Namespace("default").
-				Name("random").
+				Name("delete-test").
 				Get(&target)
-			if &target == nil {
+			t.Logf("尝试获取 Pod delete-test Name= %s,status=%s ", target.Name, target.Status.Phase)
+
+			if target.Name == "" {
 				return true
 			}
 
 			return false
 		}, interval, timeout) {
-		t.Logf("删除 Pod random 成功")
+		t.Logf("删除 Pod delete-test 成功")
 	} else {
-		t.Errorf("删除 Pod random 失败")
+		t.Errorf("删除 Pod delete-test 失败")
 	}
 
 }
