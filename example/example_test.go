@@ -15,6 +15,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // TestMain 是测试的入口函数
@@ -23,6 +24,9 @@ func TestMain(m *testing.M) {
 	fmt.Println("Initializing test environment...")
 	// 在这里可以设置数据库连接、启动服务、创建临时文件等
 	kom_starter.Init()
+
+	// 创建测试必须得Pod，后面不会再创建了
+	InitTestDeploy()
 	// 调用 m.Run() 运行所有测试
 	exitCode := m.Run()
 
@@ -33,6 +37,71 @@ func TestMain(m *testing.M) {
 	// 退出程序
 	os.Exit(exitCode)
 }
+
+// 创建一个通道用于控制停止信号
+var stopCh = make(chan struct{})
+
+func InitTestDeploy() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: random
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, s := range result {
+		fmt.Printf("%s\n", s)
+	}
+
+	// 定义检查的周期
+	period := 5 * time.Second
+
+	// 启动一个 goroutine 来执行 Until
+	go wait.Until(checkCondition, period, stopCh)
+	// 使用一个超时通道，在 10 秒后自动关闭 stopCh
+	time.AfterFunc(60*time.Second, func() {
+		fmt.Println("Timeout reached, stopping monitoring.")
+		close(stopCh)
+	})
+	// 防止主程序过早退出
+	<-stopCh
+
+	fmt.Println("Stopped checking condition.")
+
+}
+
+// 定义一个函数，用于检查条件
+func checkCondition() {
+	fmt.Println("Checking condition at", time.Now())
+
+	var pod corev1.Pod
+	err := kom.DefaultCluster().Resource(&pod).Namespace("default").
+		Name("random-char-pod").Get(&pod).Error
+	if err != nil {
+		return
+	}
+	if pod.Status.Phase == "Running" {
+		fmt.Println("pod is running at", time.Now())
+		// 停止检查
+		close(stopCh)
+	}
+}
+
 func TestYamlApplyDelete(t *testing.T) {
 	yaml := `apiVersion: v1
 kind: ConfigMap
