@@ -25,7 +25,6 @@ func TestPodLogs(t *testing.T) {
 		return
 	}
 	reader := bufio.NewReader(stream)
-
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		if err == io.EOF {
