@@ -77,6 +77,72 @@ func TestSaveFile(t *testing.T) {
 		t.Fatalf("读取文件失败，应为%s,实际%s", context, string(result))
 	}
 }
+func TestListFile(t *testing.T) {
+
+	result, err := kom.DefaultCluster().Namespace("default").
+		Name("random").
+		ContainerName("random").Poder().ListFiles("/etc")
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
+	t.Logf("读取文件数量%d", len(result))
+	if len(result) == 0 {
+		t.Fatalf("读取文件失败，不应为空,实际%d", len(result))
+	}
+}
+
+func TestDeleteFile(t *testing.T) {
+
+	// 先创建一个文件，读取验证存在，然后删除，然后再读取，验证不存在
+
+	// 创建文件
+	context := utils.RandNLengthString(20)
+	t.Logf("将%s写入/etc/xyz\n", context)
+	err := kom.DefaultCluster().Namespace("default").
+		Name("random").
+		ContainerName("random").Poder().
+		SaveFile("/etc/xyz", context)
+	if err != nil {
+		t.Errorf("Error executing SaveFile command: %v", err)
+	}
+
+	// 读取
+	result, err := kom.DefaultCluster().Namespace("default").
+		Name("random").
+		ContainerName("random").Poder().DownloadFile("/etc/xyz")
+	if err != nil {
+		t.Errorf("Error executing DownloadFile command: %v", err)
+	}
+	t.Logf("从/etc/xyz读取到%s\n", string(result))
+
+	// 验证存在
+	if !strings.Contains(string(result), context) {
+		t.Fatalf("读取文件失败，应为%s,实际%s", context, string(result))
+	}
+
+	// 删除文件
+	_, err = kom.DefaultCluster().Namespace("default").
+		Name("random").
+		ContainerName("random").Poder().DeleteFile("/etc/xyz")
+	if err != nil {
+		t.Errorf("Error executing DeleteFile command: %v", err)
+	}
+
+	// 尝试该读取文件
+	result, err = kom.DefaultCluster().Namespace("default").
+		Name("random").
+		ContainerName("random").Poder().DownloadFile("/etc/xyz")
+	if err != nil {
+		// 文件已经不存在，看看报错中是否包含文件不存在，包含成功
+		if strings.Contains(err.Error(), "No such file or directory") {
+			t.Logf("Error executing DownloadFile command: %v", err)
+			t.Logf("文件不存在，已成功删除")
+		} else {
+			t.Fatalf("删除文件失败，%v", err)
+		}
+	}
+
+}
 
 // 创建一个指定大小的文件。
 // 10 * 1024 * 1024 =10MB
