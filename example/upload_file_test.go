@@ -41,7 +41,7 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 20)
 
 	context := utils.RandNLengthString(20)
 	fmt.Printf("将%s写入/etc/xyz\n", context)
@@ -90,7 +90,7 @@ spec:
 	err = kom.DefaultCluster().Namespace("default").
 		Name("random-char-pod").
 		ContainerName("container").
-		Command("ls", "-lh", "/etc/", "|", "grep", "test").
+		Command("ls", "-l /etc/ | grep test").
 		Execute(&execResult).Error
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
