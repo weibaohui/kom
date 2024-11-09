@@ -9,7 +9,6 @@ import (
 
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/utils"
-	"k8s.io/klog/v2"
 )
 
 func TestUploadFile(t *testing.T) {
@@ -48,7 +47,7 @@ func TestUploadFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error executing command: %v", err)
 	}
-	fmt.Printf("ls test file info :\n%s", execResult)
+	t.Logf("ls test file info :\n%s", execResult)
 	if !strings.Contains(string(execResult), "100.0M") {
 		t.Fatalf("未找到上传文件，测试失败")
 	}
@@ -56,22 +55,22 @@ func TestUploadFile(t *testing.T) {
 func TestSaveFile(t *testing.T) {
 
 	context := utils.RandNLengthString(20)
-	fmt.Printf("将%s写入/etc/xyz\n", context)
+	t.Logf("将%s写入/etc/xyz\n", context)
 	err := kom.DefaultCluster().Namespace("default").
 		Name("random").
 		ContainerName("random").Poder().
 		SaveFile("/etc/xyz", context)
 	if err != nil {
-		klog.Errorf("Error executing command: %v", err)
+		t.Errorf("Error executing command: %v", err)
 	}
 
 	result, err := kom.DefaultCluster().Namespace("default").
 		Name("random").
 		ContainerName("random").Poder().DownloadFile("/etc/xyz")
 	if err != nil {
-		klog.Errorf("Error executing command: %v", err)
+		t.Errorf("Error executing command: %v", err)
 	}
-	fmt.Printf("从/etc/xyz读取到%s\n", string(result))
+	t.Logf("从/etc/xyz读取到%s\n", string(result))
 
 	if !strings.Contains(string(result), context) {
 		t.Fatalf("读取文件失败，应为%s,实际%s", context, string(result))
@@ -83,7 +82,7 @@ func TestListFile(t *testing.T) {
 		Name("random").
 		ContainerName("random").Poder().ListFiles("/etc")
 	if err != nil {
-		klog.Errorf("Error executing command: %v", err)
+		t.Errorf("Error executing command: %v", err)
 	}
 	t.Logf("读取文件数量%d", len(result))
 	if len(result) == 0 {
