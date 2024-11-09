@@ -87,6 +87,7 @@ func InitPodWatcher() error {
 			err := kom.Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
 			if err != nil {
 				fmt.Printf("无法将对象转换为 *v1.Pod 类型: %v", err)
+				return
 			}
 			// 处理事件
 			switch event.Type {
@@ -96,10 +97,6 @@ func InitPodWatcher() error {
 				fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
 			case watch.Deleted:
 				fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
-			case watch.Bookmark:
-				fmt.Printf("Pod bookmarked:%s\n", event.Object)
-			case watch.Error:
-				fmt.Printf("Pod error:%s\n", event.Object)
 			}
 		}
 	}()
