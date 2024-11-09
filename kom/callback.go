@@ -38,6 +38,7 @@ func (k *Kubectl) initializeCallbacks() *callbacks {
 			"list":   {km: k},
 			"exec":   {km: k},
 			"logs":   {km: k},
+			"watch":  {km: k},
 		},
 	}
 }
@@ -68,7 +69,9 @@ func (cs *callbacks) Exec() *processor {
 func (cs *callbacks) Logs() *processor {
 	return cs.processors["logs"]
 }
-
+func (cs *callbacks) Watch() *processor {
+	return cs.processors["watch"]
+}
 func (c *callback) Remove(name string) error {
 	klog.V(4).Infof("removing callback `%s` \n", name)
 	c.name = name
