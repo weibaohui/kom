@@ -22,6 +22,9 @@ func Delete(k *kom.Kubectl) error {
 		return err
 	}
 	if namespaced {
+		if ns == "" {
+			ns = "default"
+		}
 		err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Delete(ctx, name, metav1.DeleteOptions{})
 	} else {
 		err = stmt.Kubectl.DynamicClient().Resource(gvr).Delete(ctx, name, metav1.DeleteOptions{})
