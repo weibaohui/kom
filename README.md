@@ -273,6 +273,8 @@ err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&
 var stream io.ReadCloser
 err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
 reader := bufio.NewReader(stream)
+line, _ := reader.ReadString('\n')
+fmt.Println(line)
 ```
 #### 执行命令
 在Pod内执行命令，需要指定容器名称，并且会触发Exec()类型的callbacks。
