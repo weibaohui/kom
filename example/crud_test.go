@@ -72,6 +72,13 @@ func TestCreate(t *testing.T) {
 			return false
 		}, interval, timeout) {
 		t.Logf("创建Deploy nginx 成功")
+		err := kom.DefaultCluster().Resource(&item).
+			Namespace("default").
+			Name("nginx").
+			Delete().Error
+		if err != nil {
+			t.Errorf("Deployment Clean(&item) error :%v", err)
+		}
 	} else {
 		t.Errorf("创建Deploy nginx 失败")
 	}

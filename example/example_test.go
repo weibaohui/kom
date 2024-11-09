@@ -48,9 +48,9 @@ kind: Pod
 metadata:
   name: random
   namespace: default
-  labels: 
-	- x: y
-	- app: random
+  labels:
+    x: y
+    app: random
 spec:
   containers:
   - args:
