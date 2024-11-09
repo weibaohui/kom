@@ -36,7 +36,7 @@ func (p *poder) ListFiles(path string) ([]*FileInfo, error) {
 	var result []byte
 	err := p.kubectl.Command("ls", "-l", path).Execute(&result).Error
 	if err != nil {
-		return nil, fmt.Errorf("error executing command: %v", err)
+		return nil, fmt.Errorf("error executing ListFiles: %v", err)
 	}
 
 	return parseFileList(path, string(result)), nil
@@ -48,7 +48,17 @@ func (p *poder) DownloadFile(filePath string) ([]byte, error) {
 	var result []byte
 	err := p.kubectl.Command("cat", filePath).Execute(&result).Error
 	if err != nil {
-		return nil, fmt.Errorf("error executing command: %v", err)
+		return nil, fmt.Errorf("error executing DownloadFile: %v", err)
+	}
+
+	return result, nil
+}
+func (p *poder) DeleteFile(filePath string) ([]byte, error) {
+	klog.V(6).Infof("DeleteFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+	var result []byte
+	err := p.kubectl.Command("rm", "-rf", filePath).Execute(&result).Error
+	if err != nil {
+		return nil, fmt.Errorf("error executing DeleteFile : %v", err)
 	}
 
 	return result, nil
@@ -69,7 +79,7 @@ func (p *poder) UploadFile(destPath string, file *os.File) error {
 		Command("tar", "-xmf", "-", "-C", destPath).
 		Execute(&result).Error
 	if err != nil {
-		return fmt.Errorf("error executing command: %v", err)
+		return fmt.Errorf("error executing UploadFile: %v", err)
 	}
 	return nil
 }
