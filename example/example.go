@@ -109,11 +109,11 @@ func InitPodWatcher() error {
 			// 处理事件
 			switch event.Type {
 			case watch.Added:
-				fmt.Printf("Added Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+				fmt.Printf("Added Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
 			case watch.Modified:
-				fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+				fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
 			case watch.Deleted:
-				fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+				fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
 			}
 		}
 	}()
