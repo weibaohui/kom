@@ -72,8 +72,9 @@ func ConvertToTypedObject(obj runtime.Object, target interface{}) error {
 
 func InitPodWatcher() error {
 
-	var pod corev1.Pod
 	var watcher watch.Interface
+
+	var pod corev1.Pod
 	err := kom.DefaultCluster().Resource(&pod).
 		Namespace("default").Watch(&watcher).Error
 	if err != nil {
