@@ -274,6 +274,37 @@ err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(cron
 ```go
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Delete().Error
 ```
+#### Watch CR对象
+```go
+var watcher watch.Interface
+
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("default").Watch(&watcher).Error
+if err != nil {
+    fmt.Printf("Create Watcher Error %v", err)
+}
+go func() {
+    defer watcher.Stop()
+    
+    for event := range watcher.ResultChan() {
+    var item *unstructured.Unstructured
+    
+    item, err := kom.Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
+    if err != nil {
+        fmt.Printf("无法将对象转换为 Unstructured 类型: %v", err)
+        return
+    }
+    // 处理事件
+    switch event.Type {
+        case watch.Added:
+            fmt.Printf("Added Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+        case watch.Modified:
+            fmt.Printf("Modified Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+        case watch.Deleted:
+            fmt.Printf("Deleted Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+        }
+    }
+}()
+```
 ### 4. 多集群管理
 #### 注册多集群
 ```go
