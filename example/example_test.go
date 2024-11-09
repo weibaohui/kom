@@ -91,7 +91,7 @@ func checkCondition() {
 
 	var pod corev1.Pod
 	err := kom.DefaultCluster().Resource(&pod).Namespace("default").
-		Name("random-char-pod").Get(&pod).Error
+		Name("random").Get(&pod).Error
 	if err != nil {
 		return
 	}
