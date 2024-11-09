@@ -163,7 +163,7 @@ spec:
 			Namespace(crontab.GetNamespace()).
 			Create(&crontab).Error
 		if err != nil {
-			fmt.Printf("CRD Create error: %v\n", err)
+			t.Logf("CRD Create error: %v\n", err)
 		}
 	})
 
@@ -176,7 +176,7 @@ spec:
 			Namespace("default").
 			Get(&crontab).Error
 		if err != nil {
-			fmt.Printf("CRD Get error: %v\n", err)
+			t.Logf("CRD Get error: %v\n", err)
 		}
 	})
 
@@ -188,9 +188,9 @@ spec:
 			Namespace("default").
 			List(&crontabList).Error
 		if err != nil {
-			fmt.Printf("CRD List error: %v\n", err)
+			t.Logf("CRD List error: %v\n", err)
 		}
-		fmt.Printf("CRD List count %d\n", len(crontabList))
+		t.Logf("CRD List count %d\n", len(crontabList))
 	})
 
 	t.Run("Delete CR", func(t *testing.T) {
@@ -201,7 +201,7 @@ spec:
 			Namespace("default").
 			Delete().Error
 		if err != nil {
-			fmt.Printf("CRD Delete error: %v\n", err)
+			t.Logf("CRD Delete error: %v\n", err)
 		}
 	})
 }

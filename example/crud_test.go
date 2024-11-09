@@ -186,7 +186,7 @@ func TestListPod(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) > 0 {
-		fmt.Printf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count %d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -202,7 +202,7 @@ func TestListPodByLabelSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		fmt.Printf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count %d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -218,7 +218,7 @@ func TestListPodByMultiLabelSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		fmt.Printf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count %d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -234,7 +234,7 @@ func TestListPodByFieldSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		fmt.Printf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count %d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -265,7 +265,7 @@ spec:
 `
 	result := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, s := range result {
-		fmt.Printf("%s\n", s)
+		t.Logf("%s\n", s)
 	}
 
 	// 等待创建成功

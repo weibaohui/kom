@@ -2,7 +2,6 @@ package example
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -20,7 +19,7 @@ func TestPodLogs(t *testing.T) {
 		ContainerName("random").
 		GetLogs(&stream, &corev1.PodLogOptions{}).Error
 	if err != nil {
-		fmt.Printf("Error getting pod logs:%v\n", err)
+		t.Logf("Error getting pod logs:%v\n", err)
 	}
 	if stream == nil {
 		return
