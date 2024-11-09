@@ -68,8 +68,18 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Er
 ```
 #### 通过Label查询资源列表
 ```go
-// 查询 default 命名空间下 标签为 app=nginx 的 Deployment 列表
+// 查询 default 命名空间下 标签为 app:nginx 的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+```
+#### 通过多个Label查询资源列表
+```go
+// 查询 default 命名空间下 标签为 app:nginx m:n 的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx,m=n"}).Error
+```
+#### 通过Field查询资源列表
+```go
+// 查询 default 命名空间下 标签为 metadata.name=test-deploy 的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
 ```
 #### 更新资源内容
 ```go

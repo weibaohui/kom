@@ -20,7 +20,7 @@ import (
 
 func Example() {
 	callbacks()
-	// builtInExample()
+	builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
@@ -31,7 +31,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podUploadFile()
-	podFileCommand()
+	// podFileCommand()
 	// podLogs()
 
 }
@@ -47,8 +47,8 @@ func GetCB(k *kom.Kubectl) error {
 	name := stmt.Name
 
 	// 打印信息
-	fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
-	fmt.Printf("Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
+	fmt.Printf("Callback:Get %s/%s(%s)\n", ns, name, gvr)
+	fmt.Printf("Callback:Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
 	return nil
 }
 func yamlApplyDelete() {
@@ -286,24 +286,35 @@ spec:
 		return
 	}
 	fmt.Printf("Get Item %s\n", item.Spec.Template.Spec.Containers[0].Image)
-	kom.DefaultCluster().Applier().Delete(yaml)
+
+	result = kom.DefaultCluster().Applier().Delete(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	// Create test-deploy
 	createItem := v1.Deployment{
 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-deploy",
 			Namespace: "default",
+			Labels: map[string]string{
+				"app": "nginx",
+				"m":   "n",
+			},
 		},
 		Spec: v1.DeploymentSpec{
 			Replicas: utils.Int32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "test",
+					"app": "nginx",
+					"m":   "n",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "test",
+						"app": "nginx",
+						"m":   "n",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -317,12 +328,15 @@ spec:
 			},
 		},
 	}
+	// 创建 test-deploy
 	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Create(&createItem).Error
 	if err != nil {
 		klog.Errorf("Deployment Create(&item) error :%v", err)
 	}
+
+	// 获取 test-deploy
 	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
@@ -331,6 +345,8 @@ spec:
 	if err != nil {
 		klog.Errorf("Deployment Get(&item) error :%v", err)
 	}
+
+	// 更新 test-deploy
 	if createItem.Spec.Template.Annotations == nil {
 		createItem.Spec.Template.Annotations = map[string]string{}
 	}
@@ -348,10 +364,12 @@ spec:
     },
     "metadata": {
         "labels": {
-            "new-label": "new-value"
+            "new-label": "new-value",
+            "x": "y"
         }
     }
 }`
+	// Patch test-deploy
 	err = kom.DefaultCluster().
 		Resource(&createItem).
 		Namespace(createItem.Namespace).
@@ -363,12 +381,8 @@ spec:
 	if err != nil {
 		klog.Errorf("Deployment Patch(&item) error :%v", err)
 	}
-	err = kom.DefaultCluster().
-		Resource(&createItem).
-		Namespace(createItem.Namespace).
-		Name(createItem.Name).
-		Delete().Error
 
+	// List Deploy
 	var items []v1.Deployment
 	err = kom.DefaultCluster().
 		Resource(&item).
@@ -382,6 +396,7 @@ spec:
 		fmt.Printf("List Deployment  Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
 	}
 
+	// 通过 LabelSelector 获取
 	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
@@ -393,6 +408,38 @@ spec:
 	for _, d := range items {
 		fmt.Printf("List Deployment WithLabelSelector Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
 	}
+	// 通过 LabelSelector 获取
+	err = kom.DefaultCluster().
+		Resource(&item).
+		Namespace("default").
+		List(&items, metav1.ListOptions{LabelSelector: "app=nginx,m=n"}).Error
+	if err != nil {
+		fmt.Printf("List Error %v\n", err)
+	}
+	fmt.Printf("List Deployment WithLabelSelector app=nginx,m=n count =%v \n", len(items))
+	for _, d := range items {
+		fmt.Printf("List Deployment WithLabelSelector app=nginx,m=n Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	// 通过 FieldSelector 获取
+	err = kom.DefaultCluster().
+		Resource(&item).
+		Namespace("default").
+		List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
+	if err != nil {
+		fmt.Printf("List Error %v\n", err)
+	}
+	fmt.Printf("List Deployment WithFieldSelector metadata.name=test-deploy count =%v \n", len(items))
+	for _, d := range items {
+		fmt.Printf("List Deployment WithFieldSelector Items foreach %s,%s\n", d.Namespace, d.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	// 删除 test-deploy
+	err = kom.DefaultCluster().
+		Resource(&createItem).
+		Namespace(createItem.Namespace).
+		Name(createItem.Name).
+		Delete().Error
 }
 
 func podLogs() {
