@@ -20,8 +20,8 @@ import (
 func Example() {
 	callbacks()
 	_ = InitPodWatcher()
-	builtInExample()
-	// crdExample()
+	// builtInExample()
+	crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
 	// newEventList()
@@ -52,6 +52,40 @@ func GetCB(k *kom.Kubectl) error {
 	return nil
 }
 
+// 初始化CRD的Watch
+func initCRDWatcher() error {
+	var watcher watch.Interface
+
+	err := kom.DefaultCluster().
+		CRD("stable.example.com", "v1", "CronTab").
+		Namespace("default").Watch(&watcher).Error
+	if err != nil {
+		fmt.Printf("Create Watcher Error %v", err)
+	}
+	go func() {
+		defer watcher.Stop()
+
+		for event := range watcher.ResultChan() {
+			var item *unstructured.Unstructured
+
+			item, err := kom.Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
+			if err != nil {
+				fmt.Printf("无法将对象转换为 Unstructured 类型: %v", err)
+				return
+			}
+			// 处理事件
+			switch event.Type {
+			case watch.Added:
+				fmt.Printf("Added Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+			case watch.Modified:
+				fmt.Printf("Modified Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+			case watch.Deleted:
+				fmt.Printf("Deleted Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
+			}
+		}
+	}()
+	return err
+}
 func InitPodWatcher() error {
 
 	var watcher watch.Interface
@@ -128,6 +162,8 @@ spec:
 	}
 }
 func crdExample() {
+	err := initCRDWatcher()
+
 	yaml := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -172,6 +208,7 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
+
 	var crontab *unstructured.Unstructured
 	crontab = &unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -188,7 +225,7 @@ spec:
 		},
 	}
 
-	err := kom.DefaultCluster().
+	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
@@ -253,6 +290,7 @@ spec:
 		klog.Errorf("CronTab Delete(&item) error :%v", err)
 	}
 }
+
 func builtInExample() {
 	yaml := `apiVersion: apps/v1
 kind: Deployment
