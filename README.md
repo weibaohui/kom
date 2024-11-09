@@ -299,6 +299,11 @@ kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").P
 // multipart.File 类型文件直接上传到Pod内
 kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", multipart.File)
 ```
+#### 文件删除
+```go
+// 删除Pod内/etc/xyz文件
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
+```
 ### 6. 集群参数信息
 ```go
 // 集群文档
