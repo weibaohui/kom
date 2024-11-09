@@ -30,3 +30,12 @@ func (u *tools) ConvertRuntimeObjectToTypedObject(obj runtime.Object, target int
 
 	return nil
 }
+func (u *tools) ConvertRuntimeObjectToUnstructuredObject(obj runtime.Object) (*unstructured.Unstructured, error) {
+	// 将 obj 断言为 *unstructured.Unstructured 类型
+	unstructuredObj, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("无法将对象转换为 *unstructured.Unstructured 类型")
+	}
+
+	return unstructuredObj, nil
+}
