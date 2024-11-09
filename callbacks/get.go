@@ -26,6 +26,9 @@ func Get(k *kom.Kubectl) error {
 		return err
 	}
 	if namespaced {
+		if ns == "" {
+			ns = "default"
+		}
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 	} else {
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Get(ctx, name, metav1.GetOptions{})

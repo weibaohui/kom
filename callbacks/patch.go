@@ -27,6 +27,9 @@ func Patch(k *kom.Kubectl) error {
 		return err
 	}
 	if namespaced {
+		if ns == "" {
+			ns = "default"
+		}
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	} else {
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})

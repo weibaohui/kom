@@ -27,6 +27,10 @@ func Update(k *kom.Kubectl) error {
 	var res *unstructured.Unstructured
 
 	if namespaced {
+		if ns == "" {
+			ns = "default"
+		}
+		unstructuredObj.SetNamespace(ns)
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
 	} else {
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Update(ctx, unstructuredObj, metav1.UpdateOptions{})
