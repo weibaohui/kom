@@ -20,8 +20,8 @@ import (
 func Example() {
 	callbacks()
 	_ = InitPodWatcher()
-	// builtInExample()
-	crdExample()
+	builtInExample()
+	// crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
 	// newEventList()
