@@ -12,10 +12,10 @@ import (
 
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/kom_starter"
+	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // TestMain 是测试的入口函数
@@ -33,13 +33,14 @@ func TestMain(m *testing.M) {
 	// 清理操作
 	fmt.Println("Cleaning up test environment...")
 	// 在这里可以关闭数据库连接、删除临时文件等
-
+	CleanTestDeploy()
 	// 退出程序
 	os.Exit(exitCode)
 }
 
-// 创建一个通道用于控制停止信号
-var stopCh = make(chan struct{})
+// 每 2 秒检查一次，超时设定为 60 秒
+var interval = 2 * time.Second
+var timeout = 60 * time.Second
 
 func InitTestDeploy() {
 	yaml := `apiVersion: v1
@@ -47,6 +48,9 @@ kind: Pod
 metadata:
   name: random
   namespace: default
+  labels: 
+	- x: y
+	- app: random
 spec:
   containers:
   - args:
@@ -68,38 +72,37 @@ spec:
 		fmt.Printf("%s\n", s)
 	}
 
-	// 定义检查的周期
-	period := 5 * time.Second
-
-	// 启动一个 goroutine 来执行 Until
-	go wait.Until(checkCondition, period, stopCh)
-	// 使用一个超时通道，在 10 秒后自动关闭 stopCh
-	time.AfterFunc(60*time.Second, func() {
-		fmt.Println("Timeout reached, stopping monitoring.")
-		close(stopCh)
-	})
-	// 防止主程序过早退出
-	<-stopCh
+	if utils.WaitUntil(checkCondition, interval, timeout) {
+		fmt.Println("Check succeeded, main process exiting.")
+	} else {
+		fmt.Println("Check failed due to timeout.")
+	}
 
 	fmt.Println("Stopped checking condition.")
 
 }
+func CleanTestDeploy() {
+	kom.DefaultCluster().
+		Resource(&corev1.Pod{}).
+		Name("random").
+		Namespace("default").Delete()
+}
 
 // 定义一个函数，用于检查条件
-func checkCondition() {
+func checkCondition() bool {
 	fmt.Println("Checking condition at", time.Now())
 
 	var pod corev1.Pod
 	err := kom.DefaultCluster().Resource(&pod).Namespace("default").
 		Name("random").Get(&pod).Error
 	if err != nil {
-		return
+		return false
 	}
 	if pod.Status.Phase == "Running" {
 		fmt.Println("pod is running at", time.Now())
-		// 停止检查
-		close(stopCh)
+		return true
 	}
+	return false
 }
 
 func TestYamlApplyDelete(t *testing.T) {
