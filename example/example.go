@@ -12,12 +12,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/klog/v2"
 )
 
 func Example() {
 	callbacks()
+	_ = InitPodWatcher()
 	builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
@@ -47,6 +50,60 @@ func GetCB(k *kom.Kubectl) error {
 	// 打印信息
 	fmt.Printf("Callback:Get %s/%s(%s)\n", ns, name, gvr)
 	fmt.Printf("Callback:Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
+	return nil
+}
+
+// ConvertToTypedObject 是一个通用的转换函数，将 runtime.Object 转换为指定的目标类型
+func ConvertToTypedObject(obj runtime.Object, target interface{}) error {
+	// 将 obj 断言为 *unstructured.Unstructured 类型
+	unstructuredObj, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return fmt.Errorf("无法将对象转换为 *unstructured.Unstructured 类型")
+	}
+
+	// 使用 DefaultUnstructuredConverter 将 unstructured 数据转换为具体类型
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, target)
+	if err != nil {
+		return fmt.Errorf("无法将对象转换为目标类型: %v", err)
+	}
+
+	return nil
+}
+
+func InitPodWatcher() error {
+
+	var pod corev1.Pod
+	var watcher watch.Interface
+	err := kom.DefaultCluster().Resource(&pod).
+		Namespace("default").Watch(&watcher).Error
+	if err != nil {
+		fmt.Printf("Create Watcher Error %v", err)
+		return err
+	}
+	go func() {
+		defer watcher.Stop()
+
+		for event := range watcher.ResultChan() {
+			err := kom.Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
+			if err != nil {
+				fmt.Printf("无法将对象转换为 *v1.Pod 类型: %v", err)
+			}
+			// 处理事件
+			switch event.Type {
+			case watch.Added:
+				fmt.Printf("Added Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+			case watch.Modified:
+				fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+			case watch.Deleted:
+				fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Name, pod.Namespace)
+			case watch.Bookmark:
+				fmt.Printf("Pod bookmarked:%s\n", event.Object)
+			case watch.Error:
+				fmt.Printf("Pod error:%s\n", event.Object)
+			}
+		}
+	}()
+
 	return nil
 }
 func yamlApplyDelete() {
