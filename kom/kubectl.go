@@ -85,3 +85,8 @@ func (k *Kubectl) Status() *status {
 		kubectl: k,
 	}
 }
+func (k *Kubectl) Tools() *tools {
+	return &tools{
+		kubectl: k,
+	}
+}

@@ -41,27 +41,27 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	s.GVR = schema.GroupVersionResource{}
 	s.GVK = schema.GroupVersionKind{}
 	// 获取单个GVK
-	gvk := getParsedGVK(gvks, versions...)
+	gvk := s.Tools().GetParsedGVK(gvks, versions...)
 	s.GVK = gvk
 
 	// 获取GVR
-	if s.Kubectl.isBuiltinResource(gvk.Kind) {
+	if s.Tools().IsBuiltinResource(gvk.Kind) {
 		// 内置资源
 		if s.useCustomGVK {
 			// 设置了CRD，带有version
-			s.GVR, s.Namespaced = s.Kubectl.getGVRByGVK(gvk)
+			s.GVR, s.Namespaced = s.Tools().GetGVRByGVK(gvk)
 		} else {
-			s.GVR, s.Namespaced = s.Kubectl.getGVR(gvk.Kind)
+			s.GVR, s.Namespaced = s.Tools().GetGVRByKind(gvk.Kind)
 		}
 		klog.V(6).Infof("useCustomGVK=%v \n GVR=%v \n GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
 	} else {
-		crd, err := s.Kubectl.getCRD(gvk.Kind, gvk.Group)
+		crd, err := s.Tools().GetCRD(gvk.Kind, gvk.Group)
 		if err != nil {
 			return s
 		}
 		// 检查CRD是否是Namespaced
 		s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		s.GVR = getGRVFromCRD(crd)
+		s.GVR = s.Tools().GetGVRFromCRD(crd)
 
 	}
 

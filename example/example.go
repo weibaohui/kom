@@ -68,7 +68,7 @@ func initCRDWatcher() error {
 		for event := range watcher.ResultChan() {
 			var item *unstructured.Unstructured
 
-			item, err := kom.Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
+			item, err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
 			if err != nil {
 				fmt.Printf("无法将对象转换为 Unstructured 类型: %v", err)
 				return
@@ -101,7 +101,7 @@ func InitPodWatcher() error {
 		defer watcher.Stop()
 
 		for event := range watcher.ResultChan() {
-			err := kom.Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
+			err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
 			if err != nil {
 				fmt.Printf("无法将对象转换为 *v1.Pod 类型: %v", err)
 				return
