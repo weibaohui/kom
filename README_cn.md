@@ -1,5 +1,7 @@
-
 # Kom - Kubernetes Operations Manager
+
+[English](README.md) | [中文](README_cn.md)
+
 
 ## 简介
 
