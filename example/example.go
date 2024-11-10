@@ -30,7 +30,6 @@ func Example() {
 	// fetchDoc1()
 	// fetchDoc2()
 	// podCommand()
-	// podUploadFile()
 	// podFileCommand()
 	// podLogs()
 
