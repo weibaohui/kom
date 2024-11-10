@@ -403,7 +403,7 @@ kom.DefaultCluster().Status().CRDList()
 kom.DefaultCluster().Status().ServerVersion()
 ```
 
-### 7.callback机制
+### 7. callback机制
 * 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
 * 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
 * 当前支持的callback有：get,list,create,update,patch,delete,exec,logs,watch.
