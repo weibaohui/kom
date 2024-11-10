@@ -7,9 +7,12 @@
 通过使用 `kom`，你可以轻松地进行资源的增删改查和日志获取以及操作POD内文件等动作。
 
 ## **特点**
-1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等。
+1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等，包括对内置资源以及CRD资源的操作。
 2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
 3. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
+4. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
+5. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
+6. 支持POD内文件操作，轻松上传、下载、删除文件。
 
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
@@ -21,17 +24,56 @@
 
 ## 安装
 
-确保你的环境中已经安装 Go 语言和 Kubernetes CLI（kubectl）。
-
 ```bash
-go get github.com/weibaohui/kom
+import github.com/weibaohui/kom
+
+func main() {
+    // 注册集群
+	defaultKubeConfig := os.Getenv("KUBECONFIG")
+	if defaultKubeConfig == "" {
+		defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	}
+	_, _ = kom.Clusters().RegisterInCluster()
+	_, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default")
+	kom.Clusters().Show()
+	// 其他逻辑
+}
 ```
 
 ## 使用示例
 
-以下是一些基本的使用示例。
+### 1. 多集群管理
+#### 注册多集群
+```go
+// 注册InCluster集群，名称为InCluster
+kom.Clusters().RegisterInCluster()
+// 注册两个带名称的集群,分别名为orb和docker-desktop
+kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/orb", "orb")
+kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "docker-desktop")
+// 注册一个名为default的集群，那么kom.DefaultCluster()则会返回该集群。
+kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "default")
+```
+#### 显示已注册集群
+```go
+kom.Clusters().Show()
+```
+#### 选择默认集群
+```go
+// 使用默认集群,查询集群内kube-system命名空间下的pod
+// 首先尝试返回 ID 为 "InCluster" 的实例，如果不存在，
+// 则尝试返回 ID 为 "default" 的实例。
+// 如果上述两个名称的实例都不存在，则返回 clusters 列表中的任意一个实例。
+var pods []corev1.Pod
+err = kom.DefaultCluster().Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
+```
+#### 选择指定集群
+```go
+// 选择orb集群,查询集群内kube-system命名空间下的pod
+var pods []corev1.Pod
+err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
+```
 
-### 1. 内置资源对象的增删改查示例
+### 2. 内置资源对象的增删改查示例
 定义一个 Deployment 对象，并通过 kom 进行资源操作。
 ```go
 var item v1.Deployment
@@ -148,7 +190,8 @@ go func() {
 	}
 }()
 ```
-### 2. YAML 创建、更新、删除
+
+### 3. YAML 创建、更新、删除
 ```go
 yaml := `apiVersion: v1
 kind: ConfigMap
@@ -185,7 +228,48 @@ results = kom.DefaultCluster().Applier().Apply(yaml)
 results = kom.DefaultCluster().Applier().Delete(yaml)
 ```
 
-### 3. 自定义资源定义（CRD）
+### 4. Pod 操作
+#### 获取日志
+```go
+// 获取Pod日志
+var stream io.ReadCloser
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
+reader := bufio.NewReader(stream)
+line, _ := reader.ReadString('\n')
+fmt.Println(line)
+```
+#### 执行命令
+在Pod内执行命令，需要指定容器名称，并且会触发Exec()类型的callbacks。
+```go
+// 在Pod内执行ps -ef命令
+var execResult string
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
+fmt.Printf("execResult: %s", execResult)
+```
+#### 文件列表
+```go
+// 获取Pod内/etc文件夹列表
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ListFiles("/etc")
+```
+#### 文件下载
+```go
+// 下载Pod内/etc/hosts文件
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DownloadFile("/etc/hosts")
+```
+#### 文件上传
+```go
+// 上传文件内容到Pod内/etc/demo.txt文件
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
+// multipart.File 类型文件直接上传到Pod内
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", multipart.File)
+```
+#### 文件删除
+```go
+// 删除Pod内/etc/xyz文件
+kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
+```
+
+### 5. 自定义资源定义（CRD）
 在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
 只不过将对象定义为unstructured.Unstructured，并且需要指定Group、Version、Kind。
 因此可以通过kom.DefaultCluster().GVK(group, version, kind)来替代kom.DefaultCluster().Resource(interface{})
@@ -305,68 +389,7 @@ go func() {
     }
 }()
 ```
-### 4. 多集群管理
-#### 注册多集群
-```go
-// 注册InCluster集群，名称为InCluster
-kom.Clusters().RegisterInCluster()
-// 注册两个带名称的集群,分别名为orb和docker-desktop
-kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/orb", "orb")
-kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "docker-desktop")
-```
-#### 显示已注册集群
-```go
-kom.Clusters().Show()
-```
-#### 多集群选择
-```go
-// 选择集群,查询集群内kube-system命名空间下的pod
-var pods []corev1.Pod
-err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
-```
 
-
-
-### 5. Pod 操作
-#### 获取日志
-```go
-// 获取Pod日志
-var stream io.ReadCloser
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
-reader := bufio.NewReader(stream)
-line, _ := reader.ReadString('\n')
-fmt.Println(line)
-```
-#### 执行命令
-在Pod内执行命令，需要指定容器名称，并且会触发Exec()类型的callbacks。
-```go
-// 在Pod内执行ps -ef命令
-var execResult string
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
-fmt.Printf("execResult: %s", execResult)
-```
-#### 文件列表
-```go
-// 获取Pod内/etc文件夹列表
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ListFiles("/etc")
-```
-#### 文件下载
-```go
-// 下载Pod内/etc/hosts文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DownloadFile("/etc/hosts")
-```
-#### 文件上传
-```go
-// 上传文件内容到Pod内/etc/demo.txt文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
-// multipart.File 类型文件直接上传到Pod内
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/demo.txt", multipart.File)
-```
-#### 文件删除
-```go
-// 删除Pod内/etc/xyz文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
-```
 ### 6. 集群参数信息
 ```go
 // 集群文档
@@ -378,11 +401,12 @@ kom.DefaultCluster().Status().CRDList()
 // 集群版本信息
 kom.DefaultCluster().Status().ServerVersion()
 ```
+
 ### 7.callback机制
 * 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
 * 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
-* 当前支持的callback有：get,list,create,update,patch,delete,exec,logs.
-* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:delete","kom:pod:exec","kom:pod:logs"
+* 当前支持的callback有：get,list,create,update,patch,delete,exec,logs,watch.
+* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:logs"
 * 支持回调函数排序，默认按注册顺序执行，可以通过kom.DefaultCluster().Callback().After("kom:get")或者.Before("kom:get")设置顺序。
 * 支持删除回调函数，通过kom.DefaultCluster().Callback().Delete("kom:get")
 * 支持替换回调函数，通过kom.DefaultCluster().Callback().Replace("kom:get",cb)
@@ -399,6 +423,8 @@ kom.DefaultCluster().Callback().Update().Register("update", cb)
 kom.DefaultCluster().Callback().Patch().Register("patch", cb)
 // 为Delete删除资源注册回调函数
 kom.DefaultCluster().Callback().Delete().Register("delete", cb)
+// 为Watch资源注册回调函数
+kom.DefaultCluster().Callback().Watch().Register("watch",cb)
 // 为Exec Pod内执行命令注册回调函数
 kom.DefaultCluster().Callback().Exec().Register("exec", cb)
 // 为Logs获取日志注册回调函数
