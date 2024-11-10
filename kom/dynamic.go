@@ -8,7 +8,6 @@ import (
 	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // listResources 列出指定资源类型的所有对象
@@ -39,25 +38,4 @@ func (k *Kubectl) listResources(ctx context.Context, kind string, ns string, opt
 	}
 
 	return resources, nil
-}
-
-func (k *Kubectl) parseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
-	// 获取单个GVK
-	gvk := k.Tools().GetParsedGVK(gvks, versions...)
-
-	// 获取GVR
-	if k.Tools().IsBuiltinResource(gvk.Kind) {
-		// 内置资源
-		return k.Tools().GetGVRByKind(gvk.Kind)
-	} else {
-		crd, err := k.Tools().GetCRD(gvk.Kind, gvk.Group)
-		if err != nil {
-			return
-		}
-		// 检查CRD是否是Namespaced
-		namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		gvr = k.Tools().GetGVRFromCRD(crd)
-	}
-
-	return
 }

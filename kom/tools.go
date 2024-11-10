@@ -120,33 +120,6 @@ func (u *tools) GetCRD(kind string, group string) (*unstructured.Unstructured, e
 	return nil, fmt.Errorf("crd %s.%s not found", kind, group)
 }
 
-func (u *tools) GetParsedGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
-	if len(gvks) == 0 {
-		return schema.GroupVersionKind{}
-	}
-	if len(versions) > 0 {
-		// 指定了版本
-		v := versions[0]
-		for _, g := range gvks {
-			if g.Version == v {
-				return schema.GroupVersionKind{
-					Kind:    g.Kind,
-					Group:   g.Group,
-					Version: g.Version,
-				}
-			}
-		}
-	} else {
-		// 取第一个
-		return schema.GroupVersionKind{
-			Kind:    gvks[0].Kind,
-			Group:   gvks[0].Group,
-			Version: gvks[0].Version,
-		}
-	}
-	return
-}
-
 // GetGVKFromObj 获取对象的 GroupVersionKind
 func (u *tools) GetGVKFromObj(obj interface{}) (schema.GroupVersionKind, error) {
 	switch o := obj.(type) {
@@ -171,4 +144,52 @@ func (u *tools) GetGVRFromCRD(crd *unstructured.Unstructured) schema.GroupVersio
 		Resource: resource,
 	}
 	return gvr
+}
+
+func (u *tools) ParseGVK2GVR(gvks []schema.GroupVersionKind, versions ...string) (gvr schema.GroupVersionResource, namespaced bool) {
+	// 获取单个GVK
+	gvk := u.GetGVK(gvks, versions...)
+
+	// 获取GVR
+	if u.IsBuiltinResource(gvk.Kind) {
+		// 内置资源
+		return u.GetGVRByKind(gvk.Kind)
+	} else {
+		crd, err := u.GetCRD(gvk.Kind, gvk.Group)
+		if err != nil {
+			return
+		}
+		// 检查CRD是否是Namespaced
+		namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
+		gvr = u.GetGVRFromCRD(crd)
+	}
+
+	return
+}
+
+func (u *tools) GetGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk schema.GroupVersionKind) {
+	if len(gvks) == 0 {
+		return schema.GroupVersionKind{}
+	}
+	if len(versions) > 0 {
+		// 指定了版本
+		v := versions[0]
+		for _, g := range gvks {
+			if g.Version == v {
+				return schema.GroupVersionKind{
+					Kind:    g.Kind,
+					Group:   g.Group,
+					Version: g.Version,
+				}
+			}
+		}
+	} else {
+		// 取第一个
+		return schema.GroupVersionKind{
+			Kind:    gvks[0].Kind,
+			Group:   gvks[0].Group,
+			Version: gvks[0].Version,
+		}
+	}
+	return
 }

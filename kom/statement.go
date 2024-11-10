@@ -41,7 +41,7 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	s.GVR = schema.GroupVersionResource{}
 	s.GVK = schema.GroupVersionKind{}
 	// 获取单个GVK
-	gvk := s.Tools().GetParsedGVK(gvks, versions...)
+	gvk := s.Tools().GetGVK(gvks, versions...)
 	s.GVK = gvk
 
 	// 获取GVR

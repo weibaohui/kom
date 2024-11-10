@@ -56,7 +56,7 @@ func (a *applier) createOrUpdateCRD(obj *unstructured.Unstructured) string {
 		return fmt.Sprintf("YAML 缺少必要的 Group, Version 或 Kind")
 	}
 
-	_, namespaced := a.kubectl.parseGVK2GVR([]schema.GroupVersionKind{gvk})
+	_, namespaced := a.kubectl.Tools().ParseGVK2GVR([]schema.GroupVersionKind{gvk})
 
 	ns := obj.GetNamespace()
 	name := obj.GetName()
