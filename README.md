@@ -73,7 +73,7 @@ var pods []corev1.Pod
 err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
 ```
 
-### 2. 内置资源对象的增删改查示例
+### 2. 内置资源对象的增删改查以及Watch示例
 定义一个 Deployment 对象，并通过 kom 进行资源操作。
 ```go
 var item v1.Deployment
@@ -162,6 +162,7 @@ err := kom.DefaultCluster().GVK("events.k8s.io", "v1", "Event").Namespace("defau
 ```
 #### Watch资源变更
 ```go
+// watch default 命名空间下 Pod资源 的变更
 var watcher watch.Interface
 var pod corev1.Pod
 err := kom.DefaultCluster().Resource(&pod).Namespace("default").Watch(&watcher).Error
@@ -269,9 +270,9 @@ kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").P
 kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
 ```
 
-### 5. 自定义资源定义（CRD）
+### 5. 自定义资源定义（CRD）增删改查及Watch操作
 在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
-只不过将对象定义为unstructured.Unstructured，并且需要指定Group、Version、Kind。
+将对象定义为unstructured.Unstructured，并且需要指定Group、Version、Kind。
 因此可以通过kom.DefaultCluster().GVK(group, version, kind)来替代kom.DefaultCluster().Resource(interface{})
 为方便记忆及使用，kom提供了kom.DefaultCluster().CRD(group, version, kind)来简化操作。
 下面给出操作CRD的示例：
