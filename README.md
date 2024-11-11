@@ -27,8 +27,11 @@ By using `kom`, you can easily perform actions such as creating, reading, updati
 ## Installation
 
 ```go
-import "github.com/weibaohui/kom"
-
+import (
+	// Import the kom package init function
+    _ "github.com/weibaohui/kom/callbacks"
+    "github.com/weibaohui/kom"
+)
 func main() {
     // Register clusters
     defaultKubeConfig := os.Getenv("KUBECONFIG")

@@ -27,8 +27,11 @@
 ## 安装
 
 ```bash
-import github.com/weibaohui/kom
-
+import (
+	// 导入callbacks注册机制,务必导入
+    _ "github.com/weibaohui/kom/callbacks"
+    "github.com/weibaohui/kom"
+)
 func main() {
     // 注册集群
 	defaultKubeConfig := os.Getenv("KUBECONFIG")
