@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -37,6 +38,9 @@ func ToIntDefault(s string, i int) int {
 func ToUInt(s string) uint {
 	id, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
+		return 0
+	}
+	if id > math.MaxUint {
 		return 0
 	}
 	return uint(id)
