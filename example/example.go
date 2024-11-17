@@ -472,7 +472,8 @@ spec:
 	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
-		List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+		WithLabelSelector("app=nginx").
+		List(&items).Error
 	if err != nil {
 		fmt.Printf("List Error %v\n", err)
 	}
@@ -484,7 +485,9 @@ spec:
 	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
-		List(&items, metav1.ListOptions{LabelSelector: "app=nginx,m=n"}).Error
+		WithLabelSelector("app=nginx").
+		WithLabelSelector("m=n").
+		List(&items).Error
 	if err != nil {
 		fmt.Printf("List Error %v\n", err)
 	}
@@ -497,7 +500,8 @@ spec:
 	err = kom.DefaultCluster().
 		Resource(&item).
 		Namespace("default").
-		List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
+		WithFieldSelector("metadata.name=test-deploy").
+		List(&items).Error
 	if err != nil {
 		fmt.Printf("List Error %v\n", err)
 	}
