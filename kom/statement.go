@@ -22,7 +22,7 @@ type Statement struct {
 	GVR                 schema.GroupVersionResource // 资源类型
 	GVK                 schema.GroupVersionKind     // 资源类型
 	Namespaced          bool                        // 是否是命名空间资源
-	ListOptions         []metav1.ListOptions        // 列表查询参数
+	ListOptions         []metav1.ListOptions        // 列表查询参数,作为可变参数使用，默认只取第一个，也只使用一个
 	Context             context.Context             `json:"-"` // 上下文
 	Dest                interface{}                 // 返回结果存放对象，一般为结构体指针
 	PatchType           types.PatchType             // PATCH类型
