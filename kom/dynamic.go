@@ -4,23 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/weibaohui/kom/kom/option"
 	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // listResources 列出指定资源类型的所有对象
-func (k *Kubectl) listResources(ctx context.Context, kind string, ns string, opts ...option.ListOption) (resources []*unstructured.Unstructured, err error) {
+func (k *Kubectl) listResources(ctx context.Context, kind string, ns string) (resources []*unstructured.Unstructured, err error) {
 	gvr, namespaced := k.Tools().GetGVRByKind(kind)
 	if gvr.Empty() {
 		return nil, fmt.Errorf("不支持的资源类型: %s", kind)
 	}
 
 	listOptions := metav1.ListOptions{}
-	for _, opt := range opts {
-		opt(&listOptions)
-	}
 
 	var list *unstructured.UnstructuredList
 	if namespaced {
