@@ -127,3 +127,53 @@ func (k *Kubectl) Execute(dest interface{}) *Kubectl {
 	tx.Error = tx.Callback().Exec().Execute(tx)
 	return tx
 }
+
+func (k *Kubectl) WithLabelSelector(labelSelector string) *Kubectl {
+	tx := k.getInstance()
+	options := tx.Statement.ListOptions
+
+	// 如果 ListOptions 为空，则初始化
+	if options == nil || len(options) == 0 {
+		tx.Statement.ListOptions = []metav1.ListOptions{
+			{
+				LabelSelector: labelSelector,
+			},
+		}
+		return tx
+	}
+
+	// 合并 LabelSelector
+	opt := options[0]
+	if opt.LabelSelector != "" {
+		opt.LabelSelector += "," + labelSelector
+	} else {
+		opt.LabelSelector = labelSelector
+	}
+
+	return tx
+}
+
+func (k *Kubectl) WithFieldSelector(fieldSelector string) *Kubectl {
+	tx := k.getInstance()
+	options := tx.Statement.ListOptions
+
+	// 如果 ListOptions 为空，则初始化
+	if options == nil || len(options) == 0 {
+		tx.Statement.ListOptions = []metav1.ListOptions{
+			{
+				FieldSelector: fieldSelector,
+			},
+		}
+		return tx
+	}
+
+	// 合并 FieldSelector
+	opt := options[0]
+	if opt.FieldSelector != "" {
+		opt.FieldSelector += "," + fieldSelector
+	} else {
+		opt.FieldSelector = fieldSelector
+	}
+
+	return tx
+}
