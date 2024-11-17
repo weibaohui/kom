@@ -197,7 +197,8 @@ func TestListPodByLabelSelector(t *testing.T) {
 	err := kom.DefaultCluster().
 		Resource(&pod).
 		Namespace("default").
-		List(&items, metav1.ListOptions{LabelSelector: "app=random"}).Error
+		WithLabelSelector("app=random").
+		List(&items).Error
 	if err != nil {
 		t.Errorf("List Error %v\n", err)
 	}
@@ -213,7 +214,9 @@ func TestListPodByMultiLabelSelector(t *testing.T) {
 	err := kom.DefaultCluster().
 		Resource(&pod).
 		Namespace("default").
-		List(&items, metav1.ListOptions{LabelSelector: "app=random,x=y"}).Error
+		WithLabelSelector("app=random").
+		WithLabelSelector("x=y").
+		List(&items).Error
 	if err != nil {
 		t.Errorf("List Error %v\n", err)
 	}
@@ -229,7 +232,8 @@ func TestListPodByFieldSelector(t *testing.T) {
 	err := kom.DefaultCluster().
 		Resource(&pod).
 		Namespace("default").
-		List(&items, metav1.ListOptions{FieldSelector: "metadata.name=random"}).Error
+		WithFieldSelector("metadata.name=random").
+		List(&items).Error
 	if err != nil {
 		t.Errorf("List Error %v\n", err)
 	}
