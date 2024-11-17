@@ -126,19 +126,19 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Er
 #### List Resources by Label
 ```go
 // List Deployments in the "default" namespace with the label "app=nginx"
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").List(&items).Error
 ```
 
 #### List Resources by Multiple Labels
 ```go
 // List Deployments in the "default" namespace with labels "app=nginx" and "m=n"
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx,m=n"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").WithLabelSelector("m=n").List(&items).Error
 ```
 
 #### List Resources by Field
 ```go
 // List Deployments in the "default" namespace with the field "metadata.name=test-deploy"
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithFieldSelector("metadata.name=test-deploy").List(&items).Error
 ```
 
 #### Update a Resource

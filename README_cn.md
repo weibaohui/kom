@@ -116,18 +116,18 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Er
 #### 通过Label查询资源列表
 ```go
 // 查询 default 命名空间下 标签为 app:nginx 的 Deployment 列表
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").List(&items).Error
 ```
 #### 通过多个Label查询资源列表
 ```go
 // 查询 default 命名空间下 标签为 app:nginx m:n 的 Deployment 列表
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{LabelSelector: "app=nginx,m=n"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").WithLabelSelector("m=n").List(&items).Error
 ```
 #### 通过Field查询资源列表
 ```go
 // 查询 default 命名空间下 标签为 metadata.name=test-deploy 的 Deployment 列表
 // filedSelector 一般支持原生的字段定义。如metadata.name,metadata.namespace,metadata.labels,metadata.annotations,metadata.creationTimestamp,spec.nodeName,spec.serviceAccountName,spec.schedulerName,status.phase,status.hostIP,status.podIP,status.qosClass,spec.containers.name等字段
-err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items, metav1.ListOptions{FieldSelector: "metadata.name=test-deploy"}).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").WithFieldSelector("metadata.name=test-deploy").List(&items).Error
 ```
 #### 更新资源内容
 ```go
