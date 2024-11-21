@@ -5,7 +5,7 @@
 
 ## Introduction
 
-`kom` is a tool for Kubernetes operations that provides a range of functions to manage Kubernetes resources, including creating, updating, deleting, and retrieving resources. This project supports operations on various types of Kubernetes resources and can handle custom resource definitions (CRDs).  
+`kom` is a tool designed for Kubernetes operations, serving as an SDK-level wrapper for kubectl and client-go. It provides a range of functionalities to manage Kubernetes resources, including creating, updating, deleting, and retrieving resources. The project supports operations on various Kubernetes resource types and can handle Custom Resource Definitions (CRD).
 By using `kom`, you can easily perform actions such as creating, reading, updating, and deleting resources, fetching logs, and managing files within PODs.
 
 ## **Features**
