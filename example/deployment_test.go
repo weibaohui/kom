@@ -1,0 +1,94 @@
+package example
+
+import (
+	"testing"
+
+	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
+	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestRestart(t *testing.T) {
+	name := "nginx-restart"
+	item := v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+			Labels: map[string]string{
+				"app": name,
+			},
+		},
+		Spec: v1.DeploymentSpec{
+			Replicas: utils.Int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": name,
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": name,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  name,
+							Image: "nginx:1.14.2",
+						},
+					},
+				},
+			},
+		},
+	}
+	// 先创建Deploy
+	err := kom.DefaultCluster().
+		Resource(&item).
+		Create(&item).Error
+	if err != nil {
+		t.Errorf("Deployment Create(&item) error :%v", err)
+	}
+
+	if utils.WaitUntil(
+		func() bool {
+			var target v1.Deployment
+			kom.DefaultCluster().Resource(&target).
+				Namespace("default").
+				Name(name).
+				Get(&target)
+			if target.Spec.Template.Spec.Containers[0].Name == name {
+				// 达成测试条件
+				return true
+			}
+			return false
+		}, interval, timeout) {
+		t.Logf("创建Deploy nginx 成功")
+
+	} else {
+		t.Errorf("创建Deploy nginx 失败")
+		return
+	}
+
+	// 重启
+	err = kom.DefaultCluster().Resource(&item).
+		Namespace("default").Name(name).Ctl().
+		Deployment().Restart()
+
+	if err != nil {
+		t.Errorf("Deployment Restart(&item) error :%v", err)
+	}
+	t.Logf("Restart Deploy nginx 成功")
+
+	// 清理
+	err = kom.DefaultCluster().Resource(&item).
+		Namespace("default").
+		Name(name).
+		Delete().Error
+	if err != nil {
+		t.Errorf("Deployment Restart Clean(&item) error :%v", err)
+	}
+
+}
