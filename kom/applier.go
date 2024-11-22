@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/weibaohui/kom/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
@@ -103,5 +104,6 @@ func (a *applier) deleteCRD(obj *unstructured.Unstructured) string {
 
 // splitYAML 按 "---" 分割多文档 YAML
 func splitYAML(yamlStr string) []string {
+	yamlStr = utils.NormalizeNewlines(yamlStr)
 	return strings.Split(yamlStr, "\n---\n")
 }
