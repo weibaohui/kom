@@ -124,6 +124,12 @@ func (p *processor) Replace(name string, fn func(*Kubectl) error) error {
 }
 
 func (p *processor) Execute(k *Kubectl) error {
+	// 执行前做必要检查
+	if k.Statement.GVR.Empty() {
+		k.Statement.Error = fmt.Errorf("请先调用Resource()、CRD()、GVR()等方法")
+		return k.Statement.Error
+	}
+
 	for _, f := range p.fns {
 		err := f(k)
 		if err != nil {
