@@ -1,7 +1,6 @@
 package kom
 
 import (
-	"fmt"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
@@ -17,9 +16,7 @@ type deploy struct {
 }
 
 func (c *ctl) Deployment() *deploy {
-	if c.kubectl.Statement.GVR.Empty() {
-		c.kubectl.Statement.Error = fmt.Errorf("请先调用Resource()、CRD()、GVR()等方法")
-	}
+
 	return &deploy{
 		kubectl: c.kubectl,
 	}
