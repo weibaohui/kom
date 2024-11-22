@@ -113,3 +113,12 @@ func SanitizeFileName(filename string) string {
 
 	return sanitizedFilename
 }
+func NormalizeNewlines(input string) string {
+	// 将 Windows 风格的换行符 \r\n 替换为 Unix 风格 \n
+	return strings.ReplaceAll(input, "\r\n", "\n")
+}
+func NormalizeToWindows(input string) string {
+	// 先统一为 \n 再替换为 \r\n，防止重复替换出错
+	unixNormalized := strings.ReplaceAll(input, "\r\n", "\n")
+	return strings.ReplaceAll(unixNormalized, "\n", "\r\n")
+}
