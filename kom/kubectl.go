@@ -90,3 +90,9 @@ func (k *Kubectl) Tools() *tools {
 		kubectl: k,
 	}
 }
+
+func (k *Kubectl) Ctl() *ctl {
+	return &ctl{
+		kubectl: k,
+	}
+}
