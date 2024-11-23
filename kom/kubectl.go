@@ -3,7 +3,6 @@ package kom
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -77,10 +76,6 @@ func (k *Kubectl) Applier() *applier {
 	}
 }
 func (k *Kubectl) Poder() *poder {
-	// 执行前做必要检查
-	if k.Statement.GVR.Empty() {
-		k.Resource(&v1.Pod{})
-	}
 	return &poder{
 		kubectl: k,
 	}
