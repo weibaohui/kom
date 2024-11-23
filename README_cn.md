@@ -15,6 +15,7 @@
 4. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
 5. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
 6. 支持POD内文件操作，轻松上传、下载、删除文件。
+7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
 
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
@@ -459,4 +460,16 @@ func cb(k *kom.Kubectl) error {
     return nil
 	// return fmt.Errorf("error") 返回error将阻止后续cb的执行
 }
+```
+
+
+### 8. 高频操作
+#### Deployment重启
+```go
+err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().Restart()
+```
+#### Deployment扩缩容
+```go
+// 将名称为nginx的deployment的副本数设置为3
+err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().Scale(3)
 ```
