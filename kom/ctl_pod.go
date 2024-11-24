@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	"github.com/weibaohui/kom/utils"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
 
-type poder struct {
+type pod struct {
 	kubectl *Kubectl
+	Error   error
 }
 
 // FileInfo 文件节点结构
@@ -29,12 +31,52 @@ type FileInfo struct {
 	IsDir       bool   `json:"isDir"` // 指示是否
 }
 
+func (p *pod) ContainerName(c string) *pod {
+	tx := p.kubectl.getInstance()
+	tx.Statement.ContainerName = c
+	p.kubectl = tx
+	return p
+}
+
+func (p *pod) Command(command string, args ...string) *pod {
+	tx := p.kubectl.getInstance()
+	tx.Statement.Command = command
+	tx.Statement.Args = args
+	p.kubectl = tx
+	return p
+}
+func (p *pod) Execute(dest interface{}) *pod {
+	tx := p.kubectl.getInstance()
+	tx.Statement.Dest = dest
+	tx.Error = tx.Callback().Exec().Execute(tx)
+	p.Error = tx.Error
+	return p
+}
+func (p *pod) Stdin(reader io.Reader) *pod {
+	tx := p.kubectl.getInstance()
+	tx.Statement.Stdin = reader
+	return p
+}
+func (p *pod) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *pod {
+	tx := p.kubectl.getInstance()
+	if tx.Statement.ContainerName == "" {
+		p.Error = fmt.Errorf("请先设置ContainerName")
+		return p
+	}
+	tx.Statement.PodLogOptions = opt
+	tx.Statement.PodLogOptions.Container = tx.Statement.ContainerName
+	tx.Statement.Dest = requestPtr
+	tx.Error = tx.Callback().Logs().Execute(tx)
+	p.Error = tx.Error
+	return p
+}
+
 // ListFiles  获取容器中指定路径的文件和目录列表
-func (p *poder) ListFiles(path string) ([]*FileInfo, error) {
+func (p *pod) ListFiles(path string) ([]*FileInfo, error) {
 	klog.V(6).Infof("ListFiles %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
 	var result []byte
-	err := p.kubectl.Command("ls", "-l", path).Execute(&result).Error
+	err := p.Command("ls", "-l", path).Execute(&result).Error
 	if err != nil {
 		return nil, fmt.Errorf("error executing ListFiles: %v", err)
 	}
@@ -43,20 +85,20 @@ func (p *poder) ListFiles(path string) ([]*FileInfo, error) {
 }
 
 // DownloadFile 从指定容器下载文件
-func (p *poder) DownloadFile(filePath string) ([]byte, error) {
+func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	var result []byte
-	err := p.kubectl.Command("cat", filePath).Execute(&result).Error
+	err := p.Command("cat", filePath).Execute(&result).Error
 	if err != nil {
 		return nil, fmt.Errorf("error executing DownloadFile: %v", err)
 	}
 
 	return result, nil
 }
-func (p *poder) DeleteFile(filePath string) ([]byte, error) {
+func (p *pod) DeleteFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DeleteFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	var result []byte
-	err := p.kubectl.Command("rm", "-rf", filePath).Execute(&result).Error
+	err := p.Command("rm", "-rf", filePath).Execute(&result).Error
 	if err != nil {
 		return nil, fmt.Errorf("error executing DeleteFile : %v", err)
 	}
@@ -65,7 +107,7 @@ func (p *poder) DeleteFile(filePath string) ([]byte, error) {
 }
 
 // UploadFile 将文件上传到指定容器
-func (p *poder) UploadFile(destPath string, file *os.File) error {
+func (p *pod) UploadFile(destPath string, file *os.File) error {
 	klog.V(6).Infof("UploadFile %s to [%s/%s:%s] \n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 
 	// 读取并压缩文件内容
@@ -74,7 +116,7 @@ func (p *poder) UploadFile(destPath string, file *os.File) error {
 		panic(err.Error())
 	}
 	var result []byte
-	err := p.kubectl.
+	err := p.
 		Stdin(&buf).
 		Command("tar", "-xmf", "-", "-C", destPath).
 		Execute(&result).Error
@@ -132,12 +174,12 @@ func createTar(file *os.File, buf *bytes.Buffer) error {
 //	}
 //
 //	fmt.Println("字节数据已成功写入文件.")
-func (p *poder) SaveFile(destPath string, context string) error {
+func (p *pod) SaveFile(destPath string, context string) error {
 	klog.V(6).Infof("SaveFile %s to [%s/%s:%s]\n", destPath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 	klog.V(8).Infof("SaveFile %s \n", context)
 
 	var result []byte
-	err := p.kubectl.
+	err := p.
 		Stdin(strings.NewReader(context)).
 		Command("sh", "-c", fmt.Sprintf("cat > %s", destPath)).
 		Execute(&result).Error
