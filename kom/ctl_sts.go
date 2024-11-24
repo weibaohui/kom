@@ -21,7 +21,7 @@ func (s *statefulSet) Scale(replicas int32) error {
 		s.kubectl.Error = err
 		return s.kubectl.Error
 	}
-	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%s}}", replicas)
+	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%d}}", replicas)
 	err = s.kubectl.Resource(&item).
 		Patch(&item, types.MergePatchType, patchData).Error
 	if err != nil {

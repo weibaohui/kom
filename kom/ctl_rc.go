@@ -20,7 +20,7 @@ func (r *replicationController) Scale(replicas int32) error {
 		r.kubectl.Error = errors.Wrapf(err, "ReplicationController Scale Get %s/%s error", r.kubectl.Statement.Namespace, r.kubectl.Statement.Name)
 		return r.kubectl.Error
 	}
-	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%r}}", replicas)
+	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%d}}", replicas)
 	err = r.kubectl.Resource(&item).
 		Patch(&item, types.MergePatchType, patchData).Error
 	if err != nil {
