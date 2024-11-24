@@ -240,7 +240,7 @@ results = kom.DefaultCluster().Applier().Delete(yaml)
 ```go
 // 获取Pod日志
 var stream io.ReadCloser
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
 reader := bufio.NewReader(stream)
 line, _ := reader.ReadString('\n')
 fmt.Println(line)
