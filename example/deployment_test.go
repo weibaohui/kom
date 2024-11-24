@@ -156,8 +156,7 @@ func TestScale(t *testing.T) {
 
 	// scale
 	replicas := int32(2)
-	err = kom.DefaultCluster().Resource(&item).
-		Namespace("default").Name(name).Ctl().
+	err = kom.DefaultCluster().Resource(&item).Ctl().
 		Deployment().Scale(replicas)
 
 	if err != nil {
