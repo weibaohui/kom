@@ -26,6 +26,9 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 	tx.Statement.Namespace = ns
 	return tx
 }
+
+// ContainerName
+// Deprecated: use Ctl().Pod().ContainerName() instead.
 func (k *Kubectl) ContainerName(c string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.ContainerName = c
@@ -54,17 +57,23 @@ func (k *Kubectl) GVK(group string, version string, kind string) *Kubectl {
 
 	return tx
 }
+
+// Deprecated: use Ctl().Pod().Command() instead.
 func (k *Kubectl) Command(command string, args ...string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Command = command
 	tx.Statement.Args = args
 	return tx
 }
+
+// Deprecated: use Ctl().Pod().Stdin() instead.
 func (k *Kubectl) Stdin(reader io.Reader) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Stdin = reader
 	return tx
 }
+
+// Deprecated: use Ctl().Pod().GetLogs() instead.
 func (k *Kubectl) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.PodLogOptions = opt
@@ -121,6 +130,7 @@ func (k *Kubectl) Patch(dest interface{}, pt types.PatchType, data string) *Kube
 }
 
 // Execute 请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s
+// Deprecated: use Ctl().Pod().Command().Execute() instead.
 func (k *Kubectl) Execute(dest interface{}) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
