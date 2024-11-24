@@ -15,7 +15,7 @@ func TestPodLogs(t *testing.T) {
 	var stream io.ReadCloser
 	err := kom.DefaultCluster().
 		Namespace("default").
-		Name("random").
+		Name("random").Ctl().Pod().
 		ContainerName("random").
 		GetLogs(&stream, &corev1.PodLogOptions{}).Error
 	if err != nil {
@@ -32,6 +32,7 @@ func TestPodLogs(t *testing.T) {
 		}
 		t.Fatalf("Error reading stream: %v", err)
 	}
+	t.Logf("Reading logs line: %s\n", line)
 	if !strings.Contains(line, "A") {
 		t.Fatalf("日志读取测试失败,应该包含A。%s", line)
 	}

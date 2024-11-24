@@ -34,13 +34,15 @@ func TestUploadFile(t *testing.T) {
 	defer op.Close()
 	err = kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().
+		Ctl().
+		Pod().
+		ContainerName("random").
 		UploadFile("/etc/", op)
 
 	// 执行ls -lh /etc/ | grep test 查看文件是否已上传
 	var execResult []byte
 	err = kom.DefaultCluster().Namespace("default").
-		Name("random").
+		Name("random").Ctl().Pod().
 		ContainerName("random").
 		Command("sh", "-c", "ls -lh /etc/ | grep test").
 		Execute(&execResult).Error
@@ -58,7 +60,9 @@ func TestSaveFile(t *testing.T) {
 	t.Logf("将%s写入/etc/xyz\n", context)
 	err := kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().
+		Ctl().
+		Pod().
+		ContainerName("random").
 		SaveFile("/etc/xyz", context)
 	if err != nil {
 		t.Errorf("Error executing command: %v", err)
@@ -66,7 +70,10 @@ func TestSaveFile(t *testing.T) {
 
 	result, err := kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().DownloadFile("/etc/xyz")
+		Ctl().
+		Pod().
+		ContainerName("random").
+		DownloadFile("/etc/xyz")
 	if err != nil {
 		t.Errorf("Error executing command: %v", err)
 	}
@@ -80,7 +87,10 @@ func TestListFile(t *testing.T) {
 
 	result, err := kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().ListFiles("/etc")
+		Ctl().
+		Pod().
+		ContainerName("random").
+		ListFiles("/etc")
 	if err != nil {
 		t.Errorf("Error executing command: %v", err)
 	}
@@ -99,7 +109,9 @@ func TestDeleteFile(t *testing.T) {
 	t.Logf("将%s写入/etc/xyz\n", context)
 	err := kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().
+		Ctl().
+		Pod().
+		ContainerName("random").
 		SaveFile("/etc/xyz", context)
 	if err != nil {
 		t.Errorf("Error executing SaveFile command: %v", err)
@@ -108,7 +120,10 @@ func TestDeleteFile(t *testing.T) {
 	// 读取
 	result, err := kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().DownloadFile("/etc/xyz")
+		Ctl().
+		Pod().
+		ContainerName("random").
+		DownloadFile("/etc/xyz")
 	if err != nil {
 		t.Errorf("Error executing DownloadFile command: %v", err)
 	}
@@ -122,7 +137,10 @@ func TestDeleteFile(t *testing.T) {
 	// 删除文件
 	_, err = kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().DeleteFile("/etc/xyz")
+		Ctl().
+		Pod().
+		ContainerName("random").
+		DeleteFile("/etc/xyz")
 	if err != nil {
 		t.Errorf("Error executing DeleteFile command: %v", err)
 	}
@@ -130,12 +148,14 @@ func TestDeleteFile(t *testing.T) {
 	// 尝试该读取文件
 	result, err = kom.DefaultCluster().Namespace("default").
 		Name("random").
-		ContainerName("random").Poder().DownloadFile("/etc/xyz")
+		Ctl().
+		Pod().
+		ContainerName("random").
+		DownloadFile("/etc/xyz")
 	if err != nil {
 		// 文件已经不存在，看看报错中是否包含文件不存在，包含成功
 		if strings.Contains(err.Error(), "No such file or directory") {
-			t.Logf("Error executing DownloadFile command: %v", err)
-			t.Logf("文件不存在，已成功删除")
+			t.Logf("Error executing DownloadFile command: %v. 说明文件不存在，已成功删除", err)
 		} else {
 			t.Fatalf("删除文件失败，%v", err)
 		}
