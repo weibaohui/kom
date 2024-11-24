@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/google/gnostic-models v0.6.8
+	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
 	k8s.io/client-go v0.31.1
