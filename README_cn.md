@@ -473,3 +473,8 @@ err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ct
 // 将名称为nginx的deployment的副本数设置为3
 err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().Scale(3)
 ```
+#### Deployment更新Tag
+```go
+// 将名称为nginx的deployment的中的容器镜像tag升级为alpine
+err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().ReplaceImageTag("main","20241124")
+```
