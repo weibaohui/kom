@@ -75,8 +75,10 @@ func (k *Kubectl) Applier() *applier {
 		kubectl: k,
 	}
 }
-func (k *Kubectl) Poder() *poder {
-	return &poder{
+
+// Deprecated: use Ctl().Pod() instead.
+func (k *Kubectl) Poder() *pod {
+	return &pod{
 		kubectl: k,
 	}
 }
