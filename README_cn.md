@@ -250,31 +250,31 @@ fmt.Println(line)
 ```go
 // 在Pod内执行ps -ef命令
 var execResult string
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
 fmt.Printf("execResult: %s", execResult)
 ```
 #### 文件列表
 ```go
 // 获取Pod内/etc文件夹列表
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ListFiles("/etc")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").ListFiles("/etc")
 ```
 #### 文件下载
 ```go
 // 下载Pod内/etc/hosts文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DownloadFile("/etc/hosts")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DownloadFile("/etc/hosts")
 ```
 #### 文件上传
 ```go
 // 上传文件内容到Pod内/etc/demo.txt文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").SaveFile("/etc/demo.txt", "txt-context")
 // os.File 类型文件直接上传到Pod内/etc/目录下
 file, _ := os.Open(tempFilePath)
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/", file)
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").UploadFile("/etc/", file)
 ```
 #### 文件删除
 ```go
 // 删除Pod内/etc/xyz文件
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DeleteFile("/etc/xyz")
 ```
 
 ### 5. 自定义资源定义（CRD）增删改查及Watch操作

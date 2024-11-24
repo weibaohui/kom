@@ -259,7 +259,7 @@ results = kom.DefaultCluster().Applier().Delete(yaml)
 ```go
 // Retrieve Pod logs
 var stream io.ReadCloser
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
 reader := bufio.NewReader(stream)
 line, _ := reader.ReadString('\n')
 fmt.Println(line)
@@ -277,29 +277,29 @@ fmt.Printf("execResult: %s", execResult)
 #### List Files
 ```go
 // List files in the /etc directory within the Pod
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().ListFiles("/etc")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").ListFiles("/etc")
 ```
 
 #### Download a File
 ```go
 // Download the /etc/hosts file from inside the Pod
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DownloadFile("/etc/hosts")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DownloadFile("/etc/hosts")
 ```
 
 #### Upload a File
 ```go
 // Upload text content to /etc/demo.txt inside the Pod
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().SaveFile("/etc/demo.txt", "txt-context")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").SaveFile("/etc/demo.txt", "txt-context")
 
 // Directly upload a os.File to /etc/ inside the Pod
 file, _ := os.Open(tempFilePath)
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().UploadFile("/etc/", file)
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").UploadFile("/etc/", file)
 ```
 
 #### Delete a File
 ```go
 // Delete the /etc/xyz file inside the Pod
-kom.DefaultCluster().Namespace("default").Name("nginx").ContainerName("nginx").Poder().DeleteFile("/etc/xyz")
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DeleteFile("/etc/xyz")
 ```
 
 ### 5. Custom Resource Definition (CRD) Create, Update, Delete, and Watch Operations
