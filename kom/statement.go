@@ -72,10 +72,15 @@ func (s *Statement) ParseNsNameFromRuntimeObj(obj runtime.Object) *Statement {
 	// 获取元数据（比如Name和Namespace）
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
+		klog.V(6).Infof("error getting meta data by meta.Accessor : %v", err)
 		return s
 	}
-	s.Name = accessor.GetName()           // 获取资源的名称
-	s.Namespace = accessor.GetNamespace() // 获取资源的命名空间
+	if name := accessor.GetName(); name != "" {
+		s.Name = name // 获取资源的名称
+	}
+	if namespace := accessor.GetNamespace(); namespace != "" {
+		s.Namespace = namespace // 获取资源的命名空间
+	}
 	return s
 }
 
@@ -83,7 +88,7 @@ func (s *Statement) ParseGVKFromRuntimeObj(obj runtime.Object) *Statement {
 	// 使用 scheme.Scheme.ObjectKinds() 获取 Kind
 	gvks, _, err := scheme.Scheme.ObjectKinds(obj)
 	if err != nil {
-		klog.V(2).Infof("error getting kind by scheme.Scheme.ObjectKinds : %v", err)
+		klog.V(6).Infof("error getting kind by scheme.Scheme.ObjectKinds : %v", err)
 		return s
 	}
 	s.ParseGVKs(gvks)
