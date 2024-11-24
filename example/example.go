@@ -548,7 +548,7 @@ spec:
 	var stream io.ReadCloser
 	err := kom.DefaultCluster().
 		Namespace("default").
-		Name("random-char-pod").
+		Name("random-char-pod").Ctl().Pod().
 		ContainerName("container").
 		GetLogs(&stream, &corev1.PodLogOptions{}).Error
 	if err != nil {
@@ -604,7 +604,7 @@ spec:
 
 	var execResult []byte
 	err := kom.DefaultCluster().Namespace("default").
-		Name("random-char-pod").
+		Name("random-char-pod").Ctl().Pod().
 		ContainerName("container").
 		Command("ps", "-ef").
 		Execute(&execResult).Error
@@ -648,8 +648,8 @@ spec:
 	time.Sleep(time.Second * 1)
 
 	list, err := kom.DefaultCluster().Namespace("default").
-		Name("random-char-pod").
-		ContainerName("container").Poder().ListFiles("/etc")
+		Name("random-char-pod").Ctl().Pod().
+		ContainerName("container").ListFiles("/etc")
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
 	}
@@ -658,8 +658,8 @@ spec:
 	}
 
 	file, err := kom.DefaultCluster().Namespace("default").
-		Name("random-char-pod").
-		ContainerName("container").Poder().DownloadFile("/etc/hosts")
+		Name("random-char-pod").Ctl().Pod().
+		ContainerName("container").DownloadFile("/etc/hosts")
 	if err != nil {
 		klog.Errorf("Error executing command: %v", err)
 	}
