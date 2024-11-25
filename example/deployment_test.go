@@ -75,8 +75,7 @@ func TestRestart(t *testing.T) {
 
 	// 重启
 	err = kom.DefaultCluster().Resource(&item).
-		Namespace("default").Name(name).Ctl().
-		Deployment().Restart()
+		Namespace("default").Name(name).Ctl().Rollout().Restart()
 
 	if err != nil {
 		t.Errorf("Deployment Restart(&item) error :%v", err)
@@ -157,8 +156,7 @@ func TestScale(t *testing.T) {
 
 	// scale
 	replicas := int32(2)
-	err = kom.DefaultCluster().Resource(&item).Ctl().
-		Deployment().Scale(replicas)
+	err = kom.DefaultCluster().Resource(&item).Ctl().Scale(replicas)
 
 	if err != nil {
 		t.Errorf("Deployment Scale  error :%v", err)
