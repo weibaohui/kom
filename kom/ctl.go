@@ -45,3 +45,12 @@ func (c *ctl) Scale(replicas int32) error {
 	}
 	return item.Scale(replicas)
 }
+
+func isSupportedKind(kind string, supportedKinds []string) bool {
+	for _, k := range supportedKinds {
+		if kind == k {
+			return true
+		}
+	}
+	return false
+}
