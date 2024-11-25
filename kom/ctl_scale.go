@@ -24,8 +24,8 @@ func (d *scale) Scale(replicas int32) error {
 	// ReplicaSet
 	// ReplicationController
 
-	if !(kind == "Deployment" || kind == "StatefulSet" || kind == "ReplicationController" || kind == "ReplicaSet") {
-		d.kubectl.Error = fmt.Errorf("%s %s/%s scale is not supported", kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name)
+	if !isSupportedKind(kind, []string{"Deployment", "StatefulSet", "ReplicationController", "ReplicaSet"}) {
+		d.kubectl.Error = fmt.Errorf("%s %s/%s Scale is not supported", kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name)
 		return d.kubectl.Error
 	}
 
