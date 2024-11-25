@@ -28,19 +28,20 @@ func (d *rollout) handleError(kind string, namespace string, name string, action
 	}
 	return nil
 }
-func (d *rollout) checkResourceKind(kind string) error {
-	if !(kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" || kind == "ReplicaSet") {
-		d.kubectl.Error = fmt.Errorf("%s %s/%s operation is not supported", kind, "<namespace>", "<name>")
+func (d *rollout) checkResourceKind(kind string, supportedKinds []string) error {
+	if !isSupportedKind(kind, supportedKinds) {
+		d.kubectl.Error = fmt.Errorf("%s %s/%s operation is not supported", kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name)
 		return d.kubectl.Error
 	}
 	return nil
 }
+
 func (d *rollout) Restart() error {
 
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Restart")
 
-	if err := d.checkResourceKind(kind); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
 		return err
 	}
 
@@ -53,7 +54,7 @@ func (d *rollout) Pause() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Restart")
 
-	if err := d.checkResourceKind(kind); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
 		return err
 	}
 
@@ -67,7 +68,7 @@ func (d *rollout) Resume() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Restart")
 
-	if err := d.checkResourceKind(kind); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
 		return err
 	}
 
