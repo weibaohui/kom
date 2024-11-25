@@ -24,8 +24,24 @@ func (c *ctl) StatefulSet() *statefulSet {
 		kubectl: c.kubectl,
 	}
 }
+func (c *ctl) DaemonSet() *daemonSet {
+	return &daemonSet{
+		kubectl: c.kubectl,
+	}
+}
 func (c *ctl) Pod() *pod {
 	return &pod{
 		kubectl: c.kubectl,
 	}
+}
+func (c *ctl) Rollout() *rollout {
+	return &rollout{
+		kubectl: c.kubectl,
+	}
+}
+func (c *ctl) Scale(replicas int32) error {
+	item := &scale{
+		kubectl: c.kubectl,
+	}
+	return item.Scale(replicas)
 }
