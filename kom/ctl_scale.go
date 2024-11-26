@@ -11,12 +11,12 @@ type scale struct {
 	kubectl *Kubectl
 }
 
-func (d *scale) Scale(replicas int32) error {
+func (s *scale) Scale(replicas int32) error {
 
-	kind := d.kubectl.Statement.GVK.Kind
+	kind := s.kubectl.Statement.GVK.Kind
 	klog.V(8).Infof("scale Kind=%s", kind)
-	klog.V(8).Infof("scale Resource=%s", d.kubectl.Statement.GVR.Resource)
-	klog.V(8).Infof("scale %s/%s", d.kubectl.Statement.Namespace, d.kubectl.Statement.Name)
+	klog.V(8).Infof("scale Resource=%s", s.kubectl.Statement.GVR.Resource)
+	klog.V(8).Infof("scale %s/%s", s.kubectl.Statement.Namespace, s.kubectl.Statement.Name)
 
 	// 当前支持restart方法的资源有
 	// Deployment
@@ -25,16 +25,16 @@ func (d *scale) Scale(replicas int32) error {
 	// ReplicationController
 
 	if !isSupportedKind(kind, []string{"Deployment", "StatefulSet", "ReplicationController", "ReplicaSet"}) {
-		d.kubectl.Error = fmt.Errorf("%s %s/%s Scale is not supported", kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name)
-		return d.kubectl.Error
+		s.kubectl.Error = fmt.Errorf("%s %s/%s Scale is not supported", kind, s.kubectl.Statement.Namespace, s.kubectl.Statement.Name)
+		return s.kubectl.Error
 	}
 
 	var item interface{}
 	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%d}}", replicas)
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := s.kubectl.Patch(&item, types.MergePatchType, patchData).Error
 	if err != nil {
-		d.kubectl.Error = fmt.Errorf("%s %s/%s scale error %v", kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, err)
+		s.kubectl.Error = fmt.Errorf("%s %s/%s scale error %v", kind, s.kubectl.Statement.Namespace, s.kubectl.Statement.Name, err)
 		return err
 	}
-	return d.kubectl.Error
+	return s.kubectl.Error
 }
