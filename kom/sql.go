@@ -2,6 +2,7 @@ package kom
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	v1 "k8s.io/api/core/v1"
@@ -91,10 +92,43 @@ func (k *Kubectl) Get(dest interface{}) *Kubectl {
 }
 func (k *Kubectl) List(dest interface{}, opt ...metav1.ListOptions) *Kubectl {
 	tx := k.getInstance()
-	tx.Statement.ListOptions = opt
+
+	// 之前步骤可能使用WithLabelSelector 设置了option
+	defaultOpts := tx.Statement.ListOptions
+	if len(defaultOpts) == 0 {
+		tx.Statement.ListOptions = opt
+	} else {
+		defaultOpt := tx.Statement.ListOptions[0]
+		// 用户提供的 ListOptions（从 opt 中取第一个）
+		userOpt := metav1.ListOptions{}
+		if len(opt) > 0 {
+			userOpt = opt[0]
+		}
+		// 合并默认选项和用户选项
+		finalOpt := mergeListOptions(defaultOpt, userOpt)
+		tx.Statement.ListOptions = []metav1.ListOptions{finalOpt}
+	}
+
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().List().Execute(tx)
 	return tx
+}
+func mergeListOptions(opt1, opt2 metav1.ListOptions) metav1.ListOptions {
+	return metav1.ListOptions{
+		LabelSelector: mergeSelectors(opt1.LabelSelector, opt2.LabelSelector),
+		FieldSelector: mergeSelectors(opt1.FieldSelector, opt2.FieldSelector),
+	}
+}
+
+// 合并两个选择器，使用逗号分隔
+func mergeSelectors(selector1, selector2 string) string {
+	if selector1 != "" && selector2 != "" {
+		return fmt.Sprintf("%s,%s", selector1, selector2)
+	}
+	if selector1 != "" {
+		return selector1
+	}
+	return selector2
 }
 func (k *Kubectl) Create(dest interface{}) *Kubectl {
 	tx := k.getInstance()
@@ -159,7 +193,7 @@ func (k *Kubectl) WithLabelSelector(labelSelector string) *Kubectl {
 	} else {
 		opt.LabelSelector = labelSelector
 	}
-
+	tx.Statement.ListOptions = options
 	return tx
 }
 
