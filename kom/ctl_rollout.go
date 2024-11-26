@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -165,6 +166,90 @@ func (d *rollout) Status() (string, error) {
 			return "ReplicaSet successfully rolled out", nil
 		}
 		return fmt.Sprintf("ReplicaSet rollout in progress: %d of %d ready", readyReplicas, specReplicas), nil
+
+	default:
+		return "", fmt.Errorf("unsupported kind: %s", kind)
+	}
+}
+func (d *rollout) History() (string, error) {
+	kind := d.kubectl.Statement.GVK.Kind
+	name := d.kubectl.Statement.Name
+	d.logInfo("History")
+
+	// 校验是否是支持的资源类型
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
+		return "", err
+	}
+
+	var item unstructured.Unstructured
+	err := d.kubectl.Get(&item).Error
+	if err != nil {
+		return "", d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "history", err)
+	}
+
+	switch kind {
+	case "Deployment":
+		// 获取 Deployment 的 spec.selector.matchLabels
+		labels, found, err := unstructured.NestedMap(item.Object, "spec", "selector", "matchLabels")
+		if err != nil || !found {
+			return "", fmt.Errorf("failed to get matchLabels from Deployment: %v", err)
+		}
+
+		// 构造 labelSelector 字符串，将所有标签拼接起来
+		labelSelector := ""
+		for key, value := range labels {
+			labelSelector += fmt.Sprintf("%s=%s,", key, value)
+		}
+		// 去除最后一个逗号
+		if len(labelSelector) > 0 {
+			labelSelector = labelSelector[:len(labelSelector)-1]
+		}
+
+		// 查询与 Deployment 关联的所有 ReplicaSet
+		var rsList []unstructured.Unstructured
+
+		err = d.kubectl.Resource(&v1.ReplicaSet{}).WithLabelSelector(labelSelector).List(&rsList).Error
+		if err != nil {
+			return "", fmt.Errorf("failed to list ReplicaSets for Deployment: %v", err)
+		}
+
+		// 如果没有 ReplicaSet，则没有历史
+		if len(rsList) == 0 {
+			return "No ReplicaSets found for Deployment", nil
+		}
+
+		// 格式化历史记录
+		historyStr := "deployment/" + name + " history:\n"
+		for _, rs := range rsList {
+			rsName := rs.GetName()
+			rsRevision, _, _ := unstructured.NestedString(rs.Object, "metadata", "annotations", "deployment.kubernetes.io/revision")
+
+			historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %s\n", rsName, rsRevision)
+		}
+		return historyStr, nil
+
+	case "StatefulSet":
+		// 获取 StatefulSet 的历史修订版本
+		history, found, err := unstructured.NestedSlice(item.Object, "status", "revisionHistory")
+		if err != nil || !found {
+			return "", fmt.Errorf("failed to get revisionHistory for StatefulSet: %v", err)
+		}
+
+		if len(history) == 0 {
+			return "No history found for StatefulSet", nil
+		}
+
+		// 格式化历史记录
+		historyStr := "StatefulSet history:\n"
+		for _, revision := range history {
+			revMap, ok := revision.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			revisionVersion, _, _ := unstructured.NestedInt64(revMap, "revision")
+			historyStr += fmt.Sprintf("Revision: %d\n", revisionVersion)
+		}
+		return historyStr, nil
 
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
