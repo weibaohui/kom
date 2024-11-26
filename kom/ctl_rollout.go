@@ -8,6 +8,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// rollout支持的资源类型
+var rolloutSupportedKinds = []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}
+
 type rollout struct {
 	kubectl *Kubectl
 }
@@ -41,7 +44,7 @@ func (d *rollout) Restart() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Restart")
 
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
+	if err := d.checkResourceKind(kind, rolloutSupportedKinds); err != nil {
 		return err
 	}
 
@@ -52,9 +55,9 @@ func (d *rollout) Restart() error {
 }
 func (d *rollout) Pause() error {
 	kind := d.kubectl.Statement.GVK.Kind
-	d.logInfo("Restart")
+	d.logInfo("Pause")
 
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
+	if err := d.checkResourceKind(kind, rolloutSupportedKinds); err != nil {
 		return err
 	}
 
@@ -66,9 +69,9 @@ func (d *rollout) Pause() error {
 }
 func (d *rollout) Resume() error {
 	kind := d.kubectl.Statement.GVK.Kind
-	d.logInfo("Restart")
+	d.logInfo("Resume")
 
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"}); err != nil {
+	if err := d.checkResourceKind(kind, rolloutSupportedKinds); err != nil {
 		return err
 	}
 
