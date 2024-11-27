@@ -1,7 +1,9 @@
 package kom
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
@@ -254,4 +256,124 @@ func (d *rollout) History() (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
+}
+func (d *rollout) Undo(toVersion int) (string, error) {
+	kind := d.kubectl.Statement.GVK.Kind
+	name := d.kubectl.Statement.Name
+	namespace := d.kubectl.Statement.Namespace
+	d.logInfo("Undo")
+
+	// 校验是否是支持的资源类型
+	// TODO "StatefulSet", "DaemonSet"
+	if err := d.checkResourceKind(kind, []string{"Deployment"}); err != nil {
+		return "", err
+	}
+
+	var item unstructured.Unstructured
+	err := d.kubectl.Get(&item).Error
+	if err != nil {
+		return "", d.handleError(kind, namespace, name, "Undo", err)
+	}
+
+	// 根据资源类型调用不同的回滚方法
+	switch kind {
+	case "Deployment":
+		err = d.rollbackDeployment(toVersion)
+	// case "StatefulSet":
+	// 	err = d.rollbackStatefulSet(&item)
+	// case "DaemonSet":
+	// 	err = d.rollbackDaemonSet(&item)
+	default:
+		return "", fmt.Errorf("unsupported kind: %s", kind)
+	}
+
+	if err != nil {
+		return "", d.handleError(kind, namespace, name, "Undo", err)
+	}
+
+	return fmt.Sprintf("%s/%s rolled back successfully", kind, name), nil
+}
+
+func (d *rollout) rollbackDeployment(toVersion int) error {
+	kind := d.kubectl.Statement.GVK.Kind
+	name := d.kubectl.Statement.Name
+	ns := d.kubectl.Statement.Namespace
+	var deploy v1.Deployment
+	err := d.kubectl.Resource(&deploy).
+		WithLabelSelector("app=" + name).
+		Get(&deploy).Error
+	if err != nil {
+		return fmt.Errorf(" rollbackDeployment get deployment  err %v ", err)
+	}
+
+	if toVersion == 0 {
+		// 没有指定版本，则回滚到上一个版本
+		revision, err := ExtractRevision(deploy.Annotations)
+		if err != nil {
+			return fmt.Errorf(" rollbackDeployment get deployment revision err %v ", err)
+		}
+		toVersion = revision - 1
+	}
+
+	var rsList []v1.ReplicaSet
+	err = d.kubectl.newInstance().Resource(&v1.ReplicaSet{}).
+		Namespace(ns).
+		List(&rsList).Error
+	if err != nil {
+		return fmt.Errorf(" rollbackDeployment get rs list err %v ", err)
+	}
+	var vrs *v1.ReplicaSet
+	for _, rs := range rsList {
+		owners := rs.OwnerReferences
+		if owners != nil && len(owners) > 0 {
+			for _, owner := range owners {
+				if owner.Kind == kind && owner.Name == name {
+
+					if v, err := ExtractRevision(rs.Annotations); err == nil && v == toVersion {
+						vrs = &rs
+						break
+					}
+				}
+			}
+		}
+		if vrs != nil {
+			break
+		}
+	}
+	if vrs == nil {
+		return fmt.Errorf("rollbackDeployment get rs [%s %s] err : not found ", kind, name)
+	}
+	spec := vrs.Spec.Template.Spec
+
+	deploy.Spec.Template.Spec = spec
+	err = d.kubectl.Resource(&deploy).Update(&deploy).Error
+	if err != nil {
+		return fmt.Errorf(" rollbackDeployment rollout undo deployment  err %v ", err)
+	}
+
+	return nil
+}
+
+// ExtractRevision 从 annotations 中提取 deployment.kubernetes.io/revision 的值，并转换为 int
+func ExtractRevision(annotations map[string]string) (int, error) {
+	const revisionKey = "deployment.kubernetes.io/revision"
+
+	// 检查 annotations 是否为空
+	if annotations == nil {
+		return 0, errors.New("annotations is nil")
+	}
+
+	// 获取 revision 的值
+	revisionStr, exists := annotations[revisionKey]
+	if !exists {
+		return 0, fmt.Errorf("annotation %q not found", revisionKey)
+	}
+
+	// 转换为 int
+	revision, err := strconv.Atoi(revisionStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert %q to int: %v", revisionStr, err)
+	}
+
+	return revision, nil
 }
