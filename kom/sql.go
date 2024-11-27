@@ -93,31 +93,29 @@ func (k *Kubectl) Get(dest interface{}) *Kubectl {
 func (k *Kubectl) List(dest interface{}, opt ...metav1.ListOptions) *Kubectl {
 	tx := k.getInstance()
 
-	// 之前步骤可能使用WithLabelSelector 设置了option
-	defaultOpts := tx.Statement.ListOptions
-	if len(defaultOpts) == 0 {
-		tx.Statement.ListOptions = opt
-	} else {
-		defaultOpt := tx.Statement.ListOptions[0]
-		// 用户提供的 ListOptions（从 opt 中取第一个）
-		userOpt := metav1.ListOptions{}
-		if len(opt) > 0 {
-			userOpt = opt[0]
+	// 先判断opt是否有值，没有值，不用处理了。
+	// 如果opt没有值，那么前面步骤使用WithLabelSelector，那就沿用，没用就为空。
+	// 如果opt有值，使用 opt进行合并
+	if opt != nil && len(opt) >= 0 {
+		// 之前步骤可能使用WithLabelSelector 设置了option
+		if len(tx.Statement.ListOptions) == 0 {
+			// 之前也没有设置值，那么直接使用opt
+			tx.Statement.ListOptions = opt
+		} else {
+			// 之前有值，需要合并值
+			// 之前的值只可能是在selector，所以应该以现在的opt为基准，合并之前opt的selector
+			preOpt := tx.Statement.ListOptions[0]
+			currentOpt := opt[0]
+			currentOpt.LabelSelector = mergeSelectors(preOpt.LabelSelector, currentOpt.LabelSelector)
+			currentOpt.FieldSelector = mergeSelectors(preOpt.FieldSelector, currentOpt.FieldSelector)
+
+			tx.Statement.ListOptions = []metav1.ListOptions{currentOpt}
 		}
-		// 合并默认选项和用户选项
-		finalOpt := mergeListOptions(defaultOpt, userOpt)
-		tx.Statement.ListOptions = []metav1.ListOptions{finalOpt}
 	}
 
 	tx.Statement.Dest = dest
 	tx.Error = tx.Callback().List().Execute(tx)
 	return tx
-}
-func mergeListOptions(opt1, opt2 metav1.ListOptions) metav1.ListOptions {
-	return metav1.ListOptions{
-		LabelSelector: mergeSelectors(opt1.LabelSelector, opt2.LabelSelector),
-		FieldSelector: mergeSelectors(opt1.FieldSelector, opt2.FieldSelector),
-	}
 }
 
 // 合并两个选择器，使用逗号分隔
@@ -193,7 +191,8 @@ func (k *Kubectl) WithLabelSelector(labelSelector string) *Kubectl {
 	} else {
 		opt.LabelSelector = labelSelector
 	}
-	tx.Statement.ListOptions = options
+	tx.Statement.ListOptions = []metav1.ListOptions{opt}
+
 	return tx
 }
 
@@ -218,6 +217,6 @@ func (k *Kubectl) WithFieldSelector(fieldSelector string) *Kubectl {
 	} else {
 		opt.FieldSelector = fieldSelector
 	}
-
+	tx.Statement.ListOptions = []metav1.ListOptions{opt}
 	return tx
 }
