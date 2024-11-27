@@ -31,6 +31,19 @@ func initKubectl(config *rest.Config, id string) *Kubectl {
 	return k
 }
 
+// 获取一个全新的实例，只保留ctx
+func (k *Kubectl) newInstance() *Kubectl {
+
+	tx := &Kubectl{ID: k.ID, Error: k.Error}
+	// clone with new statement
+	tx.Statement = &Statement{
+		Kubectl: k.Statement.Kubectl,
+		Context: k.Statement.Context,
+	}
+	return tx
+
+}
+
 func (k *Kubectl) getInstance() *Kubectl {
 	if k.clone > 0 {
 		tx := &Kubectl{ID: k.ID, Error: k.Error}
