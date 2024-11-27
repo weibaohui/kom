@@ -203,7 +203,7 @@ func TestListPodByLabelSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		t.Logf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count  [app=random] :%d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -221,7 +221,25 @@ func TestListPodByMultiLabelSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		t.Logf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count  [app=random,x=y] :%d\n", len(items))
+	} else {
+		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
+	}
+}
+func TestListPodByMultiLabelSelector2(t *testing.T) {
+	var items []corev1.Pod
+	var pod corev1.Pod
+	err := kom.DefaultCluster().
+		Resource(&pod).
+		Namespace("default").
+		WithLabelSelector("app=random").
+		WithLabelSelector("x=y2").
+		List(&items).Error
+	if err != nil {
+		t.Errorf("List Error %v\n", err)
+	}
+	if len(items) == 0 {
+		t.Logf("List Pods count  [app=random,x=y2] :%d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
@@ -238,7 +256,24 @@ func TestListPodByFieldSelector(t *testing.T) {
 		t.Errorf("List Error %v\n", err)
 	}
 	if len(items) == 1 {
-		t.Logf("List Pods count %d\n", len(items))
+		t.Logf("List Pods count  [metadata.name=random] :%d\n", len(items))
+	} else {
+		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
+	}
+}
+func TestListPodByFieldSelectorNotExists(t *testing.T) {
+	var items []corev1.Pod
+	var pod corev1.Pod
+	err := kom.DefaultCluster().
+		Resource(&pod).
+		Namespace("default").
+		WithFieldSelector("metadata.name=random111").
+		List(&items).Error
+	if err != nil {
+		t.Errorf("List Error %v\n", err)
+	}
+	if len(items) == 0 {
+		t.Logf("List Pods count [metadata.name=random111] :%d\n", len(items))
 	} else {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
