@@ -62,7 +62,7 @@ func (d *rollout) Pause() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Pause")
 
-	if err := d.checkResourceKind(kind, rolloutSupportedKinds); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (d *rollout) Resume() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Resume")
 
-	if err := d.checkResourceKind(kind, rolloutSupportedKinds); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
 		return err
 	}
 
