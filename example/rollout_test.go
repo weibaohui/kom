@@ -43,3 +43,12 @@ func TestRollout_Ds_History(t *testing.T) {
 	}
 	t.Logf("random-d-generator rollout %s", result)
 }
+func TestRollout_Ds_Status(t *testing.T) {
+	result, err := kom.DefaultCluster().Resource(&v1.DaemonSet{}).
+		Namespace("default").Name("random-d-generator").Ctl().Rollout().Status()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Logf("random-d-generator rollout %s", result)
+}
