@@ -1,6 +1,7 @@
 package kom
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -176,10 +177,11 @@ func (d *rollout) Status() (string, error) {
 func (d *rollout) History() (string, error) {
 	kind := d.kubectl.Statement.GVK.Kind
 	name := d.kubectl.Statement.Name
+	ns := d.kubectl.Statement.Namespace
 	d.logInfo("History")
 
 	// 校验是否是支持的资源类型
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet"}); err != nil {
 		return "", err
 	}
 
@@ -252,6 +254,28 @@ func (d *rollout) History() (string, error) {
 			historyStr += fmt.Sprintf("Revision: %d\n", revisionVersion)
 		}
 		return historyStr, nil
+	case "DaemonSet":
+
+		var versionList []*v1.ControllerRevision
+		err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+			Namespace(ns).
+			List(&versionList).Error
+		if err != nil {
+			return "", fmt.Errorf("failed to get controllerrevisions for DaemonSet: %s/%s %v", ns, name, err)
+		}
+
+		if len(versionList) == 0 {
+			return "No history found for DaemonSet", nil
+		}
+
+		// 格式化历史记录
+		historyStr := "DaemonSet/" + name + " history:\n"
+		for _, rv := range versionList {
+			rvName := rv.GetName()
+
+			historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %d\n", rvName, rv.Revision)
+		}
+		return historyStr, nil
 
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
@@ -264,8 +288,8 @@ func (d *rollout) Undo(toVersion int) (string, error) {
 	d.logInfo("Undo")
 
 	// 校验是否是支持的资源类型
-	// TODO "StatefulSet", "DaemonSet"
-	if err := d.checkResourceKind(kind, []string{"Deployment"}); err != nil {
+	// TODO "StatefulSet",
+	if err := d.checkResourceKind(kind, []string{"Deployment", "DaemonSet"}); err != nil {
 		return "", err
 	}
 
@@ -281,8 +305,8 @@ func (d *rollout) Undo(toVersion int) (string, error) {
 		err = d.rollbackDeployment(toVersion)
 	// case "StatefulSet":
 	// 	err = d.rollbackStatefulSet(&item)
-	// case "DaemonSet":
-	// 	err = d.rollbackDaemonSet(&item)
+	case "DaemonSet":
+		err = d.rollbackDaemonSet(toVersion)
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
@@ -308,7 +332,7 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 
 	if toVersion == 0 {
 		// 没有指定版本，则回滚到上一个版本
-		revision, err := ExtractRevision(deploy.Annotations)
+		revision, err := ExtractDeploymentRevision(deploy.Annotations)
 		if err != nil {
 			return fmt.Errorf(" rollbackDeployment get deployment revision err %v ", err)
 		}
@@ -329,7 +353,7 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 			for _, owner := range owners {
 				if owner.Kind == kind && owner.Name == name {
 
-					if v, err := ExtractRevision(rs.Annotations); err == nil && v == toVersion {
+					if v, err := ExtractDeploymentRevision(rs.Annotations); err == nil && v == toVersion {
 						vrs = &rs
 						break
 					}
@@ -354,8 +378,8 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 	return nil
 }
 
-// ExtractRevision 从 annotations 中提取 deployment.kubernetes.io/revision 的值，并转换为 int
-func ExtractRevision(annotations map[string]string) (int, error) {
+// ExtractDeploymentRevision 从 annotations 中提取 deployment.kubernetes.io/revision 的值，并转换为 int
+func ExtractDeploymentRevision(annotations map[string]string) (int, error) {
 	const revisionKey = "deployment.kubernetes.io/revision"
 
 	// 检查 annotations 是否为空
@@ -376,4 +400,89 @@ func ExtractRevision(annotations map[string]string) (int, error) {
 	}
 
 	return revision, nil
+}
+
+func (d *rollout) rollbackDaemonSet(toVersion int) error {
+	kind := d.kubectl.Statement.GVK.Kind
+	name := d.kubectl.Statement.Name
+	ns := d.kubectl.Statement.Namespace
+
+	var ds v1.DaemonSet
+	err := d.kubectl.Resource(&ds).
+		WithLabelSelector("app=" + name).
+		Get(&ds).Error
+	if err != nil {
+		return fmt.Errorf("rollbackDaemonSet get daemonset err %v", err)
+	}
+	var versionList []*v1.ControllerRevision
+	err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+		Namespace(ns).
+		List(&versionList).Error
+	if err != nil {
+		return fmt.Errorf("rollbackDaemonSet list controllerrevisions err %v", err)
+	}
+	// 如果没有指定版本，则回滚到上一个版本
+	if toVersion == 0 {
+		// 查找最新的 ControllerRevision 来确定版本
+		// 找到最大的version
+		var latestRevision int64 = 0
+		for _, revision := range versionList {
+			for _, owner := range revision.OwnerReferences {
+				if owner.Kind == kind && owner.Name == name {
+					// 选择目标版本为最新版本
+					// 确定最新的版本
+					if revision.Revision > latestRevision {
+						latestRevision = revision.Revision
+					}
+				}
+			}
+		}
+
+		toVersion = int(latestRevision - 1)
+		if toVersion <= 0 {
+			// 做一个防护，只要是有变更，那么版本号必大于0，最小为1
+			toVersion = 1
+		}
+	}
+
+	// 获取目标版本的 ControllerRevision 并提取 PodTemplateSpec
+
+	// 查找目标版本的 ControllerRevision
+	var targetRevision *v1.ControllerRevision
+
+	for _, revision := range versionList {
+		for _, owner := range revision.OwnerReferences {
+			if owner.Kind == kind && owner.Name == name {
+				if int(revision.Revision) == toVersion {
+					targetRevision = revision
+					break
+				}
+			}
+		}
+		if targetRevision != nil {
+			break
+		}
+	}
+
+	if targetRevision == nil {
+		return fmt.Errorf("rollbackDaemonSet get target revision %d for %s not found", toVersion, name)
+	}
+
+	// 提取目标版本的 PodTemplateSpec
+	var dsTemplate v1.DaemonSet
+	err = json.Unmarshal(targetRevision.Data.Raw, &dsTemplate)
+	if err != nil {
+		return fmt.Errorf("rollbackDaemonSet unmarshal controllerrevision data err %v", err)
+	}
+
+	// 使用目标版本的模板更新当前 DaemonSet
+	ds.Spec.Template.Spec = dsTemplate.Spec.Template.Spec
+
+	// 更新 DaemonSet
+	err = d.kubectl.Resource(&ds).Update(&ds).Error
+	if err != nil {
+		return fmt.Errorf("rollbackDaemonSet update daemonset err %v", err)
+	}
+
+	return nil
 }
