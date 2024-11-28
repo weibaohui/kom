@@ -281,10 +281,14 @@ func (d *rollout) History() (string, error) {
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
 }
-func (d *rollout) Undo(toVersion int) (string, error) {
+func (d *rollout) Undo(toVersions ...int) (string, error) {
 	kind := d.kubectl.Statement.GVK.Kind
 	name := d.kubectl.Statement.Name
 	namespace := d.kubectl.Statement.Namespace
+	toVersion := 0
+	if len(toVersions) > 0 {
+		toVersion = toVersions[0]
+	}
 	d.logInfo("Undo")
 
 	// 校验是否是支持的资源类型
@@ -403,6 +407,11 @@ func ExtractDeploymentRevision(annotations map[string]string) (int, error) {
 }
 
 func (d *rollout) rollbackDaemonSet(toVersion int) error {
+	// 从ControllerVersion列表中找指定版本的ControllerVersion
+	// 将Revision.Data.Raw转换为DaemonSet
+	// 提取DaemonSet的Spec.Template.Spec，赋值到原先的DaemonSet上，更新
+	// 完成回滚
+
 	kind := d.kubectl.Statement.GVK.Kind
 	name := d.kubectl.Statement.Name
 	ns := d.kubectl.Statement.Namespace
