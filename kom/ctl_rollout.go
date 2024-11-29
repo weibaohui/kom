@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/duke-git/lancet/v2/slice"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,7 +63,7 @@ func (d *rollout) Pause() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Pause")
 
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment"}); err != nil {
 		return err
 	}
 
@@ -76,7 +77,7 @@ func (d *rollout) Resume() error {
 	kind := d.kubectl.Statement.GVK.Kind
 	d.logInfo("Resume")
 
-	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet"}); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment"}); err != nil {
 		return err
 	}
 
@@ -233,25 +234,27 @@ func (d *rollout) History() (string, error) {
 		return historyStr, nil
 
 	case "StatefulSet":
-		// 获取 StatefulSet 的历史修订版本
-		history, found, err := unstructured.NestedSlice(item.Object, "status", "revisionHistory")
-		if err != nil || !found {
-			return "", fmt.Errorf("failed to get revisionHistory for StatefulSet: %v", err)
+
+		var versionList []*v1.ControllerRevision
+		err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+			Namespace(ns).
+			List(&versionList).Error
+		if err != nil {
+			return "", fmt.Errorf("failed to get controllerrevisions for StatefulSet: %s/%s %v", ns, name, err)
 		}
 
-		if len(history) == 0 {
+		versionList = d.filterByOwner(versionList, kind, name)
+
+		if len(versionList) == 0 {
 			return "No history found for StatefulSet", nil
 		}
 
 		// 格式化历史记录
-		historyStr := "StatefulSet history:\n"
-		for _, revision := range history {
-			revMap, ok := revision.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			revisionVersion, _, _ := unstructured.NestedInt64(revMap, "revision")
-			historyStr += fmt.Sprintf("Revision: %d\n", revisionVersion)
+		historyStr := "StatefulSet/" + name + " history:\n"
+		for _, rv := range versionList {
+			rvName := rv.GetName()
+
+			historyStr += fmt.Sprintf("ControllerRevision: %s, Revision: %d\n", rvName, rv.Revision)
 		}
 		return historyStr, nil
 	case "DaemonSet":
@@ -263,7 +266,7 @@ func (d *rollout) History() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to get controllerrevisions for DaemonSet: %s/%s %v", ns, name, err)
 		}
-
+		versionList = d.filterByOwner(versionList, kind, name)
 		if len(versionList) == 0 {
 			return "No history found for DaemonSet", nil
 		}
@@ -273,13 +276,25 @@ func (d *rollout) History() (string, error) {
 		for _, rv := range versionList {
 			rvName := rv.GetName()
 
-			historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %d\n", rvName, rv.Revision)
+			historyStr += fmt.Sprintf("ControllerRevision: %s, Revision: %d\n", rvName, rv.Revision)
 		}
 		return historyStr, nil
 
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
+}
+
+func (d *rollout) filterByOwner(versionList []*v1.ControllerRevision, kind string, name string) []*v1.ControllerRevision {
+	versionList = slice.Filter(versionList, func(index int, item *v1.ControllerRevision) bool {
+		for _, owner := range item.OwnerReferences {
+			if owner.Kind == kind && owner.Name == name {
+				return true
+			}
+		}
+		return false
+	})
+	return versionList
 }
 func (d *rollout) Undo(toVersions ...int) (string, error) {
 	kind := d.kubectl.Statement.GVK.Kind
@@ -292,8 +307,7 @@ func (d *rollout) Undo(toVersions ...int) (string, error) {
 	d.logInfo("Undo")
 
 	// 校验是否是支持的资源类型
-	// TODO "StatefulSet",
-	if err := d.checkResourceKind(kind, []string{"Deployment", "DaemonSet"}); err != nil {
+	if err := d.checkResourceKind(kind, []string{"Deployment", "DaemonSet", "StatefulSet"}); err != nil {
 		return "", err
 	}
 
@@ -307,8 +321,8 @@ func (d *rollout) Undo(toVersions ...int) (string, error) {
 	switch kind {
 	case "Deployment":
 		err = d.rollbackDeployment(toVersion)
-	// case "StatefulSet":
-	// 	err = d.rollbackStatefulSet(&item)
+	case "StatefulSet":
+		err = d.rollbackStatefulSet(toVersion)
 	case "DaemonSet":
 		err = d.rollbackDaemonSet(toVersion)
 	default:
@@ -491,6 +505,95 @@ func (d *rollout) rollbackDaemonSet(toVersion int) error {
 	err = d.kubectl.Resource(&ds).Update(&ds).Error
 	if err != nil {
 		return fmt.Errorf("rollbackDaemonSet update daemonset err %v", err)
+	}
+
+	return nil
+}
+func (d *rollout) rollbackStatefulSet(toVersion int) error {
+	// 从ControllerVersion列表中找指定版本的ControllerVersion
+	// 将Revision.Data.Raw转换为DaemonSet
+	// 提取DaemonSet的Spec.Template.Spec，赋值到原先的DaemonSet上，更新
+	// 完成回滚
+
+	kind := d.kubectl.Statement.GVK.Kind
+	name := d.kubectl.Statement.Name
+	ns := d.kubectl.Statement.Namespace
+
+	var sts v1.StatefulSet
+	err := d.kubectl.Resource(&sts).
+		WithLabelSelector("app=" + name).
+		Get(&sts).Error
+	if err != nil {
+		return fmt.Errorf("rollbackStatefulSet get StatefulSet err %v", err)
+	}
+	var versionList []*v1.ControllerRevision
+	err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+		Namespace(ns).
+		List(&versionList).Error
+	if err != nil {
+		return fmt.Errorf("rollbackStatefulSet list controllerrevisions err %v", err)
+	}
+	// 如果没有指定版本，则回滚到上一个版本
+	if toVersion == 0 {
+		// 查找最新的 ControllerRevision 来确定版本
+		// 找到最大的version
+		var latestRevision int64 = 0
+		for _, revision := range versionList {
+			for _, owner := range revision.OwnerReferences {
+				if owner.Kind == kind && owner.Name == name {
+					// 选择目标版本为最新版本
+					// 确定最新的版本
+					if revision.Revision > latestRevision {
+						latestRevision = revision.Revision
+					}
+				}
+			}
+		}
+
+		toVersion = int(latestRevision - 1)
+		if toVersion <= 0 {
+			// 做一个防护，只要是有变更，那么版本号必大于0，最小为1
+			toVersion = 1
+		}
+	}
+
+	// 获取目标版本的 ControllerRevision 并提取 PodTemplateSpec
+
+	// 查找目标版本的 ControllerRevision
+	var targetRevision *v1.ControllerRevision
+
+	for _, revision := range versionList {
+		for _, owner := range revision.OwnerReferences {
+			if owner.Kind == kind && owner.Name == name {
+				if int(revision.Revision) == toVersion {
+					targetRevision = revision
+					break
+				}
+			}
+		}
+		if targetRevision != nil {
+			break
+		}
+	}
+
+	if targetRevision == nil {
+		return fmt.Errorf("rollbackStatefulSet get target revision %d for %s not found", toVersion, name)
+	}
+
+	// 提取目标版本的 PodTemplateSpec
+	var stsTemplate v1.StatefulSet
+	err = json.Unmarshal(targetRevision.Data.Raw, &stsTemplate)
+	if err != nil {
+		return fmt.Errorf("rollbackStatefulSet unmarshal controllerrevision data err %v", err)
+	}
+
+	// 使用目标版本的模板更新当前 DaemonSet
+	sts.Spec.Template.Spec = stsTemplate.Spec.Template.Spec
+
+	// 更新 DaemonSet
+	err = d.kubectl.Resource(&sts).Update(&sts).Error
+	if err != nil {
+		return fmt.Errorf("rollbackStatefulSet update daemonset err %v", err)
 	}
 
 	return nil
