@@ -20,7 +20,8 @@ import (
 func Example() {
 	callbacks()
 	_ = InitPodWatcher()
-	builtInExample()
+	// drainNode()
+	// builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
@@ -33,6 +34,14 @@ func Example() {
 	// podFileCommand()
 	// podLogs()
 
+}
+
+func drainNode() {
+	err := kom.DefaultCluster().Resource(&corev1.Node{}).
+		Name("kind-control-plane").Ctl().Node().Drain()
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 func callbacks() {
 	_ = kom.DefaultCluster().Callback().Get().Register("get", GetCB)
