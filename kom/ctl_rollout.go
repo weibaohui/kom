@@ -211,13 +211,20 @@ func (d *rollout) History() (string, error) {
 		}
 
 		// 查询与 Deployment 关联的所有 ReplicaSet
-		var rsList []unstructured.Unstructured
+		var rsList []*v1.ReplicaSet
 
 		err = d.kubectl.Resource(&v1.ReplicaSet{}).WithLabelSelector(labelSelector).List(&rsList).Error
 		if err != nil {
 			return "", fmt.Errorf("failed to list ReplicaSets for Deployment: %v", err)
 		}
-
+		rsList = slice.Filter(rsList, func(index int, item *v1.ReplicaSet) bool {
+			for _, owner := range item.OwnerReferences {
+				if owner.Kind == kind && owner.Name == name {
+					return true
+				}
+			}
+			return false
+		})
 		// 如果没有 ReplicaSet，则没有历史
 		if len(rsList) == 0 {
 			return "No ReplicaSets found for Deployment", nil
@@ -227,9 +234,11 @@ func (d *rollout) History() (string, error) {
 		historyStr := "deployment/" + name + " history:\n"
 		for _, rs := range rsList {
 			rsName := rs.GetName()
-			rsRevision, _, _ := unstructured.NestedString(rs.Object, "metadata", "annotations", "deployment.kubernetes.io/revision")
+			if len(rs.Annotations) > 0 {
+				rsRevision := rs.Annotations["deployment.kubernetes.io/revision"]
+				historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %s\n", rsName, rsRevision)
+			}
 
-			historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %s\n", rsName, rsRevision)
 		}
 		return historyStr, nil
 
