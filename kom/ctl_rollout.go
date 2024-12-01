@@ -213,7 +213,7 @@ func (d *rollout) History() (string, error) {
 		// 查询与 Deployment 关联的所有 ReplicaSet
 		var rsList []*v1.ReplicaSet
 
-		err = d.kubectl.Resource(&v1.ReplicaSet{}).WithLabelSelector(labelSelector).List(&rsList).Error
+		err = d.kubectl.newInstance().Resource(&v1.ReplicaSet{}).WithLabelSelector(labelSelector).List(&rsList).Error
 		if err != nil {
 			return "", fmt.Errorf("failed to list ReplicaSets for Deployment: %v", err)
 		}
