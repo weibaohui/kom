@@ -34,6 +34,11 @@ func (c *ctl) Pod() *pod {
 		kubectl: c.kubectl,
 	}
 }
+func (c *ctl) Node() *node {
+	return &node{
+		kubectl: c.kubectl,
+	}
+}
 func (c *ctl) Rollout() *rollout {
 	return &rollout{
 		kubectl: c.kubectl,
