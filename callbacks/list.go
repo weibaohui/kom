@@ -40,8 +40,13 @@ func List(k *kom.Kubectl) error {
 	var err error
 
 	if namespaced {
-		if ns == "" {
-			ns = "default"
+
+		if stmt.AllNamespace {
+			ns = metav1.NamespaceAll
+		} else {
+			if ns == "" {
+				ns = "default"
+			}
 		}
 		list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 	} else {
