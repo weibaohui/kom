@@ -32,6 +32,11 @@ func (k *Kubectl) AllNamespace() *Kubectl {
 	tx.Statement.AllNamespace = true
 	return tx
 }
+func (k *Kubectl) RemoveManagedFields() *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.RemoveManagedFields = true
+	return tx
+}
 
 // ContainerName
 // Deprecated: use Ctl().Pod().ContainerName() instead.
