@@ -17,6 +17,7 @@ import (
 type Statement struct {
 	*Kubectl                                        // 基础配置
 	RowsAffected        int64                       // 返回受影响的行数
+	AllNamespace        bool                        // 所有名空间
 	Namespace           string                      // 资源所属命名空间
 	Name                string                      // 资源名称
 	GVR                 schema.GroupVersionResource // 资源类型
