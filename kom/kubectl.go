@@ -49,14 +49,15 @@ func (k *Kubectl) getInstance() *Kubectl {
 		tx := &Kubectl{ID: k.ID, Error: k.Error}
 		// clone with new statement
 		tx.Statement = &Statement{
-			Kubectl:     k.Statement.Kubectl,
-			Context:     k.Statement.Context,
-			ListOptions: k.Statement.ListOptions,
-			Namespace:   k.Statement.Namespace,
-			Namespaced:  k.Statement.Namespaced,
-			GVR:         k.Statement.GVR,
-			GVK:         k.Statement.GVK,
-			Name:        k.Statement.Name,
+			Kubectl:      k.Statement.Kubectl,
+			Context:      k.Statement.Context,
+			ListOptions:  k.Statement.ListOptions,
+			AllNamespace: k.Statement.AllNamespace,
+			Namespace:    k.Statement.Namespace,
+			Namespaced:   k.Statement.Namespaced,
+			GVR:          k.Statement.GVR,
+			GVK:          k.Statement.GVK,
+			Name:         k.Statement.Name,
 		}
 		return tx
 	}
