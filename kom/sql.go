@@ -27,6 +27,11 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 	tx.Statement.Namespace = ns
 	return tx
 }
+func (k *Kubectl) AllNamespace() *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.AllNamespace = true
+	return tx
+}
 
 // ContainerName
 // Deprecated: use Ctl().Pod().ContainerName() instead.
