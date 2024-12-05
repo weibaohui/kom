@@ -39,6 +39,11 @@ func (c *ctl) Node() *node {
 		kubectl: c.kubectl,
 	}
 }
+func (c *ctl) CronJob() *cronJob {
+	return &cronJob{
+		kubectl: c.kubectl,
+	}
+}
 func (c *ctl) Rollout() *rollout {
 	return &rollout{
 		kubectl: c.kubectl,
