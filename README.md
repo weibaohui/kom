@@ -119,8 +119,10 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").G
 
 #### List Resources
 ```go
-// List all Deployments in the "default" namespace
+// List  Deployments in the "default" namespace
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
+// List  Deployments in all namespace
+err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
 ```
 
 #### List Resources by Label
@@ -373,7 +375,10 @@ err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(item
 #### List CR Objects
 ```go
 var crontabList []unstructured.Unstructured
+// list in default namespace
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
+// list in all namespace
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").AllNamespace().List(&crontabList).Error
 ```
 
 #### Update a CR Object
@@ -512,4 +517,68 @@ func cb(k *kom.Kubectl) error {
     return nil
     // return fmt.Errorf("error") // Return error to stop further callback execution
 }
+```
+
+
+### 8. Other Operations
+#### Restart Deployment
+```go
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Restart()
+```
+#### Scale Deployment
+```go
+// Set the replica count of the nginx deployment to 3
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Scale(3)
+```
+#### Update Deployment Tag
+```go
+// Upgrade the container image tag of the nginx deployment to alpine
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Deployment().ReplaceImageTag("main","20241124")
+```
+#### Deployment Rollout History
+```go
+// Query the upgrade history of the nginx deployment
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().History()
+```
+#### Deployment Rollout Undo
+```go
+// Rollback the nginx deployment
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo()
+// Rollback the nginx deployment to a specific version (query the history)
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo("6")
+```
+#### Deployment Rollout Pause
+```go
+// Pause the upgrade process
+err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Pause()
+```
+#### Deployment Rollout Resume
+```go
+// Resume the upgrade process
+err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Resume()
+```
+#### Deployment Rollout Status
+```go
+// Check the status of the nginx deployment rollout
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Status()
+```
+#### Taint Node
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Taint("dedicated=special-user:NoSchedule")
+```
+#### Remove Taint from Node
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnTaint("dedicated=special-user:NoSchedule")
+```
+#### Cordon Node
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Cordon()
+```
+#### UnCordon Node
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnCordon()
+```
+#### Drain Node
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```

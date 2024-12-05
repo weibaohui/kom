@@ -113,6 +113,8 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").G
 ```go
 // 查询 default 命名空间下的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
+// 查询 所有 命名空间下的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
 ```
 #### 通过Label查询资源列表
 ```go
@@ -346,7 +348,10 @@ err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(item
 #### List获取CR对象的列表
 ```go
 var crontabList []unstructured.Unstructured
+// 查询default命名空间下的CronTab
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
+// 查询所有命名空间下的CronTab
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").AllNamespace().List(&crontabList).Error
 ```
 #### 更新CR对象
 ```go
@@ -463,18 +468,65 @@ func cb(k *kom.Kubectl) error {
 ```
 
 
-### 8. 高频操作
+### 8. 其他操作
 #### Deployment重启
 ```go
-err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().Restart()
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Restart()
 ```
 #### Deployment扩缩容
 ```go
 // 将名称为nginx的deployment的副本数设置为3
-err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().Scale(3)
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Scale(3)
 ```
 #### Deployment更新Tag
 ```go
 // 将名称为nginx的deployment的中的容器镜像tag升级为alpine
-err = kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Ctl().Deployment().ReplaceImageTag("main","20241124")
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Deployment().ReplaceImageTag("main","20241124")
+```
+#### Deployment Rollout History
+```go
+// 查询名称为nginx的deployment的升级历史
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().History()
+```
+#### Deployment Rollout Undo
+```go
+// 将名称为nginx的deployment进行回滚
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo()
+// 将名称为nginx的deployment进行回滚到指定版本(history 查询)
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo("6")
+```
+#### Deployment Rollout Pause
+```go
+// 暂停升级过程
+err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Pause()
+```
+#### Deployment Rollout Resume 
+```go
+// 恢复升级过程
+err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Resume()
+```
+#### Deployment Rollout Status 
+```go
+// 将名称为nginx的deployment的中的容器镜像tag升级为alpine
+result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Status()
+```
+#### 节点打污点
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Taint("dedicated=special-user:NoSchedule")
+```
+#### 节点去除污点
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnTaint("dedicated=special-user:NoSchedule")
+```
+#### 节点Cordon
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Cordon()
+```
+#### 节点UnCordon
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnCordon()
+```
+#### 节点Drain
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
