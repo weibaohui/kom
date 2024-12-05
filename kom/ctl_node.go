@@ -3,8 +3,11 @@ package kom
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/duke-git/lancet/v2/slice"
+	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,6 +35,54 @@ func (d *node) UnCordon() error {
 	var item interface{}
 	patchData := `{"spec":{"unschedulable":null}}`
 	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	return err
+}
+func (d *node) Taint(str string) error {
+	taint, err := parseTaint(str)
+	if err != nil {
+		return err
+	}
+	var original *corev1.Node
+	err = d.kubectl.Get(&original).Error
+	if err != nil {
+		return err
+	}
+	taints := original.Spec.Taints
+	if taints == nil || len(taints) == 0 {
+		taints = []corev1.Taint{*taint}
+	} else {
+		taints = append(taints, *taint)
+	}
+
+	var item interface{}
+	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
+	err = d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	return err
+}
+func (d *node) UnTaint(str string) error {
+	taint, err := parseTaint(str)
+	if err != nil {
+		return err
+	}
+	var original *corev1.Node
+	err = d.kubectl.Get(&original).Error
+	if err != nil {
+		return err
+	}
+	taints := original.Spec.Taints
+	if taints == nil || len(taints) == 0 {
+		return fmt.Errorf("taint %s not found", str)
+	}
+
+	taints = slice.Filter(taints, func(index int, item corev1.Taint) bool {
+		if item.Key != taint.Key {
+			return true
+		}
+		return false
+	})
+	var item interface{}
+	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
+	err = d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
 	return err
 }
 
@@ -145,4 +196,37 @@ func (d *node) evictPod(pod *corev1.Pod) error {
 	}
 	klog.V(8).Infof(" pod %s/%s evicted\n", pod.Namespace, pod.Name)
 	return nil
+}
+
+// ParseTaint parses a taint string into a corev1.Taint structure.
+func parseTaint(taintStr string) (*corev1.Taint, error) {
+	// Split the input string into key-value-effect
+	var key, value, effect string
+	parts := strings.Split(taintStr, ":")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid taint format: %s", taintStr)
+	}
+	keyValue := parts[0]
+	effect = parts[1]
+
+	// Check the effect
+	if effect != string(corev1.TaintEffectNoSchedule) &&
+		effect != string(corev1.TaintEffectPreferNoSchedule) &&
+		effect != string(corev1.TaintEffectNoExecute) {
+		return nil, fmt.Errorf("invalid taint effect: %s", effect)
+	}
+
+	// Parse the key and value
+	keyValueParts := strings.SplitN(keyValue, "=", 2)
+	key = keyValueParts[0]
+	if len(keyValueParts) == 2 {
+		value = keyValueParts[1]
+	}
+
+	// Return the Taint structure
+	return &corev1.Taint{
+		Key:    key,
+		Value:  value,
+		Effect: corev1.TaintEffect(effect),
+	}, nil
 }
