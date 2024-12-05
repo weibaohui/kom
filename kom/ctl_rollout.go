@@ -175,7 +175,15 @@ func (d *rollout) Status() (string, error) {
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
 }
-func (d *rollout) History() (string, error) {
+
+type RolloutHistory struct {
+	Kind      string            `json:"kind,omitempty"`
+	Name      string            `json:"name,omitempty"`
+	Revision  string            `json:"revision,omitempty"`
+	ExtraInfo map[string]string `json:"extraInfo,omitempty"`
+}
+
+func (d *rollout) History() ([]RolloutHistory, error) {
 	kind := d.kubectl.Statement.GVK.Kind
 	name := d.kubectl.Statement.Name
 	ns := d.kubectl.Statement.Namespace
@@ -183,13 +191,13 @@ func (d *rollout) History() (string, error) {
 
 	// 校验是否是支持的资源类型
 	if err := d.checkResourceKind(kind, []string{"Deployment", "StatefulSet", "DaemonSet"}); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var item unstructured.Unstructured
 	err := d.kubectl.Get(&item).Error
 	if err != nil {
-		return "", d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "history", err)
+		return nil, d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "history", err)
 	}
 
 	switch kind {
@@ -197,7 +205,7 @@ func (d *rollout) History() (string, error) {
 		// 获取 Deployment 的 spec.selector.matchLabels
 		labels, found, err := unstructured.NestedMap(item.Object, "spec", "selector", "matchLabels")
 		if err != nil || !found {
-			return "", fmt.Errorf("failed to get matchLabels from Deployment: %v", err)
+			return nil, fmt.Errorf("failed to get matchLabels from Deployment: %s/%s %v", ns, name, err)
 		}
 
 		// 构造 labelSelector 字符串，将所有标签拼接起来
@@ -215,7 +223,7 @@ func (d *rollout) History() (string, error) {
 
 		err = d.kubectl.newInstance().Resource(&v1.ReplicaSet{}).WithLabelSelector(labelSelector).List(&rsList).Error
 		if err != nil {
-			return "", fmt.Errorf("failed to list ReplicaSets for Deployment: %v", err)
+			return nil, fmt.Errorf("failed to list ReplicaSets for Deployment %s/%s: %v", ns, name, err)
 		}
 		rsList = slice.Filter(rsList, func(index int, item *v1.ReplicaSet) bool {
 			for _, owner := range item.OwnerReferences {
@@ -227,20 +235,19 @@ func (d *rollout) History() (string, error) {
 		})
 		// 如果没有 ReplicaSet，则没有历史
 		if len(rsList) == 0 {
-			return "No ReplicaSets found for Deployment", nil
+			return nil, fmt.Errorf("no history found for Deployment %s/%s", ns, name)
 		}
 
-		// 格式化历史记录
-		historyStr := "deployment/" + name + " history:\n"
+		var historyEntries []RolloutHistory
 		for _, rs := range rsList {
-			rsName := rs.GetName()
-			if len(rs.Annotations) > 0 {
-				rsRevision := rs.Annotations["deployment.kubernetes.io/revision"]
-				historyStr += fmt.Sprintf("ReplicaSet: %s, Revision: %s\n", rsName, rsRevision)
-			}
-
+			revision := rs.Annotations["deployment.kubernetes.io/revision"]
+			historyEntries = append(historyEntries, RolloutHistory{
+				Kind:     "ReplicaSet",
+				Name:     rs.GetName(),
+				Revision: revision,
+			})
 		}
-		return historyStr, nil
+		return historyEntries, nil
 
 	case "StatefulSet":
 
@@ -249,23 +256,24 @@ func (d *rollout) History() (string, error) {
 			Namespace(ns).
 			List(&versionList).Error
 		if err != nil {
-			return "", fmt.Errorf("failed to get controllerrevisions for StatefulSet: %s/%s %v", ns, name, err)
+			return nil, fmt.Errorf("failed to get controllerrevisions for StatefulSet: %s/%s %v", ns, name, err)
 		}
 
 		versionList = d.filterByOwner(versionList, kind, name)
 
 		if len(versionList) == 0 {
-			return "No history found for StatefulSet", nil
+			return nil, fmt.Errorf("no history found for StatefulSet %s/%s", ns, name)
 		}
 
-		// 格式化历史记录
-		historyStr := "StatefulSet/" + name + " history:\n"
+		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
-			rvName := rv.GetName()
-
-			historyStr += fmt.Sprintf("ControllerRevision: %s, Revision: %d\n", rvName, rv.Revision)
+			historyEntries = append(historyEntries, RolloutHistory{
+				Kind:     "ControllerRevision",
+				Name:     rv.GetName(),
+				Revision: fmt.Sprintf("%d", rv.Revision),
+			})
 		}
-		return historyStr, nil
+		return historyEntries, nil
 	case "DaemonSet":
 
 		var versionList []*v1.ControllerRevision
@@ -273,24 +281,26 @@ func (d *rollout) History() (string, error) {
 			Namespace(ns).
 			List(&versionList).Error
 		if err != nil {
-			return "", fmt.Errorf("failed to get controllerrevisions for DaemonSet: %s/%s %v", ns, name, err)
+
+			return nil, fmt.Errorf("failed to get controllerrevisions for DaemonSet: %s/%s %v", ns, name, err)
 		}
 		versionList = d.filterByOwner(versionList, kind, name)
 		if len(versionList) == 0 {
-			return "No history found for DaemonSet", nil
+			return nil, fmt.Errorf("no history found for DaemonSet %s/%s", ns, name)
 		}
 
-		// 格式化历史记录
-		historyStr := "DaemonSet/" + name + " history:\n"
+		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
-			rvName := rv.GetName()
-
-			historyStr += fmt.Sprintf("ControllerRevision: %s, Revision: %d\n", rvName, rv.Revision)
+			historyEntries = append(historyEntries, RolloutHistory{
+				Kind:     "ControllerRevision",
+				Name:     rv.GetName(),
+				Revision: fmt.Sprintf("%d", rv.Revision),
+			})
 		}
-		return historyStr, nil
+		return historyEntries, nil
 
 	default:
-		return "", fmt.Errorf("unsupported kind: %s", kind)
+		return nil, fmt.Errorf("unsupported kind: %s", kind)
 	}
 }
 

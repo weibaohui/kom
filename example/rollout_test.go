@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 )
 
@@ -130,7 +131,7 @@ func TestRollout_Deploy_History(t *testing.T) {
 		t.Log(err)
 		return
 	}
-	t.Logf("%s rollout history %s", deployName, result)
+	t.Logf("%s rollout history %s", deployName, utils.ToJSON(result))
 }
 func TestRollout_Deploy_Status(t *testing.T) {
 	result, err := kom.DefaultCluster().Resource(&v1.Deployment{}).
@@ -158,7 +159,7 @@ func TestRollout_Ds_History(t *testing.T) {
 		t.Log(err)
 		return
 	}
-	t.Logf("%s rollout history%s", dsName, result)
+	t.Logf("%s rollout history%s", dsName, utils.ToJSON(result))
 }
 func TestRollout_Ds_Status(t *testing.T) {
 	result, err := kom.DefaultCluster().Resource(&v1.DaemonSet{}).
@@ -186,7 +187,7 @@ func TestRollout_Sts_History(t *testing.T) {
 		t.Log(err)
 		return
 	}
-	t.Logf("%s rollout history%s", stsName, result)
+	t.Logf("%s rollout history%s", stsName, utils.ToJSON(result))
 }
 func TestRollout_Sts_Status(t *testing.T) {
 	result, err := kom.DefaultCluster().Resource(&v1.StatefulSet{}).
