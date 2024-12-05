@@ -9,7 +9,9 @@ import (
 
 	"github.com/duke-git/lancet/v2/slice"
 	v1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 )
@@ -177,10 +179,13 @@ func (d *rollout) Status() (string, error) {
 }
 
 type RolloutHistory struct {
-	Kind      string            `json:"kind,omitempty"`
-	Name      string            `json:"name,omitempty"`
-	Revision  string            `json:"revision,omitempty"`
-	ExtraInfo map[string]string `json:"extraInfo,omitempty"`
+	Kind              string                  `json:"kind,omitempty"`
+	Name              string                  `json:"name,omitempty"`
+	Namespace         string                  `json:"namespace,omitempty"`
+	Revision          string                  `json:"revision,omitempty"`
+	CreationTimestamp metav1.Time             `json:"creationTimestamp"`
+	GVK               schema.GroupVersionKind `json:"gvk,omitempty"`
+	ExtraInfo         map[string]string       `json:"extraInfo,omitempty"`
 }
 
 func (d *rollout) History() ([]RolloutHistory, error) {
@@ -242,9 +247,12 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		for _, rs := range rsList {
 			revision := rs.Annotations["deployment.kubernetes.io/revision"]
 			historyEntries = append(historyEntries, RolloutHistory{
-				Kind:     "ReplicaSet",
-				Name:     rs.GetName(),
-				Revision: revision,
+				Kind:              "ReplicaSet",
+				Name:              rs.GetName(),
+				Namespace:         rs.GetNamespace(),
+				GVK:               rs.GetObjectKind().GroupVersionKind(),
+				CreationTimestamp: rs.GetCreationTimestamp(),
+				Revision:          revision,
 			})
 		}
 		return historyEntries, nil
@@ -268,9 +276,12 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
 			historyEntries = append(historyEntries, RolloutHistory{
-				Kind:     "ControllerRevision",
-				Name:     rv.GetName(),
-				Revision: fmt.Sprintf("%d", rv.Revision),
+				Kind:              "ControllerRevision",
+				Name:              rv.GetName(),
+				Namespace:         rv.GetNamespace(),
+				GVK:               rv.GetObjectKind().GroupVersionKind(),
+				CreationTimestamp: rv.GetCreationTimestamp(),
+				Revision:          fmt.Sprintf("%d", rv.Revision),
 			})
 		}
 		return historyEntries, nil
@@ -292,9 +303,12 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
 			historyEntries = append(historyEntries, RolloutHistory{
-				Kind:     "ControllerRevision",
-				Name:     rv.GetName(),
-				Revision: fmt.Sprintf("%d", rv.Revision),
+				Kind:              "ControllerRevision",
+				Name:              rv.GetName(),
+				Namespace:         rv.GetNamespace(),
+				CreationTimestamp: rv.GetCreationTimestamp(),
+				GVK:               rv.GetObjectKind().GroupVersionKind(),
+				Revision:          fmt.Sprintf("%d", rv.Revision),
 			})
 		}
 		return historyEntries, nil
