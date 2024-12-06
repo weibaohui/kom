@@ -7,10 +7,11 @@ import (
 
 func RegisterInit() {
 	klog.Infof("RegisterInit")
-}
-func init() {
 	kom.Clusters().SetRegisterCallbackFunc(RegisterDefaultCallbacks)
 	klog.Infof("Register RegisterDefaultCallbacks func  to clusters")
+}
+func init() {
+	RegisterInit()
 }
 func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
