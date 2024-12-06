@@ -29,11 +29,12 @@
 
 ```bash
 import (
-	// 导入callbacks注册机制,务必导入
-    _ "github.com/weibaohui/kom/callbacks"
     "github.com/weibaohui/kom"
+    "github.com/weibaohui/kom/callbacks"
 )
 func main() {
+    // 注册回调，务必先注册
+    callbacks.RegisterInit()
     // 注册集群
 	defaultKubeConfig := os.Getenv("KUBECONFIG")
 	if defaultKubeConfig == "" {
