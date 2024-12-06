@@ -22,9 +22,17 @@ func (k *Kubectl) Resource(obj runtime.Object) *Kubectl {
 	tx.Statement.ParseFromRuntimeObj(obj)
 	return tx
 }
+
+// Namespace 设置命名空间
+// 传入*代表取所有的命名空间，等同于调用AllNamespace()方法
 func (k *Kubectl) Namespace(ns string) *Kubectl {
 	tx := k.getInstance()
-	tx.Statement.Namespace = ns
+	if ns == "*" {
+		// all namespaces
+		tx.Statement.AllNamespace = true
+	} else {
+		tx.Statement.Namespace = ns
+	}
 	return tx
 }
 func (k *Kubectl) AllNamespace() *Kubectl {
