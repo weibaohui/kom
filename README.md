@@ -123,6 +123,7 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").G
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
 // List  Deployments in all namespace
 err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("*").List(&items).Error
 ```
 
 #### List Resources by Label
@@ -379,6 +380,7 @@ var crontabList []unstructured.Unstructured
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
 // list in all namespace
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").AllNamespace().List(&crontabList).Error
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("*").List(&crontabList).Error
 ```
 
 #### Update a CR Object

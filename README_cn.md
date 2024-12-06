@@ -114,6 +114,7 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").G
 // 查询 default 命名空间下的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
 // 查询 所有 命名空间下的 Deployment 列表
+err := kom.DefaultCluster().Resource(&item).Namespace("*").List(&items).Error
 err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
 ```
 #### 通过Label查询资源列表
@@ -352,6 +353,7 @@ var crontabList []unstructured.Unstructured
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
 // 查询所有命名空间下的CronTab
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").AllNamespace().List(&crontabList).Error
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("*").List(&crontabList).Error
 ```
 #### 更新CR对象
 ```go
