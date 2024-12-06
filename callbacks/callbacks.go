@@ -5,6 +5,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
+func RegisterInit() {
+	klog.Infof("RegisterInit")
+}
 func init() {
 	kom.Clusters().SetRegisterCallbackFunc(RegisterDefaultCallbacks)
 	klog.Infof("Register RegisterDefaultCallbacks func  to clusters")
