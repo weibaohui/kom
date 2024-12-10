@@ -207,6 +207,23 @@ func TestListAllNsPod(t *testing.T) {
 		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
 	}
 }
+func TestListAllNsPodWithOffsetLimit(t *testing.T) {
+	var items []corev1.Pod
+	var pod corev1.Pod
+	err := kom.DefaultCluster().
+		Resource(&pod).
+		AllNamespace().
+		Offset(10).Limit(2).
+		List(&items).Error
+	if err != nil {
+		t.Errorf("List Error %v\n", err)
+	}
+	if len(items) > 0 {
+		t.Logf("List Pods count %d\n", len(items))
+	} else {
+		t.Errorf("List Pods count,should %d,acctual %d", 1, len(items))
+	}
+}
 func TestListNamespaceStartPod(t *testing.T) {
 	var items []corev1.Pod
 	var pod corev1.Pod
