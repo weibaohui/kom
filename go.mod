@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	github.com/duke-git/lancet/v2 v2.3.3
 	github.com/google/gnostic-models v0.6.8
+	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
 	k8s.io/client-go v0.31.1
