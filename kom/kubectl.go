@@ -58,6 +58,7 @@ func (k *Kubectl) getInstance() *Kubectl {
 			GVR:          k.Statement.GVR,
 			GVK:          k.Statement.GVK,
 			Name:         k.Statement.Name,
+			Filter:       k.Statement.Filter,
 		}
 		return tx
 	}
