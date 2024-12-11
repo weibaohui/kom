@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/weibaohui/kom/kom"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -36,6 +37,32 @@ func TestSQL(t *testing.T) {
 	// sql = "select * from deploy where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.creationTimestamp` in ('2024-11-08','2024-11-09','2024-11-10') order by id desc limit 2"
 
 	var list []unstructured.Unstructured
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	if err != nil {
+		t.Logf("List error %v", err)
+	}
+	t.Logf("Count %d", len(list))
+	for _, d := range list {
+		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+}
+func TestCRDSQL(t *testing.T) {
+	sql := "select * from virtualmachine where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+
+	var list []unstructured.Unstructured
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	if err != nil {
+		t.Logf("List error %v", err)
+	}
+	t.Logf("Count %d", len(list))
+	for _, d := range list {
+		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+}
+func TestPodSQL(t *testing.T) {
+	sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default'   "
+
+	var list []v1.Pod
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	if err != nil {
 		t.Logf("List error %v", err)
