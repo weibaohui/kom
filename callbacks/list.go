@@ -3,13 +3,16 @@ package callbacks
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
+	"github.com/duke-git/lancet/v2/slice"
 	"github.com/duke-git/lancet/v2/stream"
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 )
 
 func List(k *kom.Kubectl) error {
@@ -62,7 +65,11 @@ func List(k *kom.Kubectl) error {
 	// 对结果进行过滤，执行where 条件
 	result := executeFilter(list.Items, stmt.Filter.Conditions)
 
-	utils.SortByCreationTime(result)
+	// 对结果执行OrderBy
+	klog.V(6).Infof("order by = %s", stmt.Filter.Order)
+	executeOrderBy(result, stmt.Filter.Order)
+
+	// utils.SortByCreationTime(result)
 	// 先清空之前的值
 	destValue.Elem().Set(reflect.MakeSlice(destValue.Elem().Type(), 0, 0))
 	streamTmp := stream.FromSlice(result)
@@ -94,4 +101,70 @@ func List(k *kom.Kubectl) error {
 		return err
 	}
 	return nil
+}
+
+func executeOrderBy(result []unstructured.Unstructured, order string) {
+	// order by `metadata.name` asc, `metadata.host` asc
+	// todo 目前只实现了单一字段的排序，还没有搞定多个字段的排序
+	order = strings.TrimPrefix(strings.TrimSpace(order), "order by")
+	order = strings.TrimSpace(order)
+	orders := strings.Split(order, ",")
+	for _, ord := range orders {
+		var field string
+		var desc bool
+		// 判断排序方向
+		if strings.Contains(ord, "desc") {
+			desc = true
+			field = strings.ReplaceAll(ord, "desc", "")
+		} else {
+			field = strings.ReplaceAll(ord, "asc", "")
+		}
+		field = strings.TrimSpace(field)
+		field = strings.TrimSpace(utils.TrimQuotes(field))
+		klog.V(6).Infof("Sorting by field: %s, Desc: %v", field, desc)
+
+		slice.SortBy(result, func(a, b unstructured.Unstructured) bool {
+			// 获取字段值
+			aFieldValue, found, err := getNestedFieldAsString(a.Object, field)
+			if err != nil || !found {
+				return false
+			}
+			bFieldValue, found, err := getNestedFieldAsString(b.Object, field)
+			if err != nil || !found {
+				return false
+			}
+			t, va := utils.DetectType(aFieldValue)
+			_, vb := utils.DetectType(bFieldValue)
+
+			switch t {
+			case utils.TypeString:
+				if desc {
+					return va.(string) > vb.(string)
+				}
+				return va.(string) < vb.(string)
+			case utils.TypeNumber:
+				if desc {
+					return va.(float64) > vb.(float64)
+				}
+				return va.(float64) < vb.(float64)
+			case utils.TypeTime:
+				tva, err := utils.ParseTime(fmt.Sprintf("%s", va))
+				if err != nil {
+					return false
+				}
+				tvb, err := utils.ParseTime(fmt.Sprintf("%s", vb))
+				if err != nil {
+					return false
+				}
+				if desc {
+					return tva.After(tvb)
+				}
+				return tva.Before(tvb)
+			default:
+				return false
+			}
+		})
+
+	}
+
 }
