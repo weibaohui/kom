@@ -3,20 +3,10 @@ package kom
 import (
 	"fmt"
 	"reflect"
-	"strconv"
-	"time"
 
 	"github.com/weibaohui/kom/utils"
 	"github.com/xwb1989/sqlparser"
 	"k8s.io/klog/v2"
-)
-
-// 定义字符串的类型
-const (
-	TypeNumber  = "number"
-	TypeTime    = "time"
-	TypeString  = "string"
-	TypeBoolean = "boolean"
 )
 
 // 解析 WHERE 表达式
@@ -65,33 +55,4 @@ func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlpar
 		fmt.Printf("Unhandled expression at depth %d: %s\n", depth, sqlparser.String(expr))
 	}
 	return conditions
-}
-
-// detectType 探测字符串的类型（数字、时间、字符串）
-func detectType(value interface{}) (string, interface{}) {
-
-	if boolean, err := strconv.ParseBool(fmt.Sprintf("%v", value)); err == nil {
-		return TypeBoolean, boolean
-	}
-
-	// 1. 尝试解析为整数或浮点数
-	if num, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64); err == nil {
-		return TypeNumber, num
-	}
-
-	// 2. 尝试解析为时间
-	timeLayouts := []string{
-		"2006-01-02",                // 日期格式
-		"2006-01-02T15:04:05Z07:00", // RFC3339 格式
-		"2006-01-02 15:04:05",       // 无时区的时间格式
-	}
-
-	for _, layout := range timeLayouts {
-		if t, err := time.Parse(layout, fmt.Sprintf("%v", value)); err == nil {
-			return TypeTime, t
-		}
-	}
-
-	// 3. 默认返回字符串类型
-	return TypeString, value
 }
