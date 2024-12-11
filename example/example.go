@@ -23,7 +23,7 @@ func Example() {
 	// _ = InitPodWatcher()
 	//
 	// drainNode()
-	builtInExample()
+	// builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
