@@ -122,3 +122,10 @@ func NormalizeToWindows(input string) string {
 	unixNormalized := strings.ReplaceAll(input, "\r\n", "\n")
 	return strings.ReplaceAll(unixNormalized, "\n", "\r\n")
 }
+func TrimQuotes(str string) string {
+	str = strings.TrimPrefix(str, "`")
+	str = strings.TrimSuffix(str, "`")
+	str = strings.TrimPrefix(str, "'")
+	str = strings.TrimSuffix(str, "'")
+	return str
+}
