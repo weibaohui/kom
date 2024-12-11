@@ -2,6 +2,7 @@ package kom
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -196,6 +197,7 @@ func (u *tools) GetGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk 
 }
 
 // FindGVKByTableNameInApiResources 从 APIResource 列表中查找表名对应的 GVK
+// APIResource 包含了CRD的内容
 func (u *tools) FindGVKByTableNameInApiResources(tableName string) *schema.GroupVersionKind {
 
 	for _, resource := range u.kubectl.parentCluster().apiResources {
@@ -226,9 +228,11 @@ func (u *tools) FindGVKByTableNameInCRDList(tableName string) *schema.GroupVersi
 		// 提取 kind 和 plural
 		kind, _ := specNames["kind"].(string)
 		plural, _ := specNames["plural"].(string)
+		singular, _ := specNames["singular"].(string)
+		shortNames, _, _ := unstructured.NestedStringSlice(crd.Object, "spec", "names", "shortNames")
 
 		// 比较 tableName 是否匹配 kind 或 plural
-		if tableName == kind || tableName == plural {
+		if tableName == kind || tableName == plural || tableName == singular || slice.Contain(shortNames, tableName) {
 			// 提取 group 和 version
 			group, _, _ := unstructured.NestedString(crd.Object, "spec", "group")
 			versions, found, _ := unstructured.NestedSlice(crd.Object, "spec", "versions")
@@ -252,4 +256,20 @@ func (u *tools) FindGVKByTableNameInCRDList(tableName string) *schema.GroupVersi
 		}
 	}
 	return nil // 未找到匹配项
+}
+func (u *tools) ListAvailableTableNames() (names []string) {
+	for _, resource := range u.kubectl.parentCluster().apiResources {
+		// 比较表名和资源名 (Name) 或 Kind
+		names = append(names, strings.ToLower(resource.Kind))
+		for _, name := range resource.ShortNames {
+			names = append(names, name)
+		}
+	}
+
+	names = slice.Unique(names)
+	names = slice.Filter(names, func(index int, item string) bool {
+		return !strings.Contains(item, "Option")
+	})
+	slice.Sort(names, "asc")
+	return names
 }
