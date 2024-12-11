@@ -18,12 +18,12 @@ import (
 )
 
 func Example() {
-	sqlTest()
+	// kom.SqlTest()
 	// callbacks()
 	// _ = InitPodWatcher()
 	//
 	// drainNode()
-	// builtInExample()
+	builtInExample()
 	// crdExample()
 	// yamlApplyDelete()
 	// multiCluster()
