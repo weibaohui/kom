@@ -3,6 +3,7 @@ package example
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,11 +19,12 @@ import (
 
 // 定义过滤条件结构体
 type Condition struct {
-	Depth    int
-	AndOr    string
-	Field    string
-	Operator string
-	Value    string
+	Depth     int
+	AndOr     string
+	Field     string
+	Operator  string
+	Value     interface{} // 通过detectType 赋值为精确类型值，detectType之前都是string
+	ValueType string      // number, string, bool, time
 }
 
 var conditions []Condition // 存储解析后的条件
@@ -44,7 +46,15 @@ func sqlTest() {
 	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`=2 order by id desc limit 2"
 	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`in (2,1) order by id desc limit 2"
 	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` not in (2,3) order by id desc limit 2"
-	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`  in (1,2) order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` between 3 and 4 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` not between 3 and 4 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` not between 1 and 2 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` not between 2 and 3 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.creationTimestamp`  between '2024-11-09 00:00:00' and '2024-11-09 23:59:39' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.creationTimestamp` not between '2024-11-08' and '2024-11-10' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.creationTimestamp` > '2024-11-08' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`in (2,1) order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.creationTimestamp` in ('2024-11-08','2024-11-09','2024-11-10') order by id desc limit 2"
 
 	fmt.Println("SQL:", sql)
 
@@ -58,6 +68,11 @@ func sqlTest() {
 	switch stmt := stmt.(type) {
 	case *sqlparser.Select:
 		parseWhereExpr(0, "AND", stmt.Where.Expr)
+	}
+
+	// 探测 conditions中的条件值类型
+	for i, cond := range conditions {
+		conditions[i].ValueType, conditions[i].Value = detectType(cond.Value)
 	}
 
 	// 打印存储的条件列表
@@ -76,6 +91,43 @@ func sqlTest() {
 		fmt.Printf("found %s/%s\n", r.GetNamespace(), r.GetName())
 	}
 
+}
+
+// 定义字符串的类型
+const (
+	TypeNumber  = "number"
+	TypeTime    = "time"
+	TypeString  = "string"
+	TypeBoolean = "boolean"
+)
+
+// detectType 探测字符串的类型（数字、时间、字符串）
+func detectType(value interface{}) (string, interface{}) {
+
+	if boolean, err := strconv.ParseBool(fmt.Sprintf("%v", value)); err == nil {
+		return TypeBoolean, boolean
+	}
+
+	// 1. 尝试解析为整数或浮点数
+	if num, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64); err == nil {
+		return TypeNumber, num
+	}
+
+	// 2. 尝试解析为时间
+	timeLayouts := []string{
+		"2006-01-02",                // 日期格式
+		"2006-01-02T15:04:05Z07:00", // RFC3339 格式
+		"2006-01-02 15:04:05",       // 无时区的时间格式
+	}
+
+	for _, layout := range timeLayouts {
+		if t, err := time.Parse(layout, fmt.Sprintf("%v", value)); err == nil {
+			return TypeTime, t
+		}
+	}
+
+	// 3. 默认返回字符串类型
+	return TypeString, value
 }
 
 func groupByDepth(conditions []Condition) map[int][]Condition {
@@ -119,7 +171,7 @@ func executeFilter(result []unstructured.Unstructured, conditions []Condition) [
 
 	return result
 }
-func trim(str string) string {
+func trimQuotes(str string) string {
 	str = strings.TrimPrefix(str, "`")
 	str = strings.TrimSuffix(str, "`")
 	str = strings.TrimPrefix(str, "'")
@@ -129,7 +181,7 @@ func trim(str string) string {
 
 // 解析 WHERE 表达式
 func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
-	klog.V(8).Infof("expr type %v,string %s", reflect.TypeOf(expr), sqlparser.String(expr))
+	klog.V(6).Infof("expr type %v,string %s", reflect.TypeOf(expr), sqlparser.String(expr))
 	d := depth + 1 // 深度递增
 	switch node := expr.(type) {
 	case *sqlparser.ComparisonExpr:
@@ -137,9 +189,9 @@ func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
 		cond := Condition{
 			Depth:    depth,
 			AndOr:    andor,
-			Field:    trim(sqlparser.String(node.Left)),
+			Field:    trimQuotes(sqlparser.String(node.Left)),
 			Operator: node.Operator,
-			Value:    trim(sqlparser.String(node.Right)),
+			Value:    trimQuotes(sqlparser.String(node.Right)),
 		}
 		conditions = append(conditions, cond)
 	case *sqlparser.ParenExpr:
@@ -152,6 +204,16 @@ func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
 		// 这里传递 "AND" 给左右两边
 		parseWhereExpr(d, "AND", node.Left)
 		parseWhereExpr(d, "AND", node.Right)
+	case *sqlparser.RangeCond:
+		// 递归解析 between 1 and 3 表达式
+		cond := Condition{
+			Depth:    depth,
+			AndOr:    andor,
+			Field:    trimQuotes(sqlparser.String(node.Left)),                                                                  // 左侧的字段
+			Operator: node.Operator,                                                                                            // 操作符（BETWEEN）
+			Value:    fmt.Sprintf("%s and %s", trimQuotes(sqlparser.String(node.From)), trimQuotes(sqlparser.String(node.To))), // 范围值
+		}
+		conditions = append(conditions, cond)
 	case *sqlparser.OrExpr:
 		// 递归解析 OR 表达式
 		// 这里传递 "OR" 给左右两边
@@ -230,8 +292,10 @@ func matchCondition(resource unstructured.Unstructured, condition Condition) boo
 		return compareIn(fieldValue, condition.Value)
 	case "not in":
 		return compareIn(fieldValue, condition.Value) == false
-	case "BETWEEN":
+	case "between":
 		return compareBetween(fieldValue, condition.Value)
+	case "not between":
+		return compareBetween(fieldValue, condition.Value) == false
 	default:
 		return false
 	}
@@ -263,18 +327,24 @@ func compareValue(fieldValue string, value interface{}) bool {
 }
 
 // compareLike 判断字符串是否匹配
-func compareLike(fieldValue string, pattern string) bool {
-	klog.V(6).Infof("compareLike (like) %s,%v(%v)", fieldValue, pattern, reflect.TypeOf(pattern))
-	val := strings.TrimPrefix(pattern, "%")
+func compareLike(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareLike (like) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+
+	targetValue := fmt.Sprintf("%v", value)
+
+	// 提取值
+	val := strings.TrimPrefix(targetValue, "%")
 	val = strings.TrimSuffix(val, "%")
-	if strings.HasSuffix(pattern, "%") && strings.HasPrefix(pattern, "%") {
+
+	// 判断是否包含%
+	if strings.HasSuffix(targetValue, "%") && strings.HasPrefix(targetValue, "%") {
 		// 以%开头，以%结尾，表示包含即可
 		return strings.Contains(fieldValue, val)
 
-	} else if strings.HasSuffix(pattern, "%") {
+	} else if strings.HasSuffix(targetValue, "%") {
 		// abc%， 只以%结尾，表示开头必须是abc
 		return strings.HasPrefix(fieldValue, val)
-	} else if strings.HasPrefix(pattern, "%") {
+	} else if strings.HasPrefix(targetValue, "%") {
 		// %abc 只以%开头，表示结尾必须是abc
 		return strings.HasSuffix(fieldValue, val)
 	} else {
@@ -285,7 +355,7 @@ func compareLike(fieldValue string, pattern string) bool {
 
 // compareGreater 比较数值是否大于
 func compareGreater(fieldValue string, value interface{}) bool {
-	klog.V(6).Infof("compareLess(>) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+	klog.V(6).Infof("compareGreater(>) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 	switch v := value.(type) {
 	case float64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
@@ -309,7 +379,15 @@ func compareGreater(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat > valueFloat
+	case time.Time:
+		fieldValTime, err := parseTime(fieldValue)
+		if err != nil {
+			return false
+		}
+
+		return fieldValTime.After(v)
 	default:
+		klog.V(6).Infof("%s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 		return false
 	}
 }
@@ -341,7 +419,14 @@ func compareLess(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat < valueFloat
+	case time.Time:
+		fieldValTime, err := parseTime(fieldValue)
+		if err != nil {
+			return false
+		}
+		return fieldValTime.Before(v)
 	default:
+		klog.V(6).Infof("%s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 		return false
 	}
 }
@@ -372,9 +457,17 @@ func compareGreaterOrEqual(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat >= valueFloat
+	case time.Time:
+		fieldValTime, err := parseTime(fieldValue)
+		if err != nil {
+			return false
+		}
+		return fieldValTime.After(v) || fieldValTime.Equal(v)
 	default:
+		klog.V(6).Infof("%s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 		return false
 	}
+
 }
 
 // compareLessOrEqual 比较数值是否小于或等于
@@ -404,15 +497,24 @@ func compareLessOrEqual(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat <= valueFloat
+	case time.Time:
+		fieldValTime, err := parseTime(fieldValue)
+		if err != nil {
+			return false
+		}
+		return fieldValTime.Before(v) || fieldValTime.Equal(v)
 	default:
+		klog.V(6).Infof("%s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 		return false
 	}
 }
 
 // compareIn 判断值是否在列表中
 func compareIn(fieldValue string, value interface{}) bool {
+
 	klog.V(6).Infof("compareIn(in []) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
-	// value 类型字符串 = (1,2,3,4)
+
+	// value 类型字符串 = (1,2,3,4) ，这个格式决定了只能是string类型
 	// 如何判断fieldValue 是否在1,2,3,4范围内?
 	if str, ok := value.(string); ok {
 		// 去掉首尾的括号
@@ -421,40 +523,125 @@ func compareIn(fieldValue string, value interface{}) bool {
 		// 以逗号分割
 		values := strings.Split(str, ",")
 		for _, v := range values {
-			if v == fieldValue {
+			v = strings.Trim(v, " ")
+			v = trimQuotes(v)
+			// 时间、字符串、数字
+
+			// 先按数字比较
+			fieldValueNum, err1 := strconv.ParseFloat(fieldValue, 64)
+			toNum, err2 := strconv.ParseFloat(v, 64)
+			if err1 == nil && err2 == nil {
+				if fieldValueNum == toNum {
+					return true
+				}
+			}
+
+			// 时间不能简单判断，而要判断是否日期、小时、分钟，是否in。
+			// 是否包含时间部分，如果包含，就是精确匹配。如果不不含，就是判断日期
+			fieldValueTime, err1 := parseTime(fieldValue)
+			toTime, err2 := parseTime(v)
+			if err1 == nil && err2 == nil {
+
+				// 判断目标时间字符串是否包含时间部分（即时分秒）
+				if hasTimeComponent(v) {
+					// 逐级比较时间分量（小时、分钟、秒）
+					if fieldValueTime.Hour() == toTime.Hour() &&
+						fieldValueTime.Minute() == toTime.Minute() &&
+						fieldValueTime.Second() == toTime.Second() {
+						return true
+					}
+				}
+				// 比较日期部分（年、月、日）
+				if isSameDate(fieldValueTime, toTime) {
+					return true
+				}
+			}
+
+			if fieldValue == v {
 				return true
 			}
+
 		}
 	}
 	return false
+}
+
+// 判断是否包含时间部分
+func hasTimeComponent(value string) bool {
+	return strings.Contains(value, ":") // 如果字符串中包含冒号，说明有时间部分
+}
+
+// 判断两个时间的日期部分是否相同
+func isSameDate(t1, t2 time.Time) bool {
+	y1, m1, d1 := t1.Date()
+	y2, m2, d2 := t2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
 // compareBetween 判断值是否在范围内
 func compareBetween(fieldValue string, value interface{}) bool {
-	if rangeVal, ok := value.([]float64); ok && len(rangeVal) == 2 {
-		start, end := rangeVal[0], rangeVal[1]
-		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
-		if err != nil {
-			return false
-		}
-		return fieldValFloat >= start && fieldValFloat <= end
-	}
-	return false
-}
+	klog.V(6).Infof("compareBetween (between x and y) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 
-// compareTime 比较时间类型
-func compareTime(fieldValue string, value interface{}) bool {
-	switch v := value.(type) {
-	case time.Time:
-		// 需要将 fieldValue 转换为时间进行比较
-		fieldTime, err := time.Parse(time.RFC3339, fieldValue)
-		if err != nil {
-			return false
-		}
-		return fieldTime.Equal(v)
-	default:
-		return false
+	// value格式 举例: 1 and 5 这个格式决定了只能是string类型
+	// 正则表达式匹配 "from AND to"
+	var from, to string
+	re := regexp.MustCompile(`(?i)(.+?)\s+AND\s+(.+)`)
+	matches := re.FindStringSubmatch(fmt.Sprintf("%v", value))
+
+	// 如果匹配成功，提取出 from 和 to
+	if len(matches) == 3 {
+		from = matches[1]
+		to = matches[2]
 	}
+
+	// 判断 from to 是否为时间类型、数字类、还是字符串
+	// 数字类型，要做 fieldValue 要转换为对应的类型，并进行>=from <=to的判断
+	// 1. 尝试作为数字比较
+	if fieldValNum, err := strconv.ParseFloat(fieldValue, 64); err == nil {
+		fromNum, err1 := strconv.ParseFloat(from, 64)
+		toNum, err2 := strconv.ParseFloat(to, 64)
+		if err1 == nil && err2 == nil {
+			klog.V(6).Infof("compareBetween(between x and y) as number %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+			return fieldValNum >= fromNum && fieldValNum <= toNum
+		} else {
+			klog.V(6).Infof("compareBetween(between x and y) as number  error %v %v", err1, err2)
+		}
+
+	}
+
+	// 2. 尝试作为时间比较
+	if fieldValTime, err := parseTime(fieldValue); err == nil {
+		fromTime, err1 := parseTime(from)
+		toTime, err2 := parseTime(to)
+		if err1 == nil && err2 == nil {
+			klog.V(6).Infof("compareBetween(between x and y) as date %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+			return (fieldValTime.Equal(fromTime) || fieldValTime.After(fromTime)) &&
+				(fieldValTime.Equal(toTime) || fieldValTime.Before(toTime))
+		} else {
+			klog.V(6).Infof("compareBetween(between x and y) as date  error %v %v", err1, err2)
+		}
+	}
+
+	// 3. 作为字符串比较
+	return fieldValue >= from && fieldValue <= to
+}
+func parseTime(value string) (time.Time, error) {
+	// 尝试不同的时间格式
+	layouts := []string{
+		time.RFC3339,          // "2006-01-02T15:04:05Z07:00"
+		"2006-01-02",          // "2006-01-02"  (日期)
+		"2006-01-02 15:04:05", // "2006-01-02 15:04:05" (无时区)
+	}
+
+	var t time.Time
+	var err error
+	for _, layout := range layouts {
+		t, err = time.Parse(layout, value)
+		if err == nil {
+			return t, nil
+		}
+	}
+	return t, err
 }
 
 // getNestedFieldAsString 获取嵌套字段值，返回字符串
