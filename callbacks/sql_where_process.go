@@ -212,7 +212,7 @@ func compareGreater(fieldValue string, value interface{}) bool {
 		}
 		return fieldValFloat > valueFloat
 	case time.Time:
-		fieldValTime, err := parseTime(fieldValue)
+		fieldValTime, err := utils.ParseTime(fieldValue)
 		if err != nil {
 			return false
 		}
@@ -252,7 +252,7 @@ func compareLess(fieldValue string, value interface{}) bool {
 		}
 		return fieldValFloat < valueFloat
 	case time.Time:
-		fieldValTime, err := parseTime(fieldValue)
+		fieldValTime, err := utils.ParseTime(fieldValue)
 		if err != nil {
 			return false
 		}
@@ -290,7 +290,7 @@ func compareGreaterOrEqual(fieldValue string, value interface{}) bool {
 		}
 		return fieldValFloat >= valueFloat
 	case time.Time:
-		fieldValTime, err := parseTime(fieldValue)
+		fieldValTime, err := utils.ParseTime(fieldValue)
 		if err != nil {
 			return false
 		}
@@ -330,7 +330,7 @@ func compareLessOrEqual(fieldValue string, value interface{}) bool {
 		}
 		return fieldValFloat <= valueFloat
 	case time.Time:
-		fieldValTime, err := parseTime(fieldValue)
+		fieldValTime, err := utils.ParseTime(fieldValue)
 		if err != nil {
 			return false
 		}
@@ -371,8 +371,8 @@ func compareIn(fieldValue string, value interface{}) bool {
 
 			// 时间不能简单判断，而要判断是否日期、小时、分钟，是否in。
 			// 是否包含时间部分，如果包含，就是精确匹配。如果不不含，就是判断日期
-			fieldValueTime, err1 := parseTime(fieldValue)
-			toTime, err2 := parseTime(v)
+			fieldValueTime, err1 := utils.ParseTime(fieldValue)
+			toTime, err2 := utils.ParseTime(v)
 			if err1 == nil && err2 == nil {
 
 				// 判断目标时间字符串是否包含时间部分（即时分秒）
@@ -443,9 +443,9 @@ func compareBetween(fieldValue string, value interface{}) bool {
 	}
 
 	// 2. 尝试作为时间比较
-	if fieldValTime, err := parseTime(fieldValue); err == nil {
-		fromTime, err1 := parseTime(from)
-		toTime, err2 := parseTime(to)
+	if fieldValTime, err := utils.ParseTime(fieldValue); err == nil {
+		fromTime, err1 := utils.ParseTime(from)
+		toTime, err2 := utils.ParseTime(to)
 		if err1 == nil && err2 == nil {
 			klog.V(6).Infof("compareBetween(between x and y) as date %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 			return (fieldValTime.Equal(fromTime) || fieldValTime.After(fromTime)) &&
@@ -457,24 +457,6 @@ func compareBetween(fieldValue string, value interface{}) bool {
 
 	// 3. 作为字符串比较
 	return fieldValue >= from && fieldValue <= to
-}
-func parseTime(value string) (time.Time, error) {
-	// 尝试不同的时间格式
-	layouts := []string{
-		time.RFC3339,          // "2006-01-02T15:04:05Z07:00"
-		"2006-01-02",          // "2006-01-02"  (日期)
-		"2006-01-02 15:04:05", // "2006-01-02 15:04:05" (无时区)
-	}
-
-	var t time.Time
-	var err error
-	for _, layout := range layouts {
-		t, err = time.Parse(layout, value)
-		if err == nil {
-			return t, nil
-		}
-	}
-	return t, err
 }
 
 // getNestedFieldAsString 获取嵌套字段值，返回字符串
