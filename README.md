@@ -16,7 +16,8 @@ By using `kom`, you can easily perform actions such as creating, reading, updati
 4. CRD Support: `kom` supports custom resource definitions (CRDs), allowing you to define and manage custom resources effortlessly.
 5. Callback Mechanism Support: Enables easy extension of business logic without tight coupling to Kubernetes operations.
 6. POD File Operations: Supports file management within PODs, making it easy to upload, download, and delete files.
-
+7. Support the encapsulation of high-frequency operations, such as restarting deployments and scaling (expanding or shrinking capacity).
+8. Support SQL queries for k8s resources.`select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by `metadata.creationTimestamp` asc`
 ## Example Program
 
 **k8m** is a lightweight Kubernetes management tool, implemented as a single file and based on `kom` and `amis`, supporting multiple platform architectures.
@@ -523,7 +524,35 @@ func cb(k *kom.Kubectl) error {
 ```
 
 
-### 8. Other Operations
+### 8. SQL Queries for k8s Resources
+* Query k8s resources through the SQL() method, which is simple and efficient.
+* The table names support the full names and abbreviations of all resources registered within the cluster, including CRD resources. As long as they are registered on the cluster, they can be queried.
+* Typical table names include: pod, deployment, service, ingress, pvc, pv, node, namespace, secret, configmap, serviceaccount, role, rolebinding, clusterrole, clusterrolebinding, crd, cr, hpa, daemonset, statefulset, job, cronjob, limitrange, horizontalpodautoscaler, poddisruptionbudget, networkpolicy, endpoints, ingressclass, mutatingwebhookconfiguration, validatingwebhookconfiguration, customresourcedefinition, storageclass, persistentvolumeclaim, persistentvolume, horizontalpodautoscaler, podsecurity. All of them can be queried.
+* The query fields currently only support “*”. That is, only “select *” is supported.
+* The query conditions currently support =,!=, >=, <=, <>, like, in, not in, and, or, between.
+* The sorting fields currently support sorting on a single field. By default, they are sorted in descending order according to the creation time.
+#### Query k8s Built-in Resources
+```go
+    sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
+
+	var list []v1.Deployment
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	for _, d := range list {
+        fmt.Printf("List Items foreach %s,%s at %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
+    }
+```
+#### Query CRD Resources
+```go
+    // vm is the CRD of Kubevirt
+    sql := "select * from vm where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+	var list []unstructured.Unstructured
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	for _, d := range list {
+        fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+    }
+``` 
+
+### 9. Other Operations
 #### Restart Deployment
 ```go
 err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Restart()

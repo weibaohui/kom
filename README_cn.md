@@ -5,7 +5,8 @@
 
 ## 简介
 
-`kom` 是一个用于 Kubernetes 操作的工具，相当于SDK级的kubectl、client-go的使用封装。它提供了一系列功能来管理 Kubernetes 资源，包括创建、更新、删除和获取资源。这个项目支持多种 Kubernetes 资源类型的操作，并能够处理自定义资源定义（CRD）。
+`kom` 是一个用于 Kubernetes 操作的工具，相当于SDK级的kubectl、client-go的使用封装。
+它提供了一系列功能来管理 Kubernetes 资源，包括创建、更新、删除和获取资源。这个项目支持多种 Kubernetes 资源类型的操作，并能够处理自定义资源定义（CRD）。
 通过使用 `kom`，你可以轻松地进行资源的增删改查和日志获取以及操作POD内文件等动作。
 
 ## **特点**
@@ -16,6 +17,7 @@
 5. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
 6. 支持POD内文件操作，轻松上传、下载、删除文件。
 7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
+8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc 
 
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
@@ -470,8 +472,35 @@ func cb(k *kom.Kubectl) error {
 }
 ```
 
+### 8. SQL查询k8s资源
+* 通过SQL()方法查询k8s资源，简单高效。
+* Table 名称支持集群内注册的所有资源的全称及简写，包括CRD资源。只要是注册到集群上了，就可以查。
+* 典型的Table 名称有：pod,deployment,service,ingress,pvc,pv,node,namespace,secret,configmap,serviceaccount,role,rolebinding,clusterrole,clusterrolebinding,crd,cr,hpa,daemonset,statefulset,job,cronjob,limitrange,horizontalpodautoscaler,poddisruptionbudget,networkpolicy,endpoints,ingressclass,mutatingwebhookconfiguration,validatingwebhookconfiguration,customresourcedefinition,storageclass,persistentvolumeclaim,persistentvolume,horizontalpodautoscaler,podsecurity。统统都可以查。
+* 查询字段目前仅支持*。也就是select *
+* 查询条件目前支持 =，!=,>=,<=,<>,like,in,not in,and,or,between
+* 排序字段目前支持对单一字段进行排序。默认按创建时间倒序排列
+* 
+#### 查询k8s内置资源
+```go
+    sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
 
-### 8. 其他操作
+	var list []v1.Deployment
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	for _, d := range list {
+		fmt.Printf("List Items foreach %s,%s at %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
+	}
+```
+#### 查询CRD资源
+```go
+    // vm 为kubevirt 的CRD
+    sql := "select * from vm where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+	var list []unstructured.Unstructured
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	for _, d := range list {
+		fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+```
+### 9. 其他操作
 #### Deployment重启
 ```go
 err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Restart()
