@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -128,4 +129,24 @@ func TrimQuotes(str string) string {
 	str = strings.TrimPrefix(str, "'")
 	str = strings.TrimSuffix(str, "'")
 	return str
+}
+
+func ParseTime(value string) (time.Time, error) {
+	// 尝试不同的时间格式
+	layouts := []string{
+		time.RFC3339,                    // "2006-01-02T15:04:05Z07:00"
+		"2006-01-02",                    // "2006-01-02"  (日期)
+		"2006-01-02 15:04:05",           // "2006-01-02 15:04:05" (无时区)
+		"2006-01-02 15:04:05 -0700 MST", // "2006-01-02 15:04:05 -0700 MST" (带时区) 2024-12-05 14:11:44 +0000 UTC
+	}
+
+	var t time.Time
+	var err error
+	for _, layout := range layouts {
+		t, err = time.Parse(layout, value)
+		if err == nil {
+			return t, nil
+		}
+	}
+	return t, err
 }
