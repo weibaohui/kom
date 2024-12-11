@@ -57,10 +57,15 @@ func List(k *kom.Kubectl) error {
 		return err
 	}
 
-	utils.SortByCreationTime(list.Items)
+	// 对List.Items进行过滤
+
+	// 对结果进行过滤，执行where 条件
+	result := executeFilter(list.Items, stmt.Filter.Conditions)
+
+	utils.SortByCreationTime(result)
 	// 先清空之前的值
 	destValue.Elem().Set(reflect.MakeSlice(destValue.Elem().Type(), 0, 0))
-	streamTmp := stream.FromSlice(list.Items)
+	streamTmp := stream.FromSlice(result)
 	// 查看是否有filter ，先使用filter 形成一个最终的list.Items
 	if stmt.Filter.Offset > 0 {
 		streamTmp = streamTmp.Skip(stmt.Filter.Offset)
