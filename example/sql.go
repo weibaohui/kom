@@ -647,6 +647,8 @@ func parseTime(value string) (time.Time, error) {
 
 // getNestedFieldAsString 获取嵌套字段值，返回字符串
 func getNestedFieldAsString(obj map[string]interface{}, path string) (string, bool, error) {
+	// todo 目前只能从一层一层的属性下取值，需要优化
+	// 需要增加对数组下的取值判断，如pod container是数组，如何从数组中某一个项的属性中取值？
 	fields := strings.Split(path, ".")
 	value, found, err := unstructured.NestedFieldCopy(obj, fields...)
 	if err != nil || !found {
