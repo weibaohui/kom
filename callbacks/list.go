@@ -65,11 +65,15 @@ func List(k *kom.Kubectl) error {
 	// 对结果进行过滤，执行where 条件
 	result := executeFilter(list.Items, stmt.Filter.Conditions)
 
-	// 对结果执行OrderBy
-	klog.V(6).Infof("order by = %s", stmt.Filter.Order)
-	executeOrderBy(result, stmt.Filter.Order)
+	if stmt.Filter.Order != "" {
+		// 对结果执行OrderBy
+		klog.V(6).Infof("order by = %s", stmt.Filter.Order)
+		executeOrderBy(result, stmt.Filter.Order)
+	} else {
+		// 默认按创建时间倒序
+		utils.SortByCreationTime(result)
+	}
 
-	// utils.SortByCreationTime(result)
 	// 先清空之前的值
 	destValue.Elem().Set(reflect.MakeSlice(destValue.Elem().Type(), 0, 0))
 	streamTmp := stream.FromSlice(result)
