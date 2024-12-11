@@ -6,10 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/kom"
-	"github.com/xwb1989/sqlparser"
-
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,80 +36,6 @@ func Example() {
 	// podFileCommand()
 	// podLogs()
 
-}
-
-// 定义过滤条件结构体
-type Condition struct {
-	Depth    int
-	AndOr    string
-	Field    string
-	Operator string
-	Value    string
-}
-
-var conditions []Condition // 存储解析后的条件
-
-func sqlTest() {
-	sql := "select * from fake where id!=1 and name!='xxx' and (age>80 and sex=0) and (x='ttt' or yyy='ttt') order by id desc"
-	fmt.Println("SQL:", sql)
-
-	stmt, err := sqlparser.Parse(sql)
-	if err != nil {
-		fmt.Println("Error parsing SQL:", err)
-		return
-	}
-
-	// 解析 SQL 中的 WHERE 子句
-	switch stmt := stmt.(type) {
-	case *sqlparser.Select:
-		parseWhereExpr(0, "AND", stmt.Where.Expr)
-	}
-
-	slice.SortBy(conditions, func(a, b Condition) bool {
-		return a.Depth < b.Depth
-	})
-	// 打印存储的条件列表
-	for _, cond := range conditions {
-		fmt.Printf("Depth: %d, AndOr: %s, Field: %s, Operator: %s, Value: %s\n",
-			cond.Depth, cond.AndOr, cond.Field, cond.Operator, cond.Value)
-	}
-}
-
-// 解析 WHERE 表达式
-func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
-	d := depth + 1 // 深度递增
-	switch node := expr.(type) {
-	case *sqlparser.ComparisonExpr:
-		// 处理比较表达式 (比如 age > 80)
-		cond := Condition{
-			Depth:    depth,
-			AndOr:    andor,
-			Field:    sqlparser.String(node.Left),
-			Operator: node.Operator,
-			Value:    sqlparser.String(node.Right),
-		}
-		conditions = append(conditions, cond)
-	case *sqlparser.ParenExpr:
-		// 处理括号表达式
-		// 括号内的表达式是一个独立的子表达式，增加深度
-		parseWhereExpr(d+1, "()", node.Expr)
-
-	case *sqlparser.AndExpr:
-		// 递归解析 AND 表达式
-		// 这里传递 "AND" 给左右两边
-		parseWhereExpr(d, "AND", node.Left)
-		parseWhereExpr(d, "AND", node.Right)
-
-	case *sqlparser.OrExpr:
-		// 递归解析 OR 表达式
-		// 这里传递 "OR" 给左右两边
-		parseWhereExpr(d, "OR", node.Left)
-		parseWhereExpr(d, "OR", node.Right)
-
-	default:
-		// 其他表达式
-		fmt.Printf("Unhandled expression at depth %d: %s\n", depth, sqlparser.String(expr))
-	}
 }
 
 func drainNode() {
