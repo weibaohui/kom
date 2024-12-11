@@ -38,12 +38,19 @@ type Statement struct {
 	Filter              Filter                      `json:"filter,omitempty" json:"filter"`
 }
 type Filter struct {
-	Columns        []string      `json:"columns,omitempty"`
-	Condition      string        `json:"condition,omitempty"` // xx=?
-	ConditionValue []interface{} `json:"conditionValue,omitempty"`
-	Order          string        `json:"order,omitempty"`
-	Limit          int           `json:"limit,omitempty"`
-	Offset         int           `json:"offset,omitempty"`
+	Columns    []string    `json:"columns,omitempty"`
+	Conditions []Condition `json:"condition,omitempty"` // xx=?
+	Order      string      `json:"order,omitempty"`
+	Limit      int         `json:"limit,omitempty"`
+	Offset     int         `json:"offset,omitempty"`
+}
+type Condition struct {
+	Depth     int
+	AndOr     string
+	Field     string
+	Operator  string
+	Value     interface{} // 通过detectType 赋值为精确类型值，detectType之前都是string
+	ValueType string      // number, string, bool, time
 }
 
 func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string) *Statement {
