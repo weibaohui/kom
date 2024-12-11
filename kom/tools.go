@@ -3,6 +3,7 @@ package kom
 import (
 	"fmt"
 
+	"github.com/duke-git/lancet/v2/slice"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -192,4 +193,63 @@ func (u *tools) GetGVK(gvks []schema.GroupVersionKind, versions ...string) (gvk 
 		}
 	}
 	return
+}
+
+// FindGVKByTableNameInApiResources 从 APIResource 列表中查找表名对应的 GVK
+func (u *tools) FindGVKByTableNameInApiResources(tableName string) *schema.GroupVersionKind {
+
+	for _, resource := range u.kubectl.parentCluster().apiResources {
+		// 比较表名和资源名 (Name) 或 Kind
+		if resource.Name == tableName || resource.Kind == tableName || resource.SingularName == tableName ||
+			slice.Contain(resource.ShortNames, tableName) {
+			// 构建 GroupVersionKind 并返回
+			return &schema.GroupVersionKind{
+				Group:   resource.Group,   // API 组
+				Version: resource.Version, // 版本
+				Kind:    resource.Kind,    // Kind
+			}
+		}
+	}
+	return nil // 没有匹配的资源
+}
+
+// FindGVKByTableNameInCRDList 从CRD列表中找到对应的表名的GVK
+func (u *tools) FindGVKByTableNameInCRDList(tableName string) *schema.GroupVersionKind {
+
+	for _, crd := range u.kubectl.parentCluster().crdList {
+		// 从 CRD 对象中获取 "spec" 下的 names 字段
+		specNames, found, err := unstructured.NestedMap(crd.Object, "spec", "names")
+		if err != nil || !found {
+			continue // 如果 spec.names 不存在，跳过当前 CRD
+		}
+
+		// 提取 kind 和 plural
+		kind, _ := specNames["kind"].(string)
+		plural, _ := specNames["plural"].(string)
+
+		// 比较 tableName 是否匹配 kind 或 plural
+		if tableName == kind || tableName == plural {
+			// 提取 group 和 version
+			group, _, _ := unstructured.NestedString(crd.Object, "spec", "group")
+			versions, found, _ := unstructured.NestedSlice(crd.Object, "spec", "versions")
+			if !found || len(versions) == 0 {
+				continue
+			}
+
+			// 获取第一个版本的 name 字段
+			versionMap, ok := versions[0].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			version, _ := versionMap["name"].(string)
+
+			// 返回 GVK
+			return &schema.GroupVersionKind{
+				Group:   group,
+				Version: version,
+				Kind:    kind,
+			}
+		}
+	}
+	return nil // 未找到匹配项
 }
