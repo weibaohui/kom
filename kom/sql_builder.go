@@ -2,13 +2,67 @@ package kom
 
 import (
 	"fmt"
+	"log"
 	"strings"
+
+	"github.com/weibaohui/kom/utils"
+	"github.com/xwb1989/sqlparser"
+	"k8s.io/klog/v2"
 )
 
 // Sql TODO 解析sql为函数调用，实现支持原生sql语句
 // select * from pod where pod.name='?', 'abc'
 func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 	tx := k.getInstance()
+	tx.AllNamespace()
+
+	stmt, err := sqlparser.Parse(sql)
+	if err != nil {
+		klog.Errorf("Error parsing SQL:%s,%v", sql, err)
+		tx.Error = err
+		return tx
+	}
+
+	var conditions []Condition // 存储解析后的条件
+
+	// 断言为 *sqlparser.Select 类型
+	selectStmt, ok := stmt.(*sqlparser.Select)
+	if !ok {
+		log.Fatalf("Not a SELECT statement")
+	}
+	// 获取 Select 语句中的 From 作为Resource
+	from := sqlparser.String(selectStmt.From)
+	gvk := k.Tools().FindGVKByTableNameInApiResources(from)
+	if gvk == nil {
+		gvk = k.Tools().FindGVKByTableNameInCRDList(from)
+		if gvk == nil {
+			tx.Error = fmt.Errorf("resource %s not found both in api-resource and crd", from)
+			return tx
+		}
+	}
+
+	// 设置GVK
+	tx.GVK(gvk.Group, gvk.Version, gvk.Kind)
+
+	// 获取 LIMIT 子句信息
+	limit := selectStmt.Limit
+	if limit != nil {
+		// 获取 LIMIT 的 Rowcount 和 Offset
+		rowCount := sqlparser.String(limit.Rowcount)
+		offset := sqlparser.String(limit.Offset)
+
+		tx.Limit(utils.ToInt(rowCount))
+		tx.Offset(utils.ToInt(offset))
+	}
+	// 解析Where语句，活的执行条件
+	conditions = parseWhereExpr(conditions, 0, "AND", selectStmt.Where.Expr)
+
+	// 探测 conditions中的条件值类型
+	for i, cond := range conditions {
+		conditions[i].ValueType, conditions[i].Value = detectType(cond.Value)
+	}
+	tx.Statement.Filter.Conditions = conditions
+
 	return tx
 }
 
