@@ -47,7 +47,7 @@ func TestSQL(t *testing.T) {
 	}
 }
 func TestCRDSQL(t *testing.T) {
-	sql := "select * from virtualmachine where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+	sql := "select * from vm where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
 
 	var list []unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
@@ -60,7 +60,7 @@ func TestCRDSQL(t *testing.T) {
 	}
 }
 func TestPodSQL(t *testing.T) {
-	sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default'   "
+	sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default'  order by `metadata.name` desc  "
 
 	var list []v1.Pod
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
