@@ -10,7 +10,7 @@ import (
 
 func main() {
 	klog.InitFlags(nil)
-	_ = flag.Set("v", "2")
+	_ = flag.Set("v", "6")
 	kom_starter.Init()
 	example.Example()
 }
