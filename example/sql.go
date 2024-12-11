@@ -2,7 +2,7 @@ package example
 
 import (
 	"fmt"
-	"regexp"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,8 +11,9 @@ import (
 	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/kom"
 	"github.com/xwb1989/sqlparser"
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/klog/v2"
 )
 
 // 定义过滤条件结构体
@@ -28,7 +29,23 @@ var conditions []Condition // 存储解析后的条件
 
 func sqlTest() {
 	sql := "select * from fake where id!=1 and `x.y.z.name`!='xxx' and (`yyy.uuu.ii.sage`>80 and sex=0) and (x='ttt' or yyy='ttt') order by id desc"
-	sql = "select * from fake where `metadata.namespace`='kube-system' order by id desc"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.name`!='hello-28890812-wj2dh' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`>=1 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`>=2 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) And  `metadata.name` Like '%dns%' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.name` LIKE '%dns' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `metadata.name` LIKE 'dns%' order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`<>2 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`!=2 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`>1 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`<1 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`<3 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`=3 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`=2 order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`in (2,1) order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas` not in (2,3) order by id desc limit 2"
+	sql = "select * from fake where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' ) and  `spec.replicas`  in (1,2) order by id desc limit 2"
+
 	fmt.Println("SQL:", sql)
 
 	stmt, err := sqlparser.Parse(sql)
@@ -49,13 +66,14 @@ func sqlTest() {
 			cond.Depth, cond.AndOr, cond.Field, cond.Operator, cond.Value)
 	}
 	var list []unstructured.Unstructured
-	err = kom.DefaultCluster().Resource(&v1.Pod{}).AllNamespace().List(&list).Error
+	err = kom.DefaultCluster().Resource(&v1.Deployment{}).AllNamespace().List(&list).Error
 	if err != nil {
 		fmt.Printf("list error %v \n", err.Error())
 	}
 	result := executeFilter(list, conditions)
+	fmt.Printf("count:%d\n", len(result))
 	for _, r := range result {
-		fmt.Printf("fount %s/%s\n", r.GetNamespace(), r.GetName())
+		fmt.Printf("found %s/%s\n", r.GetNamespace(), r.GetName())
 	}
 
 }
@@ -111,6 +129,7 @@ func trim(str string) string {
 
 // 解析 WHERE 表达式
 func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
+	klog.V(8).Infof("expr type %v,string %s", reflect.TypeOf(expr), sqlparser.String(expr))
 	d := depth + 1 // 深度递增
 	switch node := expr.(type) {
 	case *sqlparser.ComparisonExpr:
@@ -133,7 +152,6 @@ func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
 		// 这里传递 "AND" 给左右两边
 		parseWhereExpr(d, "AND", node.Left)
 		parseWhereExpr(d, "AND", node.Right)
-
 	case *sqlparser.OrExpr:
 		// 递归解析 OR 表达式
 		// 这里传递 "OR" 给左右两边
@@ -146,27 +164,12 @@ func parseWhereExpr(depth int, andor string, expr sqlparser.Expr) {
 	}
 }
 
-// /
-// // val, found, err := getNestedFieldAsString(item.Object, "spec.strategy.rollingUpdate.maxSurge")
-//		// val, found, err := getNestedFieldAsString(item.Object, "spec.template.metadata.labels.app")
-//		val, found, err := getNestedFieldAsString(item.Object, "spec.template.spec.restartPolicy")
-//		if err != nil {
-//			fmt.Printf("getNestedFieldAsString spec.dnsPolicy error :%v\n", err)
-//		}
-//		if found {
-//			fmt.Printf("spec.dnsPolicy found :%v\n", val)
-//		}
-//		klog.Errorf("val=%s, found= %v, err=%v \n", val, found, err)
-//
-//
-
 func evaluateCondition(result []unstructured.Unstructured, group []Condition) []unstructured.Unstructured {
 
 	if group[0].AndOr == "OR" {
 		return matchAny(result, group)
 	} else {
 		return matchAll(result, group)
-
 	}
 }
 
@@ -198,9 +201,12 @@ func matchAny(result []unstructured.Unstructured, conditions []Condition) []unst
 
 // matchCondition 判断单个条件是否匹配
 func matchCondition(resource unstructured.Unstructured, condition Condition) bool {
+	klog.V(6).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
+
 	// 获取字段值
 	fieldValue, found, err := getNestedFieldAsString(resource.Object, condition.Field)
 	if err != nil || !found {
+		klog.V(6).Infof("not found %s,%v", condition.Field, err)
 		return false
 	}
 
@@ -210,7 +216,7 @@ func matchCondition(resource unstructured.Unstructured, condition Condition) boo
 		return compareValue(fieldValue, condition.Value)
 	case "!=":
 		return compareValue(fieldValue, condition.Value) == false
-	case "LIKE":
+	case "like":
 		return compareLike(fieldValue, condition.Value)
 	case ">":
 		return compareGreater(fieldValue, condition.Value)
@@ -220,6 +226,10 @@ func matchCondition(resource unstructured.Unstructured, condition Condition) boo
 		return compareGreaterOrEqual(fieldValue, condition.Value)
 	case "<=":
 		return compareLessOrEqual(fieldValue, condition.Value)
+	case "in":
+		return compareIn(fieldValue, condition.Value)
+	case "not in":
+		return compareIn(fieldValue, condition.Value) == false
 	case "BETWEEN":
 		return compareBetween(fieldValue, condition.Value)
 	default:
@@ -229,6 +239,8 @@ func matchCondition(resource unstructured.Unstructured, condition Condition) boo
 
 // compareValue 比较值是否相等
 func compareValue(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareValue (=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+
 	switch v := value.(type) {
 	case string:
 		return fieldValue == v
@@ -252,14 +264,28 @@ func compareValue(fieldValue string, value interface{}) bool {
 
 // compareLike 判断字符串是否匹配
 func compareLike(fieldValue string, pattern string) bool {
-	// 使用正则表达式来判断 LIKE
-	regexPattern := strings.ReplaceAll(pattern, "%", ".*")
-	matched, _ := regexp.MatchString("^"+regexPattern+"$", fieldValue)
-	return matched
+	klog.V(6).Infof("compareLike (like) %s,%v(%v)", fieldValue, pattern, reflect.TypeOf(pattern))
+	val := strings.TrimPrefix(pattern, "%")
+	val = strings.TrimSuffix(val, "%")
+	if strings.HasSuffix(pattern, "%") && strings.HasPrefix(pattern, "%") {
+		// 以%开头，以%结尾，表示包含即可
+		return strings.Contains(fieldValue, val)
+
+	} else if strings.HasSuffix(pattern, "%") {
+		// abc%， 只以%结尾，表示开头必须是abc
+		return strings.HasPrefix(fieldValue, val)
+	} else if strings.HasPrefix(pattern, "%") {
+		// %abc 只以%开头，表示结尾必须是abc
+		return strings.HasSuffix(fieldValue, val)
+	} else {
+		// 不包含%，表示必须相等
+		return fieldValue == val
+	}
 }
 
 // compareGreater 比较数值是否大于
 func compareGreater(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareLess(>) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 	switch v := value.(type) {
 	case float64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
@@ -273,6 +299,16 @@ func compareGreater(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat > float64(v.(int))
+	case string:
+		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
+		if err != nil {
+			return false
+		}
+		valueFloat, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return false
+		}
+		return fieldValFloat > valueFloat
 	default:
 		return false
 	}
@@ -280,6 +316,8 @@ func compareGreater(fieldValue string, value interface{}) bool {
 
 // compareLess 比较数值是否小于
 func compareLess(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareLess(<) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+
 	switch v := value.(type) {
 	case float64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
@@ -293,6 +331,16 @@ func compareLess(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat < float64(v.(int))
+	case string:
+		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
+		if err != nil {
+			return false
+		}
+		valueFloat, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return false
+		}
+		return fieldValFloat < valueFloat
 	default:
 		return false
 	}
@@ -300,6 +348,7 @@ func compareLess(fieldValue string, value interface{}) bool {
 
 // compareGreaterOrEqual 比较数值是否大于或等于
 func compareGreaterOrEqual(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareGreaterOrEqual(>=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 	switch v := value.(type) {
 	case float64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
@@ -313,6 +362,16 @@ func compareGreaterOrEqual(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat >= float64(v.(int))
+	case string:
+		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
+		if err != nil {
+			return false
+		}
+		valueFloat, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return false
+		}
+		return fieldValFloat >= valueFloat
 	default:
 		return false
 	}
@@ -320,6 +379,8 @@ func compareGreaterOrEqual(fieldValue string, value interface{}) bool {
 
 // compareLessOrEqual 比较数值是否小于或等于
 func compareLessOrEqual(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareLessOrEqual(<=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+
 	switch v := value.(type) {
 	case float64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
@@ -333,9 +394,39 @@ func compareLessOrEqual(fieldValue string, value interface{}) bool {
 			return false
 		}
 		return fieldValFloat <= float64(v.(int))
+	case string:
+		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
+		if err != nil {
+			return false
+		}
+		valueFloat, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return false
+		}
+		return fieldValFloat <= valueFloat
 	default:
 		return false
 	}
+}
+
+// compareIn 判断值是否在列表中
+func compareIn(fieldValue string, value interface{}) bool {
+	klog.V(6).Infof("compareIn(in []) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+	// value 类型字符串 = (1,2,3,4)
+	// 如何判断fieldValue 是否在1,2,3,4范围内?
+	if str, ok := value.(string); ok {
+		// 去掉首尾的括号
+		str = strings.TrimPrefix(str, "(")
+		str = strings.TrimSuffix(str, ")")
+		// 以逗号分割
+		values := strings.Split(str, ",")
+		for _, v := range values {
+			if v == fieldValue {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // compareBetween 判断值是否在范围内
