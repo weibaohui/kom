@@ -34,11 +34,11 @@ func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 	from := sqlparser.String(selectStmt.From)
 	gvk := k.Tools().FindGVKByTableNameInApiResources(from)
 	if gvk == nil {
-		gvk = k.Tools().FindGVKByTableNameInCRDList(from)
-		if gvk == nil {
-			tx.Error = fmt.Errorf("resource %s not found both in api-resource and crd", from)
-			return tx
-		}
+		tx.Error = fmt.Errorf("resource %s not found both in api-resource and crd", from)
+		klog.V(6).Infof("resource %s not found both in api-resource and crd", from)
+		names := k.Tools().ListAvailableTableNames()
+		klog.V(6).Infof("Available resource: %s", names)
+		return tx
 	}
 
 	// 设置GVK
@@ -59,9 +59,15 @@ func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 
 	// 探测 conditions中的条件值类型
 	for i, cond := range conditions {
-		conditions[i].ValueType, conditions[i].Value = detectType(cond.Value)
+		conditions[i].ValueType, conditions[i].Value = utils.DetectType(cond.Value)
 	}
 	tx.Statement.Filter.Conditions = conditions
+
+	// 设置排序字段
+	orderBy := selectStmt.OrderBy
+	if orderBy != nil {
+		tx.Statement.Filter.Order = sqlparser.String(orderBy)
+	}
 
 	return tx
 }
