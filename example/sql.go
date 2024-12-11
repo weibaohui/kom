@@ -526,6 +526,7 @@ func compareIn(fieldValue string, value interface{}) bool {
 			v = strings.Trim(v, " ")
 			v = trimQuotes(v)
 			// 时间、字符串、数字
+			// 只有相等，才能返回，因为in操作符，是or的关系。一个不行，需要判断下一个。
 
 			// 先按数字比较
 			fieldValueNum, err1 := strconv.ParseFloat(fieldValue, 64)
