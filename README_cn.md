@@ -482,7 +482,7 @@ func cb(k *kom.Kubectl) error {
 * 
 #### 查询k8s内置资源
 ```go
-    sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
+    sql := "select * from deploy where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
 
 	var list []v1.Deployment
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
