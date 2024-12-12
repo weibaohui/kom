@@ -35,7 +35,7 @@ func Example() {
 	// podCommand()
 	// podFileCommand()
 	// podLogs()
-	komFuncSql()
+	// komFuncSql()
 
 }
 func sql() {
