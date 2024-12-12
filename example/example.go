@@ -35,20 +35,20 @@ func Example() {
 	// podCommand()
 	// podFileCommand()
 	// podLogs()
-	// sql()
+	sql()
 
 }
 func sql() {
-	sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default'   order by  `metadata.creationTimestamp` asc "
+	sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default'   order by  `metadata.creationTimestamp` desc "
 
-	var list []v1.Deployment
+	var list []corev1.Pod
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	if err != nil {
 		fmt.Printf("List error %v", err)
 	}
-	fmt.Printf("Count %d", len(list))
+	fmt.Printf("Count %d\n", len(list))
 	for _, d := range list {
-		fmt.Printf("List Items foreach %s,%s at %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
+		fmt.Printf("List Item  %s\t %s  \t %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
 	}
 }
 
