@@ -500,6 +500,14 @@ func cb(k *kom.Kubectl) error {
 		fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
 	}
 ```
+#### 链式调研查询SQL
+```go
+// 查询pod 列表
+err := kom.DefaultCluster().From("pod").
+		Where("`metadata.namespace` = ?  or `metadata.namespace`= ? ", "kube-system", "default").
+		Order("`metadata.creationTimestamp` desc").
+		List(&list).Error
+```
 ### 9. 其他操作
 #### Deployment重启
 ```go

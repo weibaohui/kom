@@ -551,6 +551,15 @@ func cb(k *kom.Kubectl) error {
         fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
     }
 ``` 
+#### Chained Query with SQL
+```go
+// Query the pod list
+err := kom.DefaultCluster().From("pod").
+		Where("`metadata.namespace` =?  or `metadata.namespace`=? ", "kube-system", "default").
+		Order("`metadata.creationTimestamp` desc").
+		List(&list).Error
+``` 
+
 
 ### 9. Other Operations
 #### Restart Deployment
