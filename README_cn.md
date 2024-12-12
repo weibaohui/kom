@@ -17,7 +17,7 @@
 5. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
 6. 支持POD内文件操作，轻松上传、下载、删除文件。
 7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
-8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc 
+8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` desc 
 
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
