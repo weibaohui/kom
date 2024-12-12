@@ -533,7 +533,7 @@ func cb(k *kom.Kubectl) error {
 * The sorting fields currently support sorting on a single field. By default, they are sorted in descending order according to the creation time.
 #### Query k8s Built-in Resources
 ```go
-    sql := "select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
+    sql := "select * from deploy where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
 
 	var list []v1.Deployment
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
