@@ -33,8 +33,8 @@ import (
     "github.com/weibaohui/kom"
 )
 func main() {
-	// Register the callback functions
-	callbacks.RegisterInit()
+    // Register the callback functions
+    callbacks.RegisterInit()
     // Register clusters
     defaultKubeConfig := os.Getenv("KUBECONFIG")
     if defaultKubeConfig == "" {
