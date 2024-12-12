@@ -108,7 +108,7 @@ var definitionsMap map[string]SchemaDefinition
 //			  },
 //			  "vendor_extension": [ {},{}]
 //			}
-func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
+func parseOpenAPISchema(schemaJSON string, flag map[string]struct{}) (TreeNode, error) {
 	var def SchemaDefinition
 	err := json.Unmarshal([]byte(schemaJSON), &def)
 	if err != nil {
@@ -118,7 +118,7 @@ func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
 	definitionsMap[def.Name] = def
 	// klog.V(2).Infof("add def length %d", len(definitionsMap))
 
-	return buildTree(def), nil
+	return buildTree(def, flag), nil
 }
 func parseID(id string) (group, version, kind string) {
 	parts := strings.Split(id, ".")
@@ -142,7 +142,7 @@ func parseID(id string) (group, version, kind string) {
 }
 
 // buildTree 根据 SchemaDefinition 构建 TreeNode
-func buildTree(def SchemaDefinition) TreeNode {
+func buildTree(def SchemaDefinition, flag map[string]struct{}) TreeNode {
 	// todo 应该使用GVK作为
 	labelParts := strings.Split(def.Name, ".")
 	label := labelParts[len(labelParts)-1]
@@ -154,7 +154,7 @@ func buildTree(def SchemaDefinition) TreeNode {
 
 	var children []*TreeNode
 	for _, prop := range def.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(prop))
+		children = append(children, buildPropertyNode(prop, flag))
 	}
 
 	group, version, kind := parseID(def.Name)
@@ -172,7 +172,7 @@ func buildTree(def SchemaDefinition) TreeNode {
 }
 
 // buildPropertyNode 根据 Property 构建 TreeNode
-func buildPropertyNode(prop Property) *TreeNode {
+func buildPropertyNode(prop Property, flag map[string]struct{}) *TreeNode {
 	label := prop.Name
 	nodeID := prop.Name
 	description := prop.Value.Description
@@ -189,30 +189,38 @@ func buildPropertyNode(prop Property) *TreeNode {
 	var children []*TreeNode
 
 	// 如果有引用，查找定义并递归构建子节点
-	if ref != "" && !strings.Contains(ref, "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps") {
-		// 假设 ref 的格式为 "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-		refParts := strings.Split(ref, "/")
-		refName := refParts[len(refParts)-1]
-		// 构建完整的引用路径
-		// fullRef := strings.Join(refParts[1:], ".")
-
-		// 这个可能会导致 循环引用溢出
-		if def, exists := definitionsMap[refName]; exists {
-			childNode := buildTree(def)
-			children = append(children, &childNode)
+	if ref != "" {
+		if _, ok := flag[ref]; ok {
+			klog.V(8).Infof("buildPropertyNode for ref: %s already processed", ref)
 		} else {
-			// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
-			children = append(children, &TreeNode{
-				ID:          refName,
-				Label:       refName,
-				Value:       refName,
-				Description: "Referenced definition not found",
-			})
+			klog.V(8).Infof("buildPropertyNode for ref: %s", ref)
+
+			flag[ref] = struct{}{} // 标记为已处理
+			// 假设 ref 的格式为 "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+			refParts := strings.Split(ref, "/")
+			refName := refParts[len(refParts)-1]
+			// 构建完整的引用路径
+			// fullRef := strings.Join(refParts[1:], ".")
+
+			// 这个可能会导致 循环引用溢出
+			if def, exists := definitionsMap[refName]; exists {
+				childNode := buildTree(def, flag)
+				children = append(children, &childNode)
+			} else {
+				// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
+				children = append(children, &TreeNode{
+					ID:          refName,
+					Label:       refName,
+					Value:       refName,
+					Description: "Referenced definition not found",
+				})
+			}
 		}
+
 	}
 
 	for _, pp := range prop.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(pp))
+		children = append(children, buildPropertyNode(pp, flag))
 	}
 
 	return &TreeNode{
@@ -249,6 +257,7 @@ func printTree(node *TreeNode, level int) {
 
 func InitTrees(schema *openapi_v2.Document) *Docs {
 	definitionsMap = make(map[string]SchemaDefinition)
+	refFlag := make(map[string]struct{}) // 记录ref是否已经被处理，存在key 即为已处理，不存在即为未处理
 
 	// 将 OpenAPI Schema 转换为 JSON 字符串
 	schemaBytes, err := json.Marshal(schema)
@@ -272,7 +281,7 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 	for _, definition := range definitionList {
 		str := utils.ToJSON(definition)
 		// 解析 Schema 并构建树形结构
-		treeRoot, err := parseOpenAPISchema(str)
+		treeRoot, err := parseOpenAPISchema(str, refFlag)
 		if err != nil {
 			klog.V(2).Infof("Error parsing OpenAPI schema: %v\n", err)
 			continue
