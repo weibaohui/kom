@@ -16,6 +16,9 @@ func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 	tx := k.getInstance()
 	tx.AllNamespace()
 
+	// // 添加反引号
+	// sql = AddBackticks(sql)
+
 	stmt, err := sqlparser.Parse(sql)
 	if err != nil {
 		klog.Errorf("Error parsing SQL:%s,%v", sql, err)
