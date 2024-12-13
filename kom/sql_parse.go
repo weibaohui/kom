@@ -106,9 +106,10 @@ func (s *sqlParser) AddBackticks() string {
 	// 逐个替换字段
 	// 创建一个占位符的映射
 	fieldPlaceholders := make(map[string]string)
-	for i, field := range s.Fields {
+	for _, field := range s.Fields {
 		// 为每个字段分配一个唯一的占位符
-		placeholder := fmt.Sprintf("__FIELD%d__", i+1)
+		hashValue := utils.FNV1_32([]byte(field))
+		placeholder := fmt.Sprintf("__%d__", hashValue)
 		fieldPlaceholders[field] = placeholder
 		// 将 SQL 中的字段替换成占位符
 		s.Sql = strings.ReplaceAll(s.Sql, field, placeholder)
