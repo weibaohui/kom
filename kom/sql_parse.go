@@ -3,9 +3,11 @@ package kom
 import (
 	"fmt"
 	"reflect"
-	"regexp"
+	"sort"
 	"strings"
 
+	"github.com/antlr4-go/antlr/v4"
+	"github.com/weibaohui/kom/kom/parser"
 	"github.com/weibaohui/kom/utils"
 	"github.com/xwb1989/sqlparser"
 	"k8s.io/klog/v2"
@@ -59,60 +61,65 @@ func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlpar
 	return conditions
 }
 
-// addBackticksToColumns 遍历 AST 并为列名加反引号
-func addBackticksToColumns(node sqlparser.SQLNode) {
-	// 遍历 AST 的节点
-	sqlparser.Walk(func(node sqlparser.SQLNode) (kontinue bool, err error) {
-		// 处理列名
-		if col, ok := node.(*sqlparser.ColName); ok {
-			// 为列名加反引号（如果尚未存在）
-			klog.V(4).Infof("addBackticksToColumns: %s.%s[%v]\n", col.Qualifier, col.Name, col.Metadata)
-			col.Name = sqlparser.NewColIdent(fmt.Sprintf("`%s`", strings.Trim(col.Name.String(), "`")))
-		}
-		return true, nil
-	}, node)
+// EnterColumn_name 处理字段名
+// 不要重命名，因为是一个方法的实现
+func (s *sqlParser) EnterColumn_name(ctx *parser.Column_nameContext) {
+	// 这里可以处理 SELECT 语句的其他部分，如果需要
+	field := ctx.GetText()
+	// 将识别出来的字段保存下来
+	s.Fields = append(s.Fields, field)
+}
+
+type sqlParser struct {
+	*parser.BaseSQLiteParserListener
+	Sql    string
+	Fields []string
+}
+
+func NewSqlParse(sql string) *sqlParser {
+	return &sqlParser{
+		Sql:    sql,
+		Fields: []string{},
+	}
 }
 
 // AddBackticks 给 SQL 中的字段名加反引号，保留多级路径
-func AddBackticks(sql string) string {
-	// SQL 保留关键字
-	keywords := map[string]bool{
-		"and": true, "or": true, "not": true, "in": true, "like": true, "is": true,
-		"null": true, "true": true, "false": true, "between": true, "exists": true,
-		"case": true, "when": true, "then": true, "else": true, "end": true,
-	}
+// 添加反引号，将metadata.name 转为`metadata.name`,
+// k8s中很多类似json的字段，需要用反引号进行包裹，避免被作为db.table形式使用
+func (s *sqlParser) AddBackticks() string {
+	klog.V(6).Infof("sql before add backticks [ %s ]", s.Sql)
+	// 创建输入流
+	input := antlr.NewInputStream(s.Sql)
 
-	// 运算符正则（识别字段名和值之间的运算符）
-	operators := `=|!=|<>|<=|>=|<|>|like|in|not\s+in|is\s+null|is\s+not\s+null|between|like`
+	// 创建词法分析器和解析器
+	lexer := parser.NewSQLiteLexer(input)
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	p := parser.NewSQLiteParser(stream)
 
-	// 正则表达式：匹配字段名 运算符 值 的形式
-	re := regexp.MustCompile(`\b([a-zA-Z_][a-zA-Z0-9_.]*)\b\s*(` + operators + `)\s*([^,()\s]+|'.*?'|".*?")`)
+	// 解析 SQL，遍历解析树
+	antlr.ParseTreeWalkerDefault.Walk(s, p.Sql_stmt())
 
-	// 替换逻辑
-	result := re.ReplaceAllStringFunc(sql, func(match string) string {
-		// 分组匹配：字段名、运算符、右侧值
-		parts := re.FindStringSubmatch(match)
-		if len(parts) < 4 {
-			return match // 不完整的匹配，跳过
-		}
-
-		left := parts[1]     // 左侧字段名
-		operator := parts[2] // 运算符
-		right := parts[3]    // 右侧值
-
-		// 检查字段名是否为关键字
-		if keywords[strings.ToLower(left)] {
-			return match // 如果字段名是关键字，则不加反引号
-		}
-
-		// 给字段名整体加反引号
-		if !strings.HasPrefix(left, "`") && !strings.HasSuffix(left, "`") {
-			left = fmt.Sprintf("`%s`", left)
-		}
-
-		// 重新组合
-		return fmt.Sprintf("%s %s %s", left, operator, right)
+	// 按照字段长度从长到短排序
+	sort.Slice(s.Fields, func(i, j int) bool {
+		return len(s.Fields[i]) > len(s.Fields[j])
 	})
+	// 逐个替换字段
+	// 创建一个占位符的映射
+	fieldPlaceholders := make(map[string]string)
+	for i, field := range s.Fields {
+		// 为每个字段分配一个唯一的占位符
+		placeholder := fmt.Sprintf("__FIELD%d__", i+1)
+		fieldPlaceholders[field] = placeholder
+		// 将 SQL 中的字段替换成占位符
+		s.Sql = strings.ReplaceAll(s.Sql, field, placeholder)
+	}
+	klog.V(6).Infof("sql temp add backticks [ %s ]", s.Sql)
 
-	return result
+	// 替换占位符为带反引号的字段
+	for field, placeholder := range fieldPlaceholders {
+		quotedField := "`" + field + "`"
+		s.Sql = strings.ReplaceAll(s.Sql, placeholder, quotedField)
+	}
+	klog.V(6).Infof("sql after add backticks [ %s ]", s.Sql)
+	return s.Sql
 }
