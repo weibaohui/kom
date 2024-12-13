@@ -108,7 +108,7 @@ func (s *sqlParser) AddBackticks() string {
 	fieldPlaceholders := make(map[string]string)
 	for _, field := range s.Fields {
 		// 为每个字段分配一个唯一的占位符
-		hashValue := utils.FNV1_32([]byte(field))
+		hashValue := utils.FNV1([]byte(field))
 		placeholder := fmt.Sprintf("__%d__", hashValue)
 		fieldPlaceholders[field] = placeholder
 		// 将 SQL 中的字段替换成占位符
