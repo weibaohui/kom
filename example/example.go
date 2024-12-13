@@ -40,10 +40,10 @@ func Example() {
 
 }
 func sql() {
-	sql := "select * from pod where metadata.namespace='kube-system' or metadata.namespace='default'    order by  metadata.creationTimestamp desc "
+	sql := "select * from pod where metadata.namespace=? or metadata.namespace=?    order by  metadata.creationTimestamp desc "
 
 	var list []corev1.Pod
-	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	err := kom.DefaultCluster().Sql(sql, "kube-system", "default").List(&list).Error
 	if err != nil {
 		fmt.Printf("List error %v", err)
 	}
