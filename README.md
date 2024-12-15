@@ -533,7 +533,7 @@ func cb(k *kom.Kubectl) error {
 * The sorting fields currently support sorting on a single field. By default, they are sorted in descending order according to the creation time.
 #### Query k8s Built-in Resources
 ```go
-    sql := "select * from deploy where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
+    sql := "select * from deploy where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp asc   "
 
 	var list []v1.Deployment
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
@@ -544,7 +544,7 @@ func cb(k *kom.Kubectl) error {
 #### Query CRD Resources
 ```go
     // vm is the CRD of Kubevirt
-    sql := "select * from vm where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+    sql := "select * from vm where (metadata.namespace='kube-system' or metadata.namespace='default' )  "
 	var list []unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	for _, d := range list {
@@ -555,8 +555,8 @@ func cb(k *kom.Kubectl) error {
 ```go
 // Query the pod list
 err := kom.DefaultCluster().From("pod").
-		Where("`metadata.namespace` =?  or `metadata.namespace`=? ", "kube-system", "default").
-		Order("`metadata.creationTimestamp` desc").
+		Where("metadata.namespace =?  or metadata.namespace=? ", "kube-system", "default").
+		Order("metadata.creationTimestamp desc").
 		List(&list).Error
 ``` 
 

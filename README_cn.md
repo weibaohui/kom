@@ -482,7 +482,7 @@ func cb(k *kom.Kubectl) error {
 * 
 #### 查询k8s内置资源
 ```go
-    sql := "select * from deploy where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` asc   "
+    sql := "select * from deploy where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp asc   "
 
 	var list []v1.Deployment
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
@@ -493,7 +493,7 @@ func cb(k *kom.Kubectl) error {
 #### 查询CRD资源
 ```go
     // vm 为kubevirt 的CRD
-    sql := "select * from vm where (`metadata.namespace`='kube-system' or `metadata.namespace`='default' )  "
+    sql := "select * from vm where (metadata.namespace='kube-system' or metadata.namespace='default' )  "
 	var list []unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	for _, d := range list {
@@ -504,8 +504,8 @@ func cb(k *kom.Kubectl) error {
 ```go
 // 查询pod 列表
 err := kom.DefaultCluster().From("pod").
-		Where("`metadata.namespace` = ?  or `metadata.namespace`= ? ", "kube-system", "default").
-		Order("`metadata.creationTimestamp` desc").
+		Where("metadata.namespace = ?  or metadata.namespace= ? ", "kube-system", "default").
+		Order("metadata.creationTimestamp desc").
 		List(&list).Error
 ```
 ### 9. 其他操作
