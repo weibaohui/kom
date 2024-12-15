@@ -56,6 +56,26 @@ func (c *ctl) Scale(replicas int32) error {
 	return item.Scale(replicas)
 }
 
+// Label 更新label
+// 新增label : x=y
+// 删除label : x-
+func (c *ctl) Label(str string) error {
+	item := &label{
+		kubectl: c.kubectl,
+	}
+	return item.Label(str)
+}
+
+// Annotate 更新annotation
+// 新增annotation : x=y
+// 删除annotation : x-
+func (c *ctl) Annotate(str string) error {
+	item := &annotate{
+		kubectl: c.kubectl,
+	}
+	return item.Annotate(str)
+}
+
 func isSupportedKind(kind string, supportedKinds []string) bool {
 	for _, k := range supportedKinds {
 		if kind == k {
