@@ -108,6 +108,12 @@ func (k *Kubectl) Get(dest interface{}) *Kubectl {
 	tx.Error = tx.Callback().Get().Execute(tx)
 	return tx
 }
+func (k *Kubectl) Describe(dest interface{}) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.Dest = dest
+	tx.Error = tx.Callback().Describe().Execute(tx)
+	return tx
+}
 func (k *Kubectl) List(dest interface{}, opt ...metav1.ListOptions) *Kubectl {
 	tx := k.getInstance()
 
