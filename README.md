@@ -217,6 +217,13 @@ go func() {
     }
 }()
 ```
+#### Describe a resource
+```go
+// Describe a Deployment named nginx in default namespace
+var describeResult string
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Describe(&item).Error
+fmt.Printf("describeResult: %s", describeResult)
+```
 
 ### 3. YAML Create, Update, Delete
 ```go
@@ -435,6 +442,13 @@ go func() {
         }
     }
 }()
+```
+#### Describe CR Object
+```go
+// Describe  a Deployment named nginx in the default namespace
+var describeResult string
+err := kom.DefaultCluster()..CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&item).Error
+fmt.Printf("describeResult: %s", describeResult)
 ```
 
 ### 6. Cluster Parameter Information

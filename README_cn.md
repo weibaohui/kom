@@ -203,6 +203,13 @@ go func() {
 	}
 }()
 ```
+#### Describe查询某个资源
+```go
+// Describe default 命名空间下名为 nginx 的 Deployment
+var describeResult string
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Describe(&item).Error
+fmt.Printf("describeResult: %s", describeResult)
+```
 
 ### 3. YAML 创建、更新、删除
 ```go
@@ -406,6 +413,13 @@ go func() {
         }
     }
 }()
+```
+#### Describe查询某个CRD资源
+```go
+// Describe default 命名空间下名为 nginx 的 Deployment
+var describeResult string
+err := kom.DefaultCluster()..CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&item).Error
+fmt.Printf("describeResult: %s", describeResult)
 ```
 
 ### 6. 集群参数信息
