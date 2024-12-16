@@ -584,3 +584,20 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().No
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
+
+#### 给资源增加标签
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name=zhangsan")
+```
+#### 给资源删除标签
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name-")
+```
+#### 给资源增加注解
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name=zhangsan")
+```
+#### 给资源删除注解
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
+```

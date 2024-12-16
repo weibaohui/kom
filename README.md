@@ -637,3 +637,19 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().No
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
+#### Label Resource
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name=zhangsan")
+```
+#### Remove Label from Resource
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name-")
+```
+#### Annotate Resource
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name=zhangsan")
+```
+#### Remove Annotation from Resource
+```go
+err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
+```
