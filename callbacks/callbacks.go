@@ -46,6 +46,9 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 		logsCallback := k.Callback().Logs()
 		_ = logsCallback.Register("kom:pod:logs", GetLogs)
+
+		describeCallback := k.Callback().Describe()
+		_ = describeCallback.Register("kom:describe", Describe)
 	}
 
 	return nil
