@@ -5,9 +5,11 @@ import (
 	"strings"
 
 	"github.com/google/gnostic-models/openapiv2"
+	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/klog/v2"
 )
@@ -31,6 +33,10 @@ func (s *status) Docs() *doc.Docs {
 func (s *status) ServerVersion() *version.Info {
 	cluster := s.kubectl.parentCluster()
 	return cluster.serverVersion
+}
+func (s *status) DescriberMap() map[schema.GroupKind]describe.ResourceDescriber {
+	cluster := s.kubectl.parentCluster()
+	return cluster.describerMap
 }
 
 // 获取版本信息
@@ -79,4 +85,7 @@ func (k *Kubectl) initializeAPIResources() (apiResources []*metav1.APIResource) 
 		}
 	}
 	return apiResources
+}
+func (k *Kubectl) initializeDescriberMap() map[schema.GroupKind]describe.ResourceDescriber {
+	return describe.InitializeDescriberMap(k.RestConfig())
 }
