@@ -3,9 +3,11 @@ package kom
 import (
 	"fmt"
 
+	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -34,6 +36,7 @@ type clusterInst struct {
 	callbacks     *callbacks                   // 回调
 	docs          *doc.Docs                    // 文档
 	serverVersion *version.Info                // 服务器版本
+	describerMap  map[schema.GroupKind]describe.ResourceDescriber
 }
 
 // Clusters 集群实例管理器
@@ -134,6 +137,7 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		cluster.callbacks = k.initializeCallbacks()         // 回调
 		cluster.serverVersion = k.initializeServerVersion() // 服务器版本
 		cluster.docs = doc.InitTrees(k.getOpenAPISchema())  // 文档
+		cluster.describerMap = k.initializeDescriberMap()   // 初始化描述器
 		if c.callbackRegisterFunc != nil {                  // 注册回调方法
 			c.callbackRegisterFunc(Clusters())
 		}
