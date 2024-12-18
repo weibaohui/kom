@@ -154,6 +154,11 @@ func (c *ClusterInstances) GetClusterById(id string) *clusterInst {
 	return cluster
 }
 
+// RemoveClusterById 删除集群
+func (c *ClusterInstances) RemoveClusterById(id string) {
+	delete(c.clusters, id)
+}
+
 // AllClusters 返回所有集群实例
 func (c *ClusterInstances) AllClusters() map[string]*clusterInst {
 	return c.clusters
