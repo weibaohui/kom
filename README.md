@@ -1,6 +1,7 @@
 # Kom - Kubernetes Operations Manager
 
 [English](README_en.md) | [中文](README.md)
+[![kom](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](https://github.com/weibaohui/kom/blob/master/LICENSE)
 
 
 ## 简介
