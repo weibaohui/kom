@@ -1,165 +1,154 @@
 # Kom - Kubernetes Operations Manager
 
-[English](README.md) | [中文](README_cn.md)
+[English](README_en.md) | [中文](README.md)
 
 
-## Introduction
+## 简介
 
-`kom` is a tool designed for Kubernetes operations, serving as an SDK-level wrapper for kubectl and client-go. It provides a range of functionalities to manage Kubernetes resources, including creating, updating, deleting, and retrieving resources. The project supports operations on various Kubernetes resource types and can handle Custom Resource Definitions (CRD).
-By using `kom`, you can easily perform actions such as creating, reading, updating, and deleting resources, fetching logs, and managing files within PODs.
+`kom` 是一个用于 Kubernetes 操作的工具，相当于SDK级的kubectl、client-go的使用封装。
+它提供了一系列功能来管理 Kubernetes 资源，包括创建、更新、删除和获取资源。这个项目支持多种 Kubernetes 资源类型的操作，并能够处理自定义资源定义（CRD）。
+通过使用 `kom`，你可以轻松地进行资源的增删改查和日志获取以及操作POD内文件等动作，甚至可以使用SQL语句来查询、管理k8s资源。
 
-## **Features**
+## **特点**
+1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等，包括对内置资源以及CRD资源的操作。
+2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
+3. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
+4. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
+5. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
+6. 支持POD内文件操作，轻松上传、下载、删除文件。
+7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
+8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` desc 
 
-1. Easy to Use: `kom` offers a comprehensive set of features, including create, update, delete, retrieve, and list operations for both built-in and CRD resources.
-2. Multi-Cluster Support: With RegisterCluster, you can easily manage multiple Kubernetes clusters.
-3. Chained Invocation: `kom` provides chained invocation, making resource operations simpler and more intuitive.
-4. CRD Support: `kom` supports custom resource definitions (CRDs), allowing you to define and manage custom resources effortlessly.
-5. Callback Mechanism Support: Enables easy extension of business logic without tight coupling to Kubernetes operations.
-6. POD File Operations: Supports file management within PODs, making it easy to upload, download, and delete files.
-7. Support the encapsulation of high-frequency operations, such as restarting deployments and scaling (expanding or shrinking capacity).
-8. Support SQL queries for k8s resources.`select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by `metadata.creationTimestamp` asc`
-## Example Program
+## 示例程序
+**k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
+1. **下载**：从 [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m) 下载最新版本。
+2. **运行**：使用 `./k8m` 命令启动,访问[http://127.0.0.1:3618](http://127.0.0.1:3618)。
 
-**k8m** is a lightweight Kubernetes management tool, implemented as a single file and based on `kom` and `amis`, supporting multiple platform architectures.
 
-1. **Download**: Get the latest version from [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m).
-2. **Run**: Start with the command `./k8m` and access [http://127.0.0.1:3618](http://127.0.0.1:3618).
 
-## Installation
 
-```go
+## 安装
+
+```bash
 import (
-    "github.com/weibaohui/kom/callbacks"
     "github.com/weibaohui/kom"
+    "github.com/weibaohui/kom/callbacks"
 )
 func main() {
-    // Register the callback functions
+    // 注册回调，务必先注册
     callbacks.RegisterInit()
-    // Register clusters
-    defaultKubeConfig := os.Getenv("KUBECONFIG")
-    if defaultKubeConfig == "" {
-        defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
-    }
-    _, _ = kom.Clusters().RegisterInCluster()
-    _, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default")
-    kom.Clusters().Show()
-    // Additional logic
+    // 注册集群
+	defaultKubeConfig := os.Getenv("KUBECONFIG")
+	if defaultKubeConfig == "" {
+		defaultKubeConfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	}
+	_, _ = kom.Clusters().RegisterInCluster()
+	_, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default")
+	kom.Clusters().Show()
+	// 其他逻辑
 }
 ```
-## Usage Examples
 
-### 1. Multi-Cluster Management
+## 使用示例
 
-#### Registering Multiple Clusters
+### 1. 多集群管理
+#### 注册多集群
 ```go
-// Register the InCluster cluster with the name "InCluster"
+// 注册InCluster集群，名称为InCluster
 kom.Clusters().RegisterInCluster()
-
-// Register two named clusters with IDs "orb" and "docker-desktop"
+// 注册两个带名称的集群,分别名为orb和docker-desktop
 kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/orb", "orb")
 kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "docker-desktop")
-
-// Register a cluster named "default". kom.DefaultCluster() will return this cluster.
+// 注册一个名为default的集群，那么kom.DefaultCluster()则会返回该集群。
 kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "default")
 ```
-
-#### Display Registered Clusters
+#### 显示已注册集群
 ```go
 kom.Clusters().Show()
 ```
-
-#### Selecting the Default Cluster
+#### 选择默认集群
 ```go
-// Use the default cluster to query pods in the kube-system namespace
-// First, it will try to return the instance with ID "InCluster". If it doesn't exist,
-// it will try to return the instance with ID "default".
-// If neither of these exist, it will return any instance in the clusters list.
+// 使用默认集群,查询集群内kube-system命名空间下的pod
+// 首先尝试返回 ID 为 "InCluster" 的实例，如果不存在，
+// 则尝试返回 ID 为 "default" 的实例。
+// 如果上述两个名称的实例都不存在，则返回 clusters 列表中的任意一个实例。
 var pods []corev1.Pod
 err = kom.DefaultCluster().Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
 ```
-
-#### Selecting a Specific Cluster
+#### 选择指定集群
 ```go
-// Select the "orb" cluster and query pods in the kube-system namespace
+// 选择orb集群,查询集群内kube-system命名空间下的pod
 var pods []corev1.Pod
 err = kom.Cluster("orb").Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
 ```
 
-### 2. CRUD and Watch Examples for Built-in Resource Objects
-
-Define a Deployment object and use `kom` for resource operations.
+### 2. 内置资源对象的增删改查以及Watch示例
+定义一个 Deployment 对象，并通过 kom 进行资源操作。
 ```go
 var item v1.Deployment
 var items []v1.Deployment
 ```
-
-#### Create a Resource
+#### 创建某个资源
 ```go
 item = v1.Deployment{
-    ObjectMeta: metav1.ObjectMeta{
-        Name:      "nginx",
-        Namespace: "default",
-    },
-    Spec: v1.DeploymentSpec{
-        Template: corev1.PodTemplateSpec{
-            Spec: corev1.PodSpec{
-                Containers: []corev1.Container{
-                    {Name: "test", Image: "nginx:1.14.2"},
-                },
-            },
-        },
-    },
-}
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "default",
+		},
+		Spec: v1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test", Image: "nginx:1.14.2"},
+					},
+				},
+			},
+		},
+	}
 err := kom.DefaultCluster().Resource(&item).Create(&item).Error
 ```
-
-#### Get a Specific Resource
+#### Get查询某个资源
 ```go
-// Retrieve the Deployment named "nginx" in the "default" namespace
+// 查询 default 命名空间下名为 nginx 的 Deployment
 err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Get(&item).Error
 ```
-
-#### List Resources
+#### List查询资源列表
 ```go
-// List  Deployments in the "default" namespace
+// 查询 default 命名空间下的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Error
-// List  Deployments in all namespace
-err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
+// 查询 所有 命名空间下的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("*").List(&items).Error
+err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
 ```
-
-#### List Resources by Label
+#### 通过Label查询资源列表
 ```go
-// List Deployments in the "default" namespace with the label "app=nginx"
+// 查询 default 命名空间下 标签为 app:nginx 的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").List(&items).Error
 ```
-
-#### List Resources by Multiple Labels
+#### 通过多个Label查询资源列表
 ```go
-// List Deployments in the "default" namespace with labels "app=nginx" and "m=n"
+// 查询 default 命名空间下 标签为 app:nginx m:n 的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelector("app=nginx").WithLabelSelector("m=n").List(&items).Error
 ```
-
-#### List Resources by Field
+#### 通过Field查询资源列表
 ```go
-// List Deployments in the "default" namespace with the field "metadata.name=test-deploy"
+// 查询 default 命名空间下 标签为 metadata.name=test-deploy 的 Deployment 列表
+// filedSelector 一般支持原生的字段定义。如metadata.name,metadata.namespace,metadata.labels,metadata.annotations,metadata.creationTimestamp,spec.nodeName,spec.serviceAccountName,spec.schedulerName,status.phase,status.hostIP,status.podIP,status.qosClass,spec.containers.name等字段
 err := kom.DefaultCluster().Resource(&item).Namespace("default").WithFieldSelector("metadata.name=test-deploy").List(&items).Error
 ```
-
-#### Update a Resource
+#### 更新资源内容
 ```go
-// Update the Deployment named "nginx" by adding an annotation
+// 更新名为nginx 的 Deployment，增加一个注解
 err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Get(&item).Error
 if item.Spec.Template.Annotations == nil {
-    item.Spec.Template.Annotations = map[string]string{}
+	item.Spec.Template.Annotations = map[string]string{}
 }
 item.Spec.Template.Annotations["kom.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 err = kom.DefaultCluster().Resource(&item).Update(&item).Error
 ```
-
-#### PATCH Update a Resource
+#### PATCH 更新资源
 ```go
-// Patch update to add a label and set replicas to 5 for the Deployment "nginx"
+// 使用 Patch 更新资源,为名为 nginx 的 Deployment 增加一个标签，并设置副本数为5
 patchData := `{
     "spec": {
         "replicas": 5
@@ -172,60 +161,57 @@ patchData := `{
 }`
 err := kom.DefaultCluster().Resource(&item).Patch(&item, types.MergePatchType, patchData).Error
 ```
-
-#### Delete a Resource
+#### 删除资源
 ```go
-// Delete the Deployment named "nginx"
+// 删除名为 nginx 的 Deployment
 err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Delete().Error
 ```
-
-#### Retrieve Generic Resource (for both built-in and CRD types)
+#### 通用类型资源的获取（适用于k8s内置类型以及CRD）
 ```go
-// Specify GVK to retrieve resources
+// 指定GVK获取资源
 var list []corev1.Event
 err := kom.DefaultCluster().GVK("events.k8s.io", "v1", "Event").Namespace("default").List(&list).Error
 ```
-
-#### Watch Resource Changes
+#### Watch资源变更
 ```go
-// Watch changes to Pod resources in the "default" namespace
+// watch default 命名空间下 Pod资源 的变更
 var watcher watch.Interface
 var pod corev1.Pod
 err := kom.DefaultCluster().Resource(&pod).Namespace("default").Watch(&watcher).Error
 if err != nil {
-    fmt.Printf("Create Watcher Error %v", err)
-    return err
+	fmt.Printf("Create Watcher Error %v", err)
+	return err
 }
 go func() {
-    defer watcher.Stop()
+	defer watcher.Stop()
 
-    for event := range watcher.ResultChan() {
-        err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
-        if err != nil {
-            fmt.Printf("Failed to convert object to *v1.Pod type: %v", err)
-            return
-        }
-        // Handle events
-        switch event.Type {
-        case watch.Added:
-            fmt.Printf("Added Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
-        case watch.Modified:
-            fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
-        case watch.Deleted:
-            fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
-        }
-    }
+	for event := range watcher.ResultChan() {
+		err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToTypedObject(event.Object, &pod)
+		if err != nil {
+			fmt.Printf("无法将对象转换为 *v1.Pod 类型: %v", err)
+			return
+		}
+		// 处理事件
+		switch event.Type {
+		case watch.Added:
+			fmt.Printf("Added Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
+		case watch.Modified:
+			fmt.Printf("Modified Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
+		case watch.Deleted:
+			fmt.Printf("Deleted Pod [ %s/%s ]\n", pod.Namespace, pod.Name)
+		}
+	}
 }()
 ```
-#### Describe a resource
+#### Describe查询某个资源
 ```go
-// Describe a Deployment named nginx in default namespace
+// Describe default 命名空间下名为 nginx 的 Deployment
 var describeResult []byte
-err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Describe(&describeResult).Error
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Describe(&item).Error
 fmt.Printf("describeResult: %s", describeResult)
 ```
 
-### 3. YAML Create, Update, Delete
+### 3. YAML 创建、更新、删除
 ```go
 yaml := `apiVersion: v1
 kind: ConfigMap
@@ -254,76 +240,67 @@ spec:
         - name: example-container
           image: nginx
 `
-
-// Initial Apply creates the resources and returns results for each resource
+// 第一次执行Apply为创建，返回每一条资源的执行结果 
 results := kom.DefaultCluster().Applier().Apply(yaml)
-
-// Subsequent Apply updates the resources and returns results for each resource
+// 第二次执行Apply为更新，返回每一条资源的执行结果
 results = kom.DefaultCluster().Applier().Apply(yaml)
-
-// Delete removes the resources and returns results for each resource
+// 删除，返回每一条资源的执行结果
 results = kom.DefaultCluster().Applier().Delete(yaml)
 ```
 
-### 4. Pod Operations
-
-#### Retrieve Logs
+### 4. Pod 操作
+#### 获取日志
 ```go
-// Retrieve Pod logs
+// 获取Pod日志
 var stream io.ReadCloser
 err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").GetLogs(&stream, &corev1.PodLogOptions{}).Error
 reader := bufio.NewReader(stream)
 line, _ := reader.ReadString('\n')
 fmt.Println(line)
 ```
-
-#### Execute a Command
-To execute a command inside a Pod, specify the container name. This triggers `Exec()` type callbacks.
+#### 执行命令
+在Pod内执行命令，需要指定容器名称，并且会触发Exec()类型的callbacks。
 ```go
-// Execute the "ps -ef" command inside the Pod
+// 在Pod内执行ps -ef命令
 var execResult string
-err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
+err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
 fmt.Printf("execResult: %s", execResult)
 ```
-
-#### List Files
+#### 文件列表
 ```go
-// List files in the /etc directory within the Pod
+// 获取Pod内/etc文件夹列表
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").ListFiles("/etc")
 ```
-
-#### Download a File
+#### 文件下载
 ```go
-// Download the /etc/hosts file from inside the Pod
+// 下载Pod内/etc/hosts文件
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DownloadFile("/etc/hosts")
 ```
-
-#### Upload a File
+#### 文件上传
 ```go
-// Upload text content to /etc/demo.txt inside the Pod
+// 上传文件内容到Pod内/etc/demo.txt文件
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").SaveFile("/etc/demo.txt", "txt-context")
-
-// Directly upload a os.File to /etc/ inside the Pod
+// os.File 类型文件直接上传到Pod内/etc/目录下
 file, _ := os.Open(tempFilePath)
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").UploadFile("/etc/", file)
 ```
-
-#### Delete a File
+#### 文件删除
 ```go
-// Delete the /etc/xyz file inside the Pod
+// 删除Pod内/etc/xyz文件
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DeleteFile("/etc/xyz")
 ```
 
-### 5. Custom Resource Definition (CRD) Create, Update, Delete, and Watch Operations
-
-Without defining a CR, you can still perform CRUD operations similar to built-in Kubernetes resources. To work with a CRD, define the object as `unstructured.Unstructured`, and specify the Group, Version, and Kind. For convenience, `kom.DefaultCluster().CRD(group, version, kind)` can be used to simplify the process. Below is an example of working with CRDs:
-
-First, define a generic object to handle CRD responses.
+### 5. 自定义资源定义（CRD）增删改查及Watch操作
+在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
+将对象定义为unstructured.Unstructured，并且需要指定Group、Version、Kind。
+因此可以通过kom.DefaultCluster().GVK(group, version, kind)来替代kom.DefaultCluster().Resource(interface{})
+为方便记忆及使用，kom提供了kom.DefaultCluster().CRD(group, version, kind)来简化操作。
+下面给出操作CRD的示例：
+首先定义一个通用的处理对象，用来接收CRD的返回结果。
 ```go
 var item unstructured.Unstructured
 ```
-
-#### Create a CRD
+#### 创建CRD
 ```go
 yaml := `apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -357,42 +334,38 @@ spec:
     - ct`
 result := kom.DefaultCluster().Applier().Apply(yaml)
 ```
-
-#### Create a CR Object for the CRD
+#### 创建CRD的CR对象
 ```go
 item = unstructured.Unstructured{
-    Object: map[string]interface{}{
-        "apiVersion": "stable.example.com/v1",
-        "kind":       "CronTab",
-        "metadata": map[string]interface{}{
-            "name":      "test-crontab",
-            "namespace": "default",
-        },
-        "spec": map[string]interface{}{
-            "cronSpec": "* * * * */8",
-            "image":    "test-crontab-image",
-        },
-    },
-}
+		Object: map[string]interface{}{
+			"apiVersion": "stable.example.com/v1",
+			"kind":       "CronTab",
+			"metadata": map[string]interface{}{
+				"name":      "test-crontab",
+				"namespace": "default",
+			},
+			"spec": map[string]interface{}{
+				"cronSpec": "* * * * */8",
+				"image":    "test-crontab-image",
+			},
+		},
+	}
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(item.GetNamespace()).Name(item.GetName()).Create(&item).Error
 ```
-
-#### Get a Single CR Object
+#### Get获取单个CR对象
 ```go
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(item.GetName()).Namespace(item.GetNamespace()).Get(&item).Error
 ```
-
-#### List CR Objects
+#### List获取CR对象的列表
 ```go
 var crontabList []unstructured.Unstructured
-// list in default namespace
+// 查询default命名空间下的CronTab
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace(crontab.GetNamespace()).List(&crontabList).Error
-// list in all namespace
+// 查询所有命名空间下的CronTab
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").AllNamespace().List(&crontabList).Error
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("*").List(&crontabList).Error
 ```
-
-#### Update a CR Object
+#### 更新CR对象
 ```go
 patchData := `{
     "spec": {
@@ -406,13 +379,11 @@ patchData := `{
 }`
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Patch(&crontab, types.MergePatchType, patchData).Error
 ```
-
-#### Delete a CR Object
+#### 删除CR对象
 ```go
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Delete().Error
 ```
-
-#### Watch CR Object
+#### Watch CR对象
 ```go
 var watcher watch.Interface
 
@@ -422,17 +393,17 @@ if err != nil {
 }
 go func() {
     defer watcher.Stop()
-
+    
     for event := range watcher.ResultChan() {
-        var item *unstructured.Unstructured
-
-        item, err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
-        if err != nil {
-            fmt.Printf("Unable to convert object to Unstructured type: %v", err)
-            return
-        }
-        // Handle events
-        switch event.Type {
+    var item *unstructured.Unstructured
+    
+    item, err := kom.DefaultCluster().Tools().ConvertRuntimeObjectToUnstructuredObject(event.Object)
+    if err != nil {
+        fmt.Printf("无法将对象转换为 Unstructured 类型: %v", err)
+        return
+    }
+    // 处理事件
+    switch event.Type {
         case watch.Added:
             fmt.Printf("Added Unstructured [ %s/%s ]\n", item.GetNamespace(), item.GetName())
         case watch.Modified:
@@ -443,213 +414,190 @@ go func() {
     }
 }()
 ```
-#### Describe CR Object
+#### Describe查询某个CRD资源
 ```go
-// Describe  a Deployment named nginx in the default namespace
+// Describe default 命名空间下名为 nginx 的 Deployment
 var describeResult []byte
-err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&describeResult).Error
+err := kom.DefaultCluster()..CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&item).Error
 fmt.Printf("describeResult: %s", describeResult)
 ```
 
-### 6. Cluster Parameter Information
-
-Retrieve various types of information about the cluster:
-
+### 6. 集群参数信息
 ```go
-// Cluster documentation
+// 集群文档
 kom.DefaultCluster().Status().Docs()
-
-// Cluster resource information
+// 集群资源信息
 kom.DefaultCluster().Status().APIResources()
-
-// List of registered CRDs in the cluster
+// 集群已注册CRD列表
 kom.DefaultCluster().Status().CRDList()
-
-// Cluster version information
+// 集群版本信息
 kom.DefaultCluster().Status().ServerVersion()
 ```
 
-### 7. Callback Mechanism
-
-`kom` has a built-in callback mechanism, allowing for custom callback functions that execute after specific operations. If a callback function returns `true`, the subsequent operation continues; otherwise, it terminates.
-
-#### Supported Callbacks
-- Available callbacks include: `get`, `list`, `create`, `update`, `patch`, `delete`, `exec`, `logs`, and `watch`.
-- Default callback names: `"kom:get"`, `"kom:list"`, `"kom:create"`, `"kom:update"`, `"kom:patch"`, `"kom:watch"`, `"kom:delete"`, `"kom:pod:exec"`, `"kom:pod:logs"`.
-
-#### Callback Function Management
-- **Ordering**: Callbacks execute in the order of registration by default. Set execution order using `.After("kom:get")` or `.Before("kom:get")`.
-- **Deletion**: Remove a callback with `.Delete("kom:get")`.
-- **Replacement**: Replace a callback with `.Replace("kom:get", cb)`.
-
-#### Callback Registration Examples
-
+### 7. callback机制
+* 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
+* 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
+* 当前支持的callback有：get,list,create,update,patch,delete,exec,logs,watch.
+* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:logs"
+* 支持回调函数排序，默认按注册顺序执行，可以通过kom.DefaultCluster().Callback().After("kom:get")或者.Before("kom:get")设置顺序。
+* 支持删除回调函数，通过kom.DefaultCluster().Callback().Delete("kom:get")
+* 支持替换回调函数，通过kom.DefaultCluster().Callback().Replace("kom:get",cb)
 ```go
-// Register callback for Get operation
+// 为Get获取资源注册回调函数
 kom.DefaultCluster().Callback().Get().Register("get", cb)
-// Register callback for List operation
+// 为List获取资源注册回调函数
 kom.DefaultCluster().Callback().List().Register("list", cb)
-// Register callback for Create operation
+// 为Create创建资源注册回调函数
 kom.DefaultCluster().Callback().Create().Register("create", cb)
-// Register callback for Update operation
+// 为Update更新资源注册回调函数
 kom.DefaultCluster().Callback().Update().Register("update", cb)
-// Register callback for Patch operation
+// 为Patch更新资源注册回调函数
 kom.DefaultCluster().Callback().Patch().Register("patch", cb)
-// Register callback for Delete operation
+// 为Delete删除资源注册回调函数
 kom.DefaultCluster().Callback().Delete().Register("delete", cb)
-// Register callback for Watch operation
-kom.DefaultCluster().Callback().Watch().Register("watch", cb)
-// Register callback for Pod Exec operation
+// 为Watch资源注册回调函数
+kom.DefaultCluster().Callback().Watch().Register("watch",cb)
+// 为Exec Pod内执行命令注册回调函数
 kom.DefaultCluster().Callback().Exec().Register("exec", cb)
-// Register callback for Log retrieval
+// 为Logs获取日志注册回调函数
 kom.DefaultCluster().Callback().Logs().Register("logs", cb)
-
-// Delete callback for Get operation
+// 删除回调函数
 kom.DefaultCluster().Callback().Get().Delete("get")
-// Replace callback for Get operation
+// 替换回调函数
 kom.DefaultCluster().Callback().Get().Replace("get", cb)
-
-// Specify callback execution order
+// 指定回调函数执行顺序，在内置的回调函数执行完之后再执行
 kom.DefaultCluster().Callback().After("kom:get").Register("get", cb)
+// 指定回调函数执行顺序，在内置的回调函数执行之前先执行
+// 案例1.在Create创建资源前，进行权限检查，没有权限则返回error，后续创建动作将不再执行
+// 案例2.在List获取资源列表后，进行特定的资源筛选，从列表(Statement.Dest)中删除不符合要求的资源，然后返回给用户
 kom.DefaultCluster().Callback().Before("kom:create").Register("create", cb)
 
-// Example Scenarios
-// 1. Perform permission check before Create operation. If unauthorized, return an error, halting further execution.
-// 2. After List operation, filter results, removing resources that do not meet specific criteria.
-
-```
-
-#### Custom Callback Function
-
-Define a custom callback function to include specific operations:
-
-```go
+// 自定义回调函数
 func cb(k *kom.Kubectl) error {
     stmt := k.Statement
     gvr := stmt.GVR
     ns := stmt.Namespace
     name := stmt.Name
-    // Print information
+    // 打印信息
     fmt.Printf("Get %s/%s(%s)\n", ns, name, gvr)
     fmt.Printf("Command %s/%s(%s %s)\n", ns, name, stmt.Command, stmt.Args)
     return nil
-    // return fmt.Errorf("error") // Return error to stop further callback execution
+	// return fmt.Errorf("error") 返回error将阻止后续cb的执行
 }
 ```
 
-
-### 8. SQL Queries for k8s Resources
-* Query k8s resources through the SQL() method, which is simple and efficient.
-* The table names support the full names and abbreviations of all resources registered within the cluster, including CRD resources. As long as they are registered on the cluster, they can be queried.
-* Typical table names include: pod, deployment, service, ingress, pvc, pv, node, namespace, secret, configmap, serviceaccount, role, rolebinding, clusterrole, clusterrolebinding, crd, cr, hpa, daemonset, statefulset, job, cronjob, limitrange, horizontalpodautoscaler, poddisruptionbudget, networkpolicy, endpoints, ingressclass, mutatingwebhookconfiguration, validatingwebhookconfiguration, customresourcedefinition, storageclass, persistentvolumeclaim, persistentvolume, horizontalpodautoscaler, podsecurity. All of them can be queried.
-* The query fields currently only support “*”. That is, only “select *” is supported.
-* The query conditions currently support =,!=, >=, <=, <>, like, in, not in, and, or, between.
-* The sorting fields currently support sorting on a single field. By default, they are sorted in descending order according to the creation time.
-#### Query k8s Built-in Resources
+### 8. SQL查询k8s资源
+* 通过SQL()方法查询k8s资源，简单高效。
+* Table 名称支持集群内注册的所有资源的全称及简写，包括CRD资源。只要是注册到集群上了，就可以查。
+* 典型的Table 名称有：pod,deployment,service,ingress,pvc,pv,node,namespace,secret,configmap,serviceaccount,role,rolebinding,clusterrole,clusterrolebinding,crd,cr,hpa,daemonset,statefulset,job,cronjob,limitrange,horizontalpodautoscaler,poddisruptionbudget,networkpolicy,endpoints,ingressclass,mutatingwebhookconfiguration,validatingwebhookconfiguration,customresourcedefinition,storageclass,persistentvolumeclaim,persistentvolume,horizontalpodautoscaler,podsecurity。统统都可以查。
+* 查询字段目前仅支持*。也就是select *
+* 查询条件目前支持 =，!=,>=,<=,<>,like,in,not in,and,or,between
+* 排序字段目前支持对单一字段进行排序。默认按创建时间倒序排列
+* 
+#### 查询k8s内置资源
 ```go
     sql := "select * from deploy where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp asc   "
 
 	var list []v1.Deployment
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	for _, d := range list {
-        fmt.Printf("List Items foreach %s,%s at %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
-    }
+		fmt.Printf("List Items foreach %s,%s at %s \n", d.GetNamespace(), d.GetName(), d.GetCreationTimestamp())
+	}
 ```
-#### Query CRD Resources
+#### 查询CRD资源
 ```go
-    // vm is the CRD of Kubevirt
+    // vm 为kubevirt 的CRD
     sql := "select * from vm where (metadata.namespace='kube-system' or metadata.namespace='default' )  "
 	var list []unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	for _, d := range list {
-        fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
-    }
-``` 
-#### Chained Query with SQL
+		fmt.Printf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+```
+#### 链式调研查询SQL
 ```go
-// Query the pod list
+// 查询pod 列表
 err := kom.DefaultCluster().From("pod").
-		Where("metadata.namespace =?  or metadata.namespace=? ", "kube-system", "default").
+		Where("metadata.namespace = ?  or metadata.namespace= ? ", "kube-system", "default").
 		Order("metadata.creationTimestamp desc").
 		List(&list).Error
-``` 
-
-
-### 9. Other Operations
-#### Restart Deployment
+```
+### 9. 其他操作
+#### Deployment重启
 ```go
 err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Restart()
 ```
-#### Scale Deployment
+#### Deployment扩缩容
 ```go
-// Set the replica count of the nginx deployment to 3
+// 将名称为nginx的deployment的副本数设置为3
 err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Scale(3)
 ```
-#### Update Deployment Tag
+#### Deployment更新Tag
 ```go
-// Upgrade the container image tag of the nginx deployment to alpine
+// 将名称为nginx的deployment的中的容器镜像tag升级为alpine
 err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Deployment().ReplaceImageTag("main","20241124")
 ```
 #### Deployment Rollout History
 ```go
-// Query the upgrade history of the nginx deployment
+// 查询名称为nginx的deployment的升级历史
 result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().History()
 ```
 #### Deployment Rollout Undo
 ```go
-// Rollback the nginx deployment
+// 将名称为nginx的deployment进行回滚
 result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo()
-// Rollback the nginx deployment to a specific version (query the history)
+// 将名称为nginx的deployment进行回滚到指定版本(history 查询)
 result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Undo("6")
 ```
 #### Deployment Rollout Pause
 ```go
-// Pause the upgrade process
+// 暂停升级过程
 err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Pause()
 ```
-#### Deployment Rollout Resume
+#### Deployment Rollout Resume 
 ```go
-// Resume the upgrade process
+// 恢复升级过程
 err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Resume()
 ```
-#### Deployment Rollout Status
+#### Deployment Rollout Status 
 ```go
-// Check the status of the nginx deployment rollout
+// 将名称为nginx的deployment的中的容器镜像tag升级为alpine
 result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Status()
 ```
-#### Taint Node
+#### 节点打污点
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Taint("dedicated=special-user:NoSchedule")
 ```
-#### Remove Taint from Node
+#### 节点去除污点
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnTaint("dedicated=special-user:NoSchedule")
 ```
-#### Cordon Node
+#### 节点Cordon
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Cordon()
 ```
-#### UnCordon Node
+#### 节点UnCordon
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().UnCordon()
 ```
-#### Drain Node
+#### 节点Drain
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
-#### Label Resource
+
+#### 给资源增加标签
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name=zhangsan")
 ```
-#### Remove Label from Resource
+#### 给资源删除标签
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name-")
 ```
-#### Annotate Resource
+#### 给资源增加注解
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name=zhangsan")
 ```
-#### Remove Annotation from Resource
+#### 给资源删除注解
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
 ```
