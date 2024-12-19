@@ -605,4 +605,4 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 
 
 ## 联系我
-微信 搜索ID：daluomadetaiyang,备注kom。
+微信（大罗马的太阳） 搜索ID：daluomadetaiyang,备注kom。
