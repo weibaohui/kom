@@ -25,7 +25,7 @@ func Example() {
 	// drainNode()
 	// builtInExample()
 	// crdExample()
-	// yamlApplyDelete()
+	yamlApplyDelete()
 	// multiCluster()
 	// newEventList()
 	// coreEventList()
@@ -145,32 +145,28 @@ func InitPodWatcher() error {
 	return nil
 }
 func yamlApplyDelete() {
-	yaml := `apiVersion: v1
-kind: ConfigMap
+	yaml := `apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
 metadata:
-  name: example-config
-  namespace: default
-data:
-  key: value
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: example-deployment
-  namespace: default
+  name: foo-bar-route
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: example
-  template:
-    metadata:
-      labels:
-        app: example
-    spec:
-      containers:
-        - name: example-container
-          image: nginx
+  http:
+  - name: foo
+    match:
+      hosts:
+      - foo.com
+      paths:
+      - "/foo/*"
+    backends:
+    - serviceName: foo
+      servicePort: 80
+  - name: bar
+    match:
+      paths:
+        - "/bar/*"
+    backends:
+    - serviceName: bar
+      servicePort: 80
 `
 	results := kom.DefaultCluster().Applier().Apply(yaml)
 	for _, r := range results {

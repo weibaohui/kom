@@ -8,10 +8,7 @@ import (
 )
 
 func GetLogs(k *kom.Kubectl) error {
-	// 前序步骤有任何Error及时终止
-	if k.Error != nil {
-		return k.Error
-	}
+
 	stmt := k.Statement
 	ns := stmt.Namespace
 	name := stmt.Name
