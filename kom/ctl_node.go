@@ -89,6 +89,7 @@ func (d *node) UnTaint(str string) error {
 // Drain node
 // drain 通常在节点需要进行维护时使用。它不仅会标记节点为不可调度，还会逐一驱逐（Evict）该节点上的所有 Pod。
 func (d *node) Drain() error {
+	// todo 增加--force的处理，也就强制驱逐所有pod，即便是不满足PDB
 	name := d.kubectl.Statement.Name
 
 	// Step 1: 将节点标记为不可调度
