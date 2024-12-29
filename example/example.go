@@ -25,7 +25,7 @@ func Example() {
 	// drainNode()
 	// builtInExample()
 	// crdExample()
-	yamlApplyDelete()
+	// yamlApplyDelete()
 	// multiCluster()
 	// newEventList()
 	// coreEventList()
