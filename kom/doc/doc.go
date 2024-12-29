@@ -357,7 +357,6 @@ func loadArrayItems(node *TreeNode, refArrayNodes map[string]*TreeNode) {
 func childMoveUpLevel(item *TreeNode) {
 	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 	if item.Ref != "" && len(item.Children) == 1 && item.Children[0].ID == name && len(item.Children[0].Children) > 0 {
-
 		item.Children = item.Children[0].Children
 	}
 	for i := range item.Children {
@@ -372,7 +371,15 @@ func loadChild(item *TreeNode, refArrayNodes map[string]*TreeNode) {
 		item.Children[0] = refNode
 	}
 	for i := range item.Children {
-		loadChild(item.Children[i], refArrayNodes)
+		// 避免循环引用，先检测子是否已存在，不存在再递归
+		node := item.Children[i]
+		if node.Ref != "" && len(node.Children) > 0 {
+			ref := item.Ref
+			if _, ok := refArrayNodes[ref]; !ok {
+				loadChild(node, refArrayNodes)
+			}
+		}
+
 	}
 }
 func uniqueID(item *TreeNode) {
