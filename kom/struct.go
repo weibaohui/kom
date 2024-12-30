@@ -1,6 +1,9 @@
 package kom
 
 import (
+	"fmt"
+
+	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -18,4 +21,38 @@ type ResourceUsageResult struct {
 	Limits         map[corev1.ResourceName]resource.Quantity     `json:"limits"`         // 限制用量
 	Allocatable    map[corev1.ResourceName]resource.Quantity     `json:"allocatable"`    // 节点可分配的实时值
 	UsageFractions map[corev1.ResourceName]ResourceUsageFraction `json:"usageFractions"` // 使用占比
+}
+
+// ResourceUsageRow 临时结构体，用于存储每一行数据
+type ResourceUsageRow struct {
+	ResourceType    string `json:"resourceType"`
+	Total           string `json:"total"`
+	Request         string `json:"request"`
+	RequestFraction string `json:"requestFraction"`
+	Limit           string `json:"limit"`
+	LimitFraction   string `json:"limitFraction"`
+}
+
+func convertToTableData(result *ResourceUsageResult) ([]*ResourceUsageRow, error) {
+	var tableData []*ResourceUsageRow
+
+	// 遍历资源类型（CPU、内存等），并生成表格行
+	for _, resourceType := range []corev1.ResourceName{corev1.ResourceCPU, corev1.ResourceMemory, corev1.ResourceEphemeralStorage} {
+		// 创建一行数据
+		alc := result.Allocatable[resourceType]
+		req := result.Requests[resourceType]
+		lit := result.Limits[resourceType]
+		row := &ResourceUsageRow{
+			ResourceType:    string(resourceType),
+			Total:           utils.FormatResource(alc),
+			Request:         utils.FormatResource(req),
+			RequestFraction: fmt.Sprintf("%.2f", result.UsageFractions[resourceType].RequestFraction),
+			Limit:           utils.FormatResource(lit),
+			LimitFraction:   fmt.Sprintf("%.2f", result.UsageFractions[resourceType].LimitFraction),
+		}
+		// 将行加入表格数据
+		tableData = append(tableData, row)
+	}
+
+	return tableData, nil
 }
