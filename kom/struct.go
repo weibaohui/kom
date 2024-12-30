@@ -34,6 +34,9 @@ type ResourceUsageRow struct {
 }
 
 func convertToTableData(result *ResourceUsageResult) ([]*ResourceUsageRow, error) {
+	if result == nil {
+		return nil, fmt.Errorf("result is nil")
+	}
 	var tableData []*ResourceUsageRow
 
 	// 遍历资源类型（CPU、内存等），并生成表格行
