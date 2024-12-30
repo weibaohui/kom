@@ -38,6 +38,14 @@ func Example() {
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
+	// NodeIPUsage()
+}
+
+func NodeIPUsage() {
+	nodeName := "kwok-node-0"
+	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
+		Name(nodeName).Ctl().Node().IPUsage()
+	fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
 }
 func PodUsageExample() {
 	podName := "coredns-ccb96694c-jprpf"
