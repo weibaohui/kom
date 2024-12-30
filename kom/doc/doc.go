@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/duke-git/lancet/v2/slice"
 	"github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
@@ -108,7 +109,7 @@ var definitionsMap map[string]SchemaDefinition
 //			  },
 //			  "vendor_extension": [ {},{}]
 //			}
-func parseOpenAPISchema(schemaJSON string, flag map[string]struct{}) (TreeNode, error) {
+func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
 	var def SchemaDefinition
 	err := json.Unmarshal([]byte(schemaJSON), &def)
 	if err != nil {
@@ -118,7 +119,7 @@ func parseOpenAPISchema(schemaJSON string, flag map[string]struct{}) (TreeNode, 
 	definitionsMap[def.Name] = def
 	// klog.V(2).Infof("add def length %d", len(definitionsMap))
 
-	return buildTree(def, flag), nil
+	return buildTree(def), nil
 }
 func parseID(id string) (group, version, kind string) {
 	parts := strings.Split(id, ".")
@@ -142,7 +143,7 @@ func parseID(id string) (group, version, kind string) {
 }
 
 // buildTree 根据 SchemaDefinition 构建 TreeNode
-func buildTree(def SchemaDefinition, flag map[string]struct{}) TreeNode {
+func buildTree(def SchemaDefinition) TreeNode {
 	// todo 应该使用GVK作为
 	labelParts := strings.Split(def.Name, ".")
 	label := labelParts[len(labelParts)-1]
@@ -154,7 +155,7 @@ func buildTree(def SchemaDefinition, flag map[string]struct{}) TreeNode {
 
 	var children []*TreeNode
 	for _, prop := range def.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(prop, flag))
+		children = append(children, buildPropertyNode(prop))
 	}
 
 	group, version, kind := parseID(def.Name)
@@ -172,7 +173,7 @@ func buildTree(def SchemaDefinition, flag map[string]struct{}) TreeNode {
 }
 
 // buildPropertyNode 根据 Property 构建 TreeNode
-func buildPropertyNode(prop Property, flag map[string]struct{}) *TreeNode {
+func buildPropertyNode(prop Property) *TreeNode {
 	label := prop.Name
 	nodeID := prop.Name
 	description := prop.Value.Description
@@ -188,39 +189,35 @@ func buildPropertyNode(prop Property, flag map[string]struct{}) *TreeNode {
 
 	var children []*TreeNode
 
+	blackList := []string{
+		"#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps",
+	}
+
 	// 如果有引用，查找定义并递归构建子节点
-	if ref != "" {
-		if _, ok := flag[ref]; ok {
-			klog.V(8).Infof("buildPropertyNode for ref: %s already processed", ref)
+	if ref != "" && !slice.Contain(blackList, ref) {
+		// 假设 ref 的格式为 "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+		refParts := strings.Split(ref, "/")
+		refName := refParts[len(refParts)-1]
+		// 构建完整的引用路径
+		// fullRef := strings.Join(refParts[1:], ".")
+
+		// 这个可能会导致 循环引用溢出
+		if def, exists := definitionsMap[refName]; exists {
+			childNode := buildTree(def)
+			children = append(children, &childNode)
 		} else {
-			klog.V(8).Infof("buildPropertyNode for ref: %s", ref)
-
-			flag[ref] = struct{}{} // 标记为已处理
-			// 假设 ref 的格式为 "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-			refParts := strings.Split(ref, "/")
-			refName := refParts[len(refParts)-1]
-			// 构建完整的引用路径
-			// fullRef := strings.Join(refParts[1:], ".")
-
-			// 这个可能会导致 循环引用溢出
-			if def, exists := definitionsMap[refName]; exists {
-				childNode := buildTree(def, flag)
-				children = append(children, &childNode)
-			} else {
-				// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
-				children = append(children, &TreeNode{
-					ID:          refName,
-					Label:       refName,
-					Value:       refName,
-					Description: "Referenced definition not found",
-				})
-			}
+			// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
+			children = append(children, &TreeNode{
+				ID:          refName,
+				Label:       refName,
+				Value:       refName,
+				Description: "Referenced definition not found",
+			})
 		}
-
 	}
 
 	for _, pp := range prop.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(pp, flag))
+		children = append(children, buildPropertyNode(pp))
 	}
 
 	return &TreeNode{
@@ -257,8 +254,6 @@ func printTree(node *TreeNode, level int) {
 
 func InitTrees(schema *openapi_v2.Document) *Docs {
 	definitionsMap = make(map[string]SchemaDefinition)
-	refFlag := make(map[string]struct{})    // 记录ref是否已经被处理，存在key 即为已处理，不存在即为未处理
-	refArrayNodes := map[string]*TreeNode{} // loadArrayItems 时记录已经处理过的ref节点
 
 	// 将 OpenAPI Schema 转换为 JSON 字符串
 	schemaBytes, err := json.Marshal(schema)
@@ -282,7 +277,7 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 	for _, definition := range definitionList {
 		str := utils.ToJSON(definition)
 		// 解析 Schema 并构建树形结构
-		treeRoot, err := parseOpenAPISchema(str, refFlag)
+		treeRoot, err := parseOpenAPISchema(str)
 		if err != nil {
 			klog.V(2).Infof("Error parsing OpenAPI schema: %v\n", err)
 			continue
@@ -293,11 +288,11 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 	// 进行遍历处理，将child中ref对应的类型提取出来
 	// 此时应该所有的类型都已经存在了
 	for _, item := range trees {
-		loadChild(&item, refArrayNodes)
+		loadChild(&item)
 	}
 
 	for _, item := range trees {
-		loadArrayItems(&item, refArrayNodes)
+		loadArrayItems(&item)
 	}
 
 	// 此时 层级结构当中是ref 下面是具体的一个结构体A
@@ -325,61 +320,39 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 		Trees: trees,
 	}
 }
-func loadArrayItems(node *TreeNode, refArrayNodes map[string]*TreeNode) {
+func loadArrayItems(node *TreeNode) {
 
 	if len(node.Items.Schema) > 0 && node.Items.Schema[0].Ref != "" {
+
 		ref := node.Items.Schema[0].Ref
-		if n, ok := refArrayNodes[ref]; ok {
-			// 已经存在了
-			node.Children = n.Children
-		} else {
-			// 第一次处理
-			klog.V(6).Infof("loadArrayItems ref=%s", ref)
-			refNode := FetchByRef(ref, refArrayNodes)
-			refArrayNodes[ref] = refNode
+		if !strings.Contains(ref, "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps") {
+			refNode := FetchByRef(ref)
 			node.Children = refNode.Children
 		}
-
 	}
 	for i := range node.Children {
-		// 检测循环引用
-		// 在构建树时，验证子节点是否已经存在于父节点的链路中
-		treeNode := node.Children[i]
-		if len(treeNode.Items.Schema) > 0 && treeNode.Items.Schema[0].Ref != "" {
-			ref := treeNode.Items.Schema[0].Ref
-			if _, ok := refArrayNodes[ref]; !ok {
-				loadArrayItems(treeNode, refArrayNodes)
-			}
-		}
-
+		loadArrayItems(node.Children[i])
 	}
 }
 func childMoveUpLevel(item *TreeNode) {
 	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 	if item.Ref != "" && len(item.Children) == 1 && item.Children[0].ID == name && len(item.Children[0].Children) > 0 {
+
 		item.Children = item.Children[0].Children
 	}
 	for i := range item.Children {
 		childMoveUpLevel(item.Children[i])
 	}
 }
-func loadChild(item *TreeNode, refArrayNodes map[string]*TreeNode) {
+func loadChild(item *TreeNode) {
 	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 
 	if item.Ref != "" && len(item.Children) > 0 && item.Children[0].ID == name {
-		refNode := FetchByRef(item.Ref, refArrayNodes)
+		refNode := FetchByRef(item.Ref)
 		item.Children[0] = refNode
 	}
 	for i := range item.Children {
-		// 避免循环引用，先检测子是否已存在，不存在再递归
-		node := item.Children[i]
-		if node.Ref != "" && len(node.Children) > 0 {
-			ref := item.Ref
-			if _, ok := refArrayNodes[ref]; !ok {
-				loadChild(node, refArrayNodes)
-			}
-		}
-
+		loadChild(item.Children[i])
 	}
 }
 func uniqueID(item *TreeNode) {
@@ -394,22 +367,15 @@ func (d *Docs) ListNames() {
 		klog.Infof("tree info ID: %s\tLabel:%s\t\n Parse GVK=[%s,%s,%s]", tree.ID, tree.Label, tree.group, tree.version, tree.kind)
 	}
 }
-func FetchByRef(ref string, refArrayNodes map[string]*TreeNode) *TreeNode {
+func FetchByRef(ref string) *TreeNode {
 	// #/definitions/io.k8s.api.core.v1.PodSpec
-	if n, ok := refArrayNodes[ref]; ok {
-		// 已经存在了
-		return n
-	} else {
-		id := strings.TrimPrefix(ref, "#/definitions/")
-		for _, tree := range trees {
-			if tree.ID == id {
-				// 为了避免多个node引用同一个节点，需要深拷贝
-				// 否则会有相同的value，前端显示会有点显示错位
-				klog.V(6).Infof("FetchByRef %s\n", id)
-				dcp, _ := utils.DeepCopy(tree)
-				refArrayNodes[ref] = &dcp
-				return &dcp
-			}
+	id := strings.TrimPrefix(ref, "#/definitions/")
+	for _, tree := range trees {
+		if tree.ID == id {
+			// 为了避免多个node引用同一个节点，需要深拷贝
+			// 否则会有相同的value，前端显示会有点显示错位
+			dcp, _ := utils.DeepCopy(tree)
+			return &dcp
 		}
 	}
 	return nil
