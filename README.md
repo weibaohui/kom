@@ -585,6 +585,13 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().No
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
+#### 查询节点IP资源情况
+```go
+nodeName := "kwok-node-0"
+total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).Name(nodeName).Ctl().Node().IPUsage()
+fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
+//Total 256, Used 6, Available 250
+```
 #### 节点资源用量情况统计
 ```go
 nodeName := "lima-rancher-desktop"
