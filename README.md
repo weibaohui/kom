@@ -643,7 +643,45 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
 ```
-
+#### 查看Pod资源占用率
+```go
+podName := "coredns-ccb96694c-jprpf"
+ns := "kube-system"
+usage := kom.DefaultCluster().Resource(&corev1.Pod{}).Name(podName).Namespace(ns).Ctl().Pod().ResourceUsage()
+fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
+```
+包括当前的请求值、限制值、可分配值、使用比例
+```json
+{
+  "requests": {
+    "cpu": "100m",
+    "memory": "70Mi"
+  },
+  "limits": {
+    "memory": "170Mi"
+  },
+  "allocatable": {
+    "cpu": "4",
+    "ephemeral-storage": "99833802265",
+    "hugepages-1Gi": "0",
+    "hugepages-2Mi": "0",
+    "hugepages-32Mi": "0",
+    "hugepages-64Ki": "0",
+    "memory": "8127096Ki",
+    "pods": "110"
+  },
+  "usageFractions": {
+    "cpu": {
+      "requestFraction": 2.5,
+      "limitFraction": 0
+    },
+    "memory": {
+      "requestFraction": 0.88198785888588,
+      "limitFraction": 2.1419705144371375
+    }
+  }
+}
+```
 
 ## 联系我
 微信（大罗马的太阳） 搜索ID：daluomadetaiyang,备注kom。
