@@ -341,7 +341,7 @@ func (p *pod) ResourceUsageTable() []*ResourceUsageRow {
 	data, err := convertToTableData(usage)
 	if err != nil {
 		klog.V(6).Infof("convertToTableData error %v\n", err.Error())
-		return nil
+		return make([]*ResourceUsageRow, 0)
 	}
 	return data
 }
