@@ -585,7 +585,48 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().No
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
-
+#### 节点资源用量情况统计
+```go
+nodeName := "lima-rancher-desktop"
+usage := kom.DefaultCluster().Resource(&corev1.Node{}).Name(nodeName).Ctl().Node().ResourceUsage()
+fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
+```
+包括当前的请求值、限制值、可分配值、使用比例
+```json
+{
+  "requests": {
+    "cpu": "200m",
+    "memory": "140Mi"
+  },
+  "limits": {
+    "memory": "170Mi"
+  },
+  "allocatable": {
+    "cpu": "4",
+    "ephemeral-storage": "99833802265",
+    "hugepages-1Gi": "0",
+    "hugepages-2Mi": "0",
+    "hugepages-32Mi": "0",
+    "hugepages-64Ki": "0",
+    "memory": "8127096Ki",
+    "pods": "110"
+  },
+  "usageFractions": {
+    "cpu": {
+      "requestFraction": 5,
+      "limitFraction": 0
+    },
+    "ephemeral-storage": {
+      "requestFraction": 0,
+      "limitFraction": 0
+    },
+    "memory": {
+      "requestFraction": 1.76397571777176,
+      "limitFraction": 2.1419705144371375
+    }
+  }
+}
+```
 #### 给资源增加标签
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Label("name=zhangsan")
