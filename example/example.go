@@ -37,6 +37,16 @@ func Example() {
 	// podLogs()
 	// sql()
 	// NodeUsageExample()
+	// PodUsageExample()
+}
+func PodUsageExample() {
+	podName := "coredns-ccb96694c-jprpf"
+	ns := "kube-system"
+	usage := kom.DefaultCluster().Resource(&corev1.Pod{}).
+		Name(podName).Namespace(ns).
+		Ctl().Pod().ResourceUsage()
+	fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
+
 }
 func NodeUsageExample() {
 	nodeName := "lima-rancher-desktop"
