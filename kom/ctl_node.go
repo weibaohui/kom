@@ -331,6 +331,16 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 		UsageFractions: usageFractions,
 	}
 }
+func (d *node) ResourceUsageTable() []*ResourceUsageRow {
+
+	usage := d.ResourceUsage()
+	data, err := convertToTableData(usage)
+	if err != nil {
+		klog.V(6).Infof("convertToTableData error %v\n", err.Error())
+		return nil
+	}
+	return data
+}
 
 func getPodsTotalRequestsAndLimits(podList []*corev1.Pod) (reqs map[corev1.ResourceName]resource.Quantity, limits map[corev1.ResourceName]resource.Quantity) {
 	reqs, limits = map[corev1.ResourceName]resource.Quantity{}, map[corev1.ResourceName]resource.Quantity{}
