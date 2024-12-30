@@ -44,14 +44,14 @@ func PodUsageExample() {
 	ns := "kube-system"
 	usage := kom.DefaultCluster().Resource(&corev1.Pod{}).
 		Name(podName).Namespace(ns).
-		Ctl().Pod().ResourceUsage()
+		Ctl().Pod().ResourceUsageTable()
 	fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
 
 }
 func NodeUsageExample() {
 	nodeName := "lima-rancher-desktop"
 	usage := kom.DefaultCluster().Resource(&corev1.Node{}).
-		Name(nodeName).Ctl().Node().ResourceUsage()
+		Name(nodeName).Ctl().Node().ResourceUsageTable()
 	fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
 
 }
