@@ -255,14 +255,15 @@ func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quanti
 
 // NodeResourceUsageFraction 定义单种资源的使用占比
 type NodeResourceUsageFraction struct {
-	RequestFraction float64 `json:"requestFraction"` // 请求使用占比（百分比）
-	LimitFraction   float64 `json:"limitFraction"`   // 限制使用占比（百分比）
+	RequestFraction float64 `json:"requestFraction"` // 请求使用占比（百分比）占总可分配值的比例
+	LimitFraction   float64 `json:"limitFraction"`   // 限制使用占比（百分比）占总可分配值的比例
 }
 
 // NodeResourceUsageResult 定义节点资源使用情况的结构体
 type NodeResourceUsageResult struct {
 	Requests       map[corev1.ResourceName]resource.Quantity         `json:"requests"`       // 请求用量
 	Limits         map[corev1.ResourceName]resource.Quantity         `json:"limits"`         // 限制用量
+	Allocatable    map[corev1.ResourceName]resource.Quantity         `json:"allocatable"`    // 节点可分配的实时值
 	UsageFractions map[corev1.ResourceName]NodeResourceUsageFraction `json:"usageFractions"` // 使用占比
 }
 
@@ -340,6 +341,7 @@ func (d *node) ResourceUsage() *NodeResourceUsageResult {
 	return &NodeResourceUsageResult{
 		Requests:       reqs,
 		Limits:         limits,
+		Allocatable:    allocatable,
 		UsageFractions: usageFractions,
 	}
 }
