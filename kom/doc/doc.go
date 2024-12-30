@@ -98,6 +98,12 @@ type Definitions struct {
 // definitionsMap 存储所有定义，以便处理引用
 var definitionsMap map[string]SchemaDefinition
 
+var blackList = []string{
+	"#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps",
+	"#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1beta1.JSON",
+	"#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1beta1.JSONSchemaProps",
+}
+
 // parseOpenAPISchema 解析 OpenAPI Schema JSON 字符串并返回根 TreeNode
 // Example:
 //
@@ -145,6 +151,8 @@ func parseID(id string) (group, version, kind string) {
 // buildTree 根据 SchemaDefinition 构建 TreeNode
 func buildTree(def SchemaDefinition) TreeNode {
 	// todo 应该使用GVK作为
+	klog.V(6).Infof("buildTree %s", def.Name)
+
 	labelParts := strings.Split(def.Name, ".")
 	label := labelParts[len(labelParts)-1]
 
@@ -152,8 +160,8 @@ func buildTree(def SchemaDefinition) TreeNode {
 	if len(def.Value.Type.Value) > 0 {
 		nodeType = def.Value.Type.Value[0]
 	}
-
 	var children []*TreeNode
+
 	for _, prop := range def.Value.Properties.AdditionalProperties {
 		children = append(children, buildPropertyNode(prop))
 	}
@@ -170,6 +178,7 @@ func buildTree(def SchemaDefinition) TreeNode {
 		version:     version,
 		kind:        kind,
 	}
+
 }
 
 // buildPropertyNode 根据 Property 构建 TreeNode
@@ -189,10 +198,6 @@ func buildPropertyNode(prop Property) *TreeNode {
 
 	var children []*TreeNode
 
-	blackList := []string{
-		"#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps",
-	}
-
 	// 如果有引用，查找定义并递归构建子节点
 	if ref != "" && !slice.Contain(blackList, ref) {
 		// 假设 ref 的格式为 "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
@@ -203,8 +208,10 @@ func buildPropertyNode(prop Property) *TreeNode {
 
 		// 这个可能会导致 循环引用溢出
 		if def, exists := definitionsMap[refName]; exists {
-			childNode := buildTree(def)
-			children = append(children, &childNode)
+			if !slice.Contain(blackList, refName) {
+				childNode := buildTree(def)
+				children = append(children, &childNode)
+			}
 		} else {
 			// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
 			children = append(children, &TreeNode{
@@ -325,7 +332,7 @@ func loadArrayItems(node *TreeNode) {
 	if len(node.Items.Schema) > 0 && node.Items.Schema[0].Ref != "" {
 
 		ref := node.Items.Schema[0].Ref
-		if !strings.Contains(ref, "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps") {
+		if !slice.Contain(blackList, ref) {
 			refNode := FetchByRef(ref)
 			node.Children = refNode.Children
 		}
@@ -369,6 +376,7 @@ func (d *Docs) ListNames() {
 }
 func FetchByRef(ref string) *TreeNode {
 	// #/definitions/io.k8s.api.core.v1.PodSpec
+	klog.V(6).Infof("doc FetchByRef: %s", ref)
 	id := strings.TrimPrefix(ref, "#/definitions/")
 	for _, tree := range trees {
 		if tree.ID == id {
