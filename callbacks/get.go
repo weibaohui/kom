@@ -18,6 +18,12 @@ func Get(k *kom.Kubectl) error {
 	ns := stmt.Namespace
 	name := stmt.Name
 	ctx := stmt.Context
+	conditions := stmt.Filter.Conditions
+
+	// 如果设置了where条件。那么应该使用List，因为sql查出来的是list，哪怕是只有一个元素
+	if len(conditions) > 0 {
+		return fmt.Errorf("SQL 查询方式请使用List承载，如需获取单个资源，请从List中获得")
+	}
 
 	var res *unstructured.Unstructured
 	var err error
