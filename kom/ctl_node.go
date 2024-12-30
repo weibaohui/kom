@@ -342,6 +342,43 @@ func (d *node) ResourceUsageTable() []*ResourceUsageRow {
 	return data
 }
 
+// IPUsage 计算节点上IP数量状态，返回节点IP总数，已用数量，可用数量
+func (d *node) IPUsage() (total, used, available int) {
+	var n *corev1.Node
+	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
+		Name(d.kubectl.Statement.Name).Get(&n).Error
+	if err != nil {
+		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+		return 0, 0, 0
+	}
+	// 计算总数
+	cidr := n.Spec.PodCIDR
+	count, err := utils.CidrTotalIPs(cidr)
+	if err != nil {
+		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+		return 0, 0, 0
+	}
+	total = count
+
+	// 计算PodIP数量，
+	var podList []*corev1.Pod
+	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		Where("spec.nodeName=?", d.kubectl.Statement.Name).
+		List(&podList).Error
+	if err != nil {
+		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+		return 0, 0, 0
+	}
+
+	podList = slice.Filter(podList, func(index int, item *corev1.Pod) bool {
+		return item.Status.PodIP != ""
+	})
+	used = len(podList)
+	available = total - used
+	return
+
+}
+
 func getPodsTotalRequestsAndLimits(podList []*corev1.Pod) (reqs map[corev1.ResourceName]resource.Quantity, limits map[corev1.ResourceName]resource.Quantity) {
 	reqs, limits = map[corev1.ResourceName]resource.Quantity{}, map[corev1.ResourceName]resource.Quantity{}
 	for _, pod := range podList {
