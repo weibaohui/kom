@@ -22,6 +22,7 @@ func List(k *kom.Kubectl) error {
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
 	ctx := stmt.Context
+	conditions := stmt.Filter.Conditions
 
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
@@ -63,7 +64,7 @@ func List(k *kom.Kubectl) error {
 	// 对List.Items进行过滤
 
 	// 对结果进行过滤，执行where 条件
-	result := executeFilter(list.Items, stmt.Filter.Conditions)
+	result := executeFilter(list.Items, conditions)
 
 	if stmt.Filter.Order != "" {
 		// 对结果执行OrderBy
