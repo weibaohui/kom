@@ -308,7 +308,7 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 		allocatable = n.Status.Allocatable
 	}
 
-	klog.V(6).Infof("allocatable=:\n%s", utils.ToJSON(allocatable))
+	klog.V(8).Infof("allocatable=:\n%s", utils.ToJSON(allocatable))
 	cpuReq, cpuLimit, memoryReq, memoryLimit := req[v1.ResourceCPU], limit[v1.ResourceCPU], req[v1.ResourceMemory], limit[v1.ResourceMemory]
 	fractionCpuReq := float64(cpuReq.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
 	fractionCpuLimit := float64(cpuLimit.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100

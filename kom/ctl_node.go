@@ -273,7 +273,7 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 		allocatable = n.Status.Allocatable
 	}
 
-	klog.V(6).Infof("allocatable=:\n%s", utils.ToJSON(allocatable))
+	klog.V(8).Infof("allocatable=:\n%s", utils.ToJSON(allocatable))
 	cpuReqs, cpuLimits, memoryReqs, memoryLimits, ephemeralstorageReqs, ephemeralstorageLimits :=
 		reqs[corev1.ResourceCPU], limits[corev1.ResourceCPU], reqs[corev1.ResourceMemory], limits[corev1.ResourceMemory], reqs[corev1.ResourceEphemeralStorage], limits[corev1.ResourceEphemeralStorage]
 
