@@ -36,6 +36,13 @@ func Example() {
 	// podFileCommand()
 	// podLogs()
 	// sql()
+	// NodeUsageExample()
+}
+func NodeUsageExample() {
+	nodeName := "lima-rancher-desktop"
+	usage := kom.DefaultCluster().Resource(&corev1.Node{}).
+		Name(nodeName).Ctl().Node().ResourceUsage()
+	fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
 
 }
 func sql() {
