@@ -253,20 +253,6 @@ func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quanti
 	return getPodsTotalRequestsAndLimits(pods)
 }
 
-// ResourceUsageFraction 定义单种资源的使用占比
-type ResourceUsageFraction struct {
-	RequestFraction float64 `json:"requestFraction"` // 请求使用占比（百分比）占总可分配值的比例
-	LimitFraction   float64 `json:"limitFraction"`   // 限制使用占比（百分比）占总可分配值的比例
-}
-
-// ResourceUsageResult 定义节点资源使用情况的结构体
-type ResourceUsageResult struct {
-	Requests       map[corev1.ResourceName]resource.Quantity     `json:"requests"`       // 请求用量
-	Limits         map[corev1.ResourceName]resource.Quantity     `json:"limits"`         // 限制用量
-	Allocatable    map[corev1.ResourceName]resource.Quantity     `json:"allocatable"`    // 节点可分配的实时值
-	UsageFractions map[corev1.ResourceName]ResourceUsageFraction `json:"usageFractions"` // 使用占比
-}
-
 // ResourceUsage 获取节点的资源使用情况，包括资源的请求和限制，还有当前使用占比
 func (d *node) ResourceUsage() *ResourceUsageResult {
 
