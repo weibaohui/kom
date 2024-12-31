@@ -39,8 +39,24 @@ func Example() {
 	// NodeUsageExample()
 	// PodUsageExample()
 	// NodeIPUsage()
+	// StreamExample()
 }
 
+func StreamExample() {
+	cb := func(data []byte) error {
+		fmt.Printf("Data %s\n", string(data))
+		return nil
+	}
+	err := kom.DefaultCluster().
+		Namespace("kube-system").
+		Name("traefik-d7c9c5778-p9nf4").Ctl().Pod().
+		ContainerName("traefik").
+		Command("ping", "127.0.0.1").
+		StreamExecute(cb, cb).Error
+	if err != nil {
+		fmt.Printf("Error StreamExecute pod logs:%v\n", err)
+	}
+}
 func NodeIPUsage() {
 	nodeName := "kwok-node-0"
 	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
