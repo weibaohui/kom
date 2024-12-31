@@ -69,6 +69,7 @@ func ExecuteCommand(k *kom.Kubectl) error {
 
 	var outBuf bytes.Buffer
 	var errBuf bytes.Buffer
+
 	options := &remotecommand.StreamOptions{
 		Stdout: &outBuf,
 		Stderr: &errBuf,
