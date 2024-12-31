@@ -454,8 +454,8 @@ kom.DefaultCluster().Status().ServerVersion()
 ### 7. callback机制
 * 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
 * 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
-* 当前支持的callback有：get,list,create,update,patch,delete,exec,logs,watch.
-* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:logs"
+* 当前支持的callback有：get,list,create,update,patch,delete,exec,stream-exec,logs,watch.
+* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:stream:exec","kom:pod:logs"
 * 支持回调函数排序，默认按注册顺序执行，可以通过kom.DefaultCluster().Callback().After("kom:get")或者.Before("kom:get")设置顺序。
 * 支持删除回调函数，通过kom.DefaultCluster().Callback().Delete("kom:get")
 * 支持替换回调函数，通过kom.DefaultCluster().Callback().Replace("kom:get",cb)
