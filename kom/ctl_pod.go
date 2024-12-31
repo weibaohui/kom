@@ -53,6 +53,15 @@ func (p *pod) Execute(dest interface{}) *pod {
 	p.Error = tx.Error
 	return p
 }
+
+func (p *pod) StreamExecute(stdout, stderr func(data []byte) error) *Kubectl {
+	tx := p.kubectl.getInstance()
+	tx.Statement.StdoutCallback = stdout
+	tx.Statement.StderrCallback = stderr
+	tx.Error = tx.Callback().StreamExec().Execute(tx)
+	p.Error = tx.Error
+	return tx
+}
 func (p *pod) Stdin(reader io.Reader) *pod {
 	tx := p.kubectl.getInstance()
 	tx.Statement.Stdin = reader
