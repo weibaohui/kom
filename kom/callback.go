@@ -30,16 +30,17 @@ type callback struct {
 func (k *Kubectl) initializeCallbacks() *callbacks {
 	return &callbacks{
 		processors: map[string]*processor{
-			"get":      {km: k},
-			"patch":    {km: k},
-			"create":   {km: k},
-			"update":   {km: k},
-			"delete":   {km: k},
-			"list":     {km: k},
-			"exec":     {km: k},
-			"logs":     {km: k},
-			"watch":    {km: k},
-			"describe": {km: k},
+			"get":         {km: k},
+			"patch":       {km: k},
+			"create":      {km: k},
+			"update":      {km: k},
+			"delete":      {km: k},
+			"list":        {km: k},
+			"exec":        {km: k},
+			"logs":        {km: k},
+			"watch":       {km: k},
+			"describe":    {km: k},
+			"stream-exec": {km: k},
 		},
 	}
 }
@@ -68,6 +69,9 @@ func (cs *callbacks) List() *processor {
 }
 func (cs *callbacks) Exec() *processor {
 	return cs.processors["exec"]
+}
+func (cs *callbacks) StreamExec() *processor {
+	return cs.processors["stream-exec"]
 }
 func (cs *callbacks) Logs() *processor {
 	return cs.processors["logs"]
