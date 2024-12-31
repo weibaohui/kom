@@ -36,6 +36,8 @@ type Statement struct {
 	PodLogOptions       *v1.PodLogOptions           `json:"-" `                            // 获取容器日志使用
 	Stdin               io.Reader                   `json:"-" `                            // 设置输入
 	Filter              Filter                      `json:"filter,omitempty" json:"filter"`
+	StdoutCallback      func(data []byte) error     `json:"-"`
+	StderrCallback      func(data []byte) error     `json:"-"`
 }
 type Filter struct {
 	Columns    []string    `json:"columns,omitempty"`
