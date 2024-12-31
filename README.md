@@ -267,6 +267,22 @@ var execResult string
 err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
 fmt.Printf("execResult: %s", execResult)
 ```
+#### 流式执行命令
+在Pod内执行命令，并且会触发StreamExec()类型的callbacks。适合执行ping 等命令
+```go
+cb := func(data []byte) error {
+		fmt.Printf("Data %s\n", string(data))
+		return nil
+	}
+err := kom.DefaultCluster().Namespace("kube-system").Name("traefik-d7c9c5778-p9nf4").Ctl().Pod().ContainerName("traefik").Command("ping", "127.0.0.1").StreamExecute(cb, cb).Error
+//输出：
+//Data PING 127.0.0.1 (127.0.0.1): 56 data bytes
+//Data 64 bytes from 127.0.0.1: seq=0 ttl=42 time=0.023 ms
+//Data 64 bytes from 127.0.0.1: seq=1 ttl=42 time=0.011 ms
+//Data 64 bytes from 127.0.0.1: seq=2 ttl=42 time=0.012 ms
+//Data 64 bytes from 127.0.0.1: seq=3 ttl=42 time=0.016 ms
+```
+
 #### 文件列表
 ```go
 // 获取Pod内/etc文件夹列表
