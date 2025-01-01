@@ -29,7 +29,7 @@ func Get(k *kom.Kubectl) error {
 	}
 
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s/%s", ns, name, gvr.Group, gvr.Resource, gvr.Version)
-	res, err := utils.GetOrSetCache(stmt.Kubectl.Cache(), cacheKey, stmt.CacheTTL, func() (ret *unstructured.Unstructured, err error) {
+	res, err := utils.GetOrSetCache(stmt.Kubectl.ClusterCache(), cacheKey, stmt.CacheTTL, func() (ret *unstructured.Unstructured, err error) {
 		if namespaced {
 			if ns == "" {
 				ns = "default"
