@@ -151,7 +151,6 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 			BufferItems: 64,      // number of keys per Get buffer.
 		})
 		cluster.Cache = cache
-		// defer cache.Close()
 		return k, nil
 	}
 }
