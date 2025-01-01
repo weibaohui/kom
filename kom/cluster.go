@@ -3,6 +3,7 @@ package kom
 import (
 	"fmt"
 
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,7 @@ type clusterInst struct {
 	docs          *doc.Docs                    // 文档
 	serverVersion *version.Info                // 服务器版本
 	describerMap  map[schema.GroupKind]describe.ResourceDescriber
+	Cache         *ristretto.Cache[string, any]
 }
 
 // Clusters 集群实例管理器
@@ -130,8 +132,9 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		if err != nil {
 			return nil, fmt.Errorf("RegisterByConfigWithID Error %s %v", id, err)
 		}
-		cluster.Client = client                             // kubernetes 客户端
-		cluster.DynamicClient = dynamicClient               // 动态客户端
+		cluster.Client = client               // kubernetes 客户端
+		cluster.DynamicClient = dynamicClient // 动态客户端
+		// 缓存
 		cluster.apiResources = k.initializeAPIResources()   // API 资源
 		cluster.crdList = k.initializeCRDList()             // CRD列表
 		cluster.callbacks = k.initializeCallbacks()         // 回调
@@ -141,6 +144,14 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		if c.callbackRegisterFunc != nil {                  // 注册回调方法
 			c.callbackRegisterFunc(Clusters())
 		}
+
+		cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
+			NumCounters: 1e7,     // number of keys to track frequency of (10M).
+			MaxCost:     1 << 30, // maximum cost of cache (1GB).
+			BufferItems: 64,      // number of keys per Get buffer.
+		})
+		cluster.Cache = cache
+		defer cache.Close()
 		return k, nil
 	}
 }
