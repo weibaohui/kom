@@ -238,7 +238,7 @@ func (d *node) RunningPods() ([]*corev1.Pod, error) {
 	// status.phase!=Succeeded,status.phase!=Failed
 	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
 		Where("spec.nodeName=? and status.phase!=Succeeded and status.phase!=Failed", d.kubectl.Statement.Name).
-		List(&podList).Error
+		WithCache(5 * time.Second).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return nil, err
@@ -263,7 +263,7 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 	}
 	var n *corev1.Node
 	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
-		Name(d.kubectl.Statement.Name).Get(&n).Error
+		Name(d.kubectl.Statement.Name).WithCache(5 * time.Second).Get(&n).Error
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return nil
@@ -347,7 +347,7 @@ func (d *node) ResourceUsageTable() []*ResourceUsageRow {
 func (d *node) IPUsage() (total, used, available int) {
 	var n *corev1.Node
 	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
-		Name(d.kubectl.Statement.Name).Get(&n).Error
+		Name(d.kubectl.Statement.Name).WithCache(5 * time.Second).Get(&n).Error
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return 0, 0, 0
@@ -365,7 +365,7 @@ func (d *node) IPUsage() (total, used, available int) {
 	var podList []*corev1.Pod
 	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
 		Where("spec.nodeName=?", d.kubectl.Statement.Name).
-		List(&podList).Error
+		WithCache(5 * time.Second).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return 0, 0, 0
