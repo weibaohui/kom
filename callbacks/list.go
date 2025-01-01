@@ -41,27 +41,28 @@ func List(k *kom.Kubectl) error {
 	// 获取切片的元素类型
 	elemType := destValue.Elem().Type().Elem()
 
-	var list *unstructured.UnstructuredList
-	var err error
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", ns, gvr.Group, gvr.Resource, gvr.Version)
+	list, err := utils.GetOrSetCache(stmt.Kubectl.Cache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
+		if namespaced {
 
-	if namespaced {
-
-		if stmt.AllNamespace {
-			ns = metav1.NamespaceAll
-		} else {
-			if ns == "" {
-				ns = "default"
+			if stmt.AllNamespace {
+				ns = metav1.NamespaceAll
+			} else {
+				if ns == "" {
+					ns = "default"
+				}
 			}
+			list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
+		} else {
+			list, err = stmt.Kubectl.DynamicClient().Resource(gvr).List(ctx, listOptions)
 		}
-		list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
-	} else {
-		list, err = stmt.Kubectl.DynamicClient().Resource(gvr).List(ctx, listOptions)
-	}
-	if err != nil {
-		return err
-	}
+		return
+	})
 
-	// 对List.Items进行过滤
+	if list == nil {
+		// 为空直接返回
+		return fmt.Errorf("list is nil")
+	}
 
 	// 对结果进行过滤，执行where 条件
 	result := executeFilter(list.Items, conditions)
