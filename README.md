@@ -19,7 +19,7 @@
 6. 支持POD内文件操作，轻松上传、下载、删除文件。
 7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
 8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` desc 
-
+9. 支持查询缓存，在高频查询场景下，可设置缓存过期时间，提升查询性能。
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
 1. **下载**：从 [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m) 下载最新版本。
@@ -112,6 +112,9 @@ err := kom.DefaultCluster().Resource(&item).Create(&item).Error
 ```go
 // 查询 default 命名空间下名为 nginx 的 Deployment
 err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Get(&item).Error
+// 查询 default 命名空间下名为 nginx 的 Deployment，并使用缓存 5 秒
+// 5秒内，不会再次查询，批量操作、高频操作下，建议启用缓存
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").WithCache(5 * time.Second).Get(&item).Error
 ```
 #### List查询资源列表
 ```go
@@ -120,6 +123,8 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").List(&items).Er
 // 查询 所有 命名空间下的 Deployment 列表
 err := kom.DefaultCluster().Resource(&item).Namespace("*").List(&items).Error
 err := kom.DefaultCluster().Resource(&item).AllNamespace().List(&items).Error
+// 设置5秒缓存，对列表生效
+err := kom.DefaultCluster().Resource(&item).WithCache(5 * time.Second).List(&nodeList).Error
 ```
 #### 通过Label查询资源列表
 ```go
