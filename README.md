@@ -19,7 +19,7 @@
 6. 支持POD内文件操作，轻松上传、下载、删除文件。
 7. 支持高频操作封装，如deployment的restart重启、scale扩缩容等。
 8. 支持SQL查询k8s资源。select * from pod where `metadata.namespace`='kube-system' or `metadata.namespace`='default' order by  `metadata.creationTimestamp` desc 
-9. 支持查询缓存，在高频查询场景下，可设置缓存过期时间，提升查询性能。
+9. 支持查询缓存，在高频、批量查询场景下，可设置缓存过期时间，提升查询性能。列表过滤条件不受缓存影响。
 ## 示例程序
 **k8m** 是一个轻量级的 Kubernetes 管理工具，它基于kom、amis实现，单文件，支持多平台架构。
 1. **下载**：从 [https://github.com/weibaohui/k8m](https://github.com/weibaohui/k8m) 下载最新版本。
