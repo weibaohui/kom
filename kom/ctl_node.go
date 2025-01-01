@@ -235,8 +235,9 @@ func parseTaint(taintStr string) (*corev1.Taint, error) {
 }
 func (d *node) RunningPods() ([]*corev1.Pod, error) {
 	var podList []*corev1.Pod
+	// status.phase!=Succeeded,status.phase!=Failed
 	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
-		Where("spec.nodeName=?", d.kubectl.Statement.Name).
+		Where("spec.nodeName=? and status.phase!=Succeeded and status.phase!=Failed", d.kubectl.Statement.Name).
 		List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
