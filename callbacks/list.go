@@ -42,7 +42,7 @@ func List(k *kom.Kubectl) error {
 	elemType := destValue.Elem().Type().Elem()
 
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s", ns, gvr.Group, gvr.Resource, gvr.Version)
-	list, err := utils.GetOrSetCache(stmt.Kubectl.Cache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
+	list, err := utils.GetOrSetCache(stmt.ClusterCache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
 		if namespaced {
 
 			if stmt.AllNamespace {
