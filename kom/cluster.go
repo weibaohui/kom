@@ -60,6 +60,9 @@ func DefaultCluster() *Kubectl {
 
 // Cluster 获取集群
 func Cluster(id string) *Kubectl {
+	if id == "" {
+		return Clusters().DefaultCluster().Kubectl
+	}
 	return Clusters().GetClusterById(id).Kubectl
 }
 
