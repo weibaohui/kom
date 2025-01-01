@@ -52,3 +52,21 @@ func ConvertUnstructuredToYAML(obj *unstructured.Unstructured) (string, error) {
 
 	return string(yamlBytes), nil
 }
+
+// AddOrUpdateAnnotations 添加或更新 annotations
+func AddOrUpdateAnnotations(item *unstructured.Unstructured, newAnnotations map[string]string) {
+	// 获取现有的 annotations
+	annotations := item.GetAnnotations()
+	if annotations == nil {
+		// 如果不存在，初始化一个 map
+		annotations = make(map[string]string)
+	}
+
+	// 追加或覆盖新数据
+	for key, value := range newAnnotations {
+		annotations[key] = value
+	}
+
+	// 设置回对象
+	item.SetAnnotations(annotations)
+}
