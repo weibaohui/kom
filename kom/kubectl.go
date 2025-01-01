@@ -3,6 +3,7 @@ package kom
 import (
 	"context"
 
+	"github.com/dgraph-io/ristretto/v2"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -58,6 +59,7 @@ func (k *Kubectl) getInstance() *Kubectl {
 			GVR:          k.Statement.GVR,
 			GVK:          k.Statement.GVK,
 			Name:         k.Statement.Name,
+			CacheTTL:     k.Statement.CacheTTL,
 			Filter:       k.Statement.Filter,
 		}
 		return tx
@@ -76,6 +78,10 @@ func (k *Kubectl) RestConfig() *rest.Config {
 func (k *Kubectl) Client() *kubernetes.Clientset {
 	cluster := Clusters().GetClusterById(k.ID)
 	return cluster.Client
+}
+func (k *Kubectl) Cache() *ristretto.Cache[string, any] {
+	cache := Clusters().GetClusterById(k.ID).Cache
+	return cache
 }
 func (k *Kubectl) DynamicClient() *dynamic.DynamicClient {
 	cluster := Clusters().GetClusterById(k.ID)
