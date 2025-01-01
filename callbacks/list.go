@@ -58,7 +58,9 @@ func List(k *kom.Kubectl) error {
 		}
 		return
 	})
-
+	if err != nil {
+		return err
+	}
 	if list == nil {
 		// 为空直接返回
 		return fmt.Errorf("list is nil")

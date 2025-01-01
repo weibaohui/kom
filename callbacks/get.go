@@ -40,6 +40,9 @@ func Get(k *kom.Kubectl) error {
 		}
 		return
 	})
+	if err != nil {
+		return err
+	}
 
 	stmt.RowsAffected = 1
 	if stmt.RemoveManagedFields {
