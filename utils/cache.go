@@ -16,7 +16,7 @@ func GetOrSetCache[T any](cache *ristretto.Cache[string, any], cacheKey string, 
 	}
 	// 检查缓存是否命中
 	if v, found := cache.Get(cacheKey); found {
-		klog.V(5).InfoS("cache hit", "cacheKey", cacheKey)
+		klog.V(5).Infof("cache hit cacheKey= %s", cacheKey)
 		return v.(T), nil
 	}
 
@@ -27,6 +27,8 @@ func GetOrSetCache[T any](cache *ristretto.Cache[string, any], cacheKey string, 
 	}
 
 	// 设置缓存并返回结果
-	cache.SetWithTTL(cacheKey, result, 0, ttl)
+	cache.SetWithTTL(cacheKey, result, 100, ttl)
+	cache.Wait()
+
 	return result, nil
 }
