@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
@@ -293,6 +294,7 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 	err := p.kubectl.newInstance().Resource(&v1.Pod{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		Name(p.kubectl.Statement.Name).
+		WithCache(5 * time.Second).
 		Get(&inst).Error
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in pod/%s  error %v\n", p.kubectl.Statement.Name, err.Error())
@@ -306,6 +308,7 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 
 	var n *v1.Node
 	err = p.kubectl.newInstance().Resource(&v1.Node{}).
+		WithCache(5 * time.Second).
 		Name(nodeName).Get(&n).Error
 	if err != nil {
 		klog.V(6).Infof("Get Pod ResourceUsage in node/%s  error %v\n", nodeName, err.Error())
