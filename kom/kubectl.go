@@ -79,7 +79,7 @@ func (k *Kubectl) Client() *kubernetes.Clientset {
 	cluster := Clusters().GetClusterById(k.ID)
 	return cluster.Client
 }
-func (k *Kubectl) Cache() *ristretto.Cache[string, any] {
+func (k *Kubectl) ClusterCache() *ristretto.Cache[string, any] {
 	cache := Clusters().GetClusterById(k.ID).Cache
 	return cache
 }
