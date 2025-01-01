@@ -92,7 +92,7 @@ func ALLNodeUsageExample() {
 	// 打印开始时间
 	startTime := time.Now()
 	var nodeList []*corev1.Node
-	err := kom.DefaultCluster().Resource(&corev1.Node{}).List(&nodeList).Error
+	err := kom.DefaultCluster().Resource(&corev1.Node{}).WithCache(5 * time.Second).List(&nodeList).Error
 	if err != nil {
 		fmt.Printf("Get node list error %v\n", err.Error())
 		return
