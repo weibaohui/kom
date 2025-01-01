@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,6 +57,11 @@ func (k *Kubectl) ContainerName(c string) *Kubectl {
 func (k *Kubectl) Name(name string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Name = name
+	return tx
+}
+func (k *Kubectl) WithCache(ttl time.Duration) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.CacheTTL = ttl
 	return tx
 }
 
