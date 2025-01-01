@@ -3,6 +3,7 @@ package kom
 import (
 	"context"
 	"io"
+	"time"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -35,9 +36,10 @@ type Statement struct {
 	Args                []string                    `json:"args,omitempty"`                // 容器内执行命令参数
 	PodLogOptions       *v1.PodLogOptions           `json:"-" `                            // 获取容器日志使用
 	Stdin               io.Reader                   `json:"-" `                            // 设置输入
-	Filter              Filter                      `json:"filter,omitempty" json:"filter"`
+	Filter              Filter                      `json:"filter,omitempty"`
 	StdoutCallback      func(data []byte) error     `json:"-"`
 	StderrCallback      func(data []byte) error     `json:"-"`
+	CacheTTL            time.Duration               `json:"cacheTTL,omitempty"` // 设置缓存时间
 }
 type Filter struct {
 	Columns    []string    `json:"columns,omitempty"`
