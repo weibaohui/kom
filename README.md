@@ -146,6 +146,7 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").WithFieldSelect
 ```go
 var list []corev1.Pod
 var total int64
+sql := "select * from pod where metadata.namespace=? or metadata.namespace=?     order by  metadata.creationTimestamp desc "
 err := kom.DefaultCluster().Sql(sql, "kube-system", "default").
 		FillTotalCount(&total).
 		Limit(5).
