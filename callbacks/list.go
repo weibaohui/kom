@@ -65,6 +65,10 @@ func List(k *kom.Kubectl) error {
 		// 为空直接返回
 		return fmt.Errorf("list is nil")
 	}
+	if list.Items == nil {
+		// 为空直接返回
+		return fmt.Errorf("list Items is nil")
+	}
 
 	// 对结果进行过滤，执行where 条件
 	result := executeFilter(list.Items, conditions)
