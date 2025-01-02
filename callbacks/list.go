@@ -66,10 +66,9 @@ func List(k *kom.Kubectl) error {
 		return fmt.Errorf("list is nil")
 	}
 
-	*stmt.TotalCount = int64(len(list.Items))
-
 	// 对结果进行过滤，执行where 条件
 	result := executeFilter(list.Items, conditions)
+	*stmt.TotalCount = int64(len(list.Items))
 
 	if stmt.Filter.Order != "" {
 		// 对结果执行OrderBy
