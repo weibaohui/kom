@@ -250,3 +250,9 @@ func (k *Kubectl) WithFieldSelector(fieldSelector string) *Kubectl {
 	tx.Statement.ListOptions = []metav1.ListOptions{opt}
 	return tx
 }
+
+func (k *Kubectl) FillTotalRows(total *int64) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.TotalRows = total
+	return tx
+}
