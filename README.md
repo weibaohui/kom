@@ -142,6 +142,18 @@ err := kom.DefaultCluster().Resource(&item).Namespace("default").WithLabelSelect
 // filedSelector 一般支持原生的字段定义。如metadata.name,metadata.namespace,metadata.labels,metadata.annotations,metadata.creationTimestamp,spec.nodeName,spec.serviceAccountName,spec.schedulerName,status.phase,status.hostIP,status.podIP,status.qosClass,spec.containers.name等字段
 err := kom.DefaultCluster().Resource(&item).Namespace("default").WithFieldSelector("metadata.name=test-deploy").List(&items).Error
 ```
+#### 分页查询资源
+```go
+var list []corev1.Pod
+var total int64
+err := kom.DefaultCluster().Sql(sql, "kube-system", "default").
+		FillTotalCount(&total).
+		Limit(5).
+		Offset(10).
+		List(&list).Error
+fmt.Printf("total %d\n", total)  //返回总数 480
+fmt.Printf("Count %d\n", len(list)) //返回条目数=limit=5
+```
 #### 更新资源内容
 ```go
 // 更新名为nginx 的 Deployment，增加一个注解
