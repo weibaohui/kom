@@ -251,8 +251,8 @@ func (k *Kubectl) WithFieldSelector(fieldSelector string) *Kubectl {
 	return tx
 }
 
-func (k *Kubectl) FillTotalRows(total *int64) *Kubectl {
+func (k *Kubectl) FillTotalCount(total *int64) *Kubectl {
 	tx := k.getInstance()
-	tx.Statement.TotalRows = total
+	tx.Statement.TotalCount = total
 	return tx
 }
