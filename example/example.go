@@ -120,6 +120,7 @@ func sql() {
 		Sql(sql, "kube-system", "default").
 		FillTotalCount(&total).
 		Limit(5).
+		Offset(10).
 		List(&list).Error
 	if err != nil {
 		fmt.Printf("List error %v", err)
