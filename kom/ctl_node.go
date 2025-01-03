@@ -77,10 +77,7 @@ func (d *node) UnTaint(str string) error {
 	}
 
 	taints = slice.Filter(taints, func(index int, item corev1.Taint) bool {
-		if item.Key != taint.Key {
-			return true
-		}
-		return false
+		return item.Key != taint.Key
 	})
 	var item interface{}
 	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
@@ -234,11 +231,15 @@ func parseTaint(taintStr string) (*corev1.Taint, error) {
 	}, nil
 }
 func (d *node) RunningPods() ([]*corev1.Pod, error) {
+	cacheTime := d.kubectl.Statement.CacheTTL
+	if cacheTime == 0 {
+		cacheTime = 5 * time.Second
+	}
 	var podList []*corev1.Pod
 	// status.phase!=Succeeded,status.phase!=Failed
 	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
 		Where("spec.nodeName=? and status.phase!=Succeeded and status.phase!=Failed", d.kubectl.Statement.Name).
-		WithCache(5 * time.Second).List(&podList).Error
+		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return nil, err
@@ -261,9 +262,13 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 	if reqs == nil || limits == nil {
 		return nil
 	}
+	cacheTime := d.kubectl.Statement.CacheTTL
+	if cacheTime == 0 {
+		cacheTime = 5 * time.Second
+	}
 	var n *corev1.Node
 	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
-		Name(d.kubectl.Statement.Name).WithCache(5 * time.Second).Get(&n).Error
+		Name(d.kubectl.Statement.Name).WithCache(cacheTime).Get(&n).Error
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return nil
