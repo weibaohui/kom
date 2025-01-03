@@ -43,8 +43,8 @@ func List(k *kom.Kubectl) error {
 
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s", ns, gvr.Group, gvr.Resource, gvr.Version)
 	list, err := utils.GetOrSetCache(stmt.ClusterCache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
+		// TODO 获取列表改为使用Option,解决大数据量获取问题。
 		if namespaced {
-
 			if stmt.AllNamespace {
 				ns = metav1.NamespaceAll
 			} else {
