@@ -31,7 +31,12 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 	if ns == "*" {
 		// all namespaces
 		tx.Statement.AllNamespace = true
+	} else if ns == "" {
+		// 与kubectl 保持一致，不传表示限制在default 命名空间中
+		tx.Statement.AllNamespace = false
+		tx.Statement.Namespace = "default"
 	} else {
+		tx.Statement.AllNamespace = false
 		tx.Statement.Namespace = ns
 	}
 	return tx
