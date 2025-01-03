@@ -305,12 +305,12 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 		klog.V(6).Infof("Get ResourceUsage in pod/%s  error %v\n", p.kubectl.Statement.Name, err.Error())
 		return nil
 	}
-	req, limit := resourcehelper.PodRequestsAndLimits(inst)
-	if req == nil || limit == nil {
+
+	nodeName := inst.Spec.NodeName
+	if nodeName == "" {
+		klog.V(6).Infof("Get Pod ResourceUsage in pod/%s  error %v\n", p.kubectl.Statement.Name, "nodeName is empty")
 		return nil
 	}
-	nodeName := inst.Spec.NodeName
-
 	var n *v1.Node
 	err = p.kubectl.newInstance().Resource(&v1.Node{}).
 		WithCache(cacheTime).
@@ -320,6 +320,10 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 		return nil
 	}
 
+	req, limit := resourcehelper.PodRequestsAndLimits(inst)
+	if req == nil || limit == nil {
+		return nil
+	}
 	allocatable := n.Status.Capacity
 	if len(n.Status.Allocatable) > 0 {
 		allocatable = n.Status.Allocatable
