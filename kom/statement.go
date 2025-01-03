@@ -78,7 +78,7 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 		} else {
 			s.GVR, s.Namespaced = s.Tools().GetGVRByKind(gvk.Kind)
 		}
-		klog.V(6).Infof("useCustomGVK=%v \n GVR=%v \n GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
+		klog.V(6).Infof("useCustomGVK=%v \t GVR=%v \t GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
 	} else {
 		crd, err := s.Tools().GetCRD(gvk.Kind, gvk.Group)
 		if err != nil {
