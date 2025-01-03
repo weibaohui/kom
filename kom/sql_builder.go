@@ -160,6 +160,9 @@ func formatSql(condition string, values []interface{}) string {
 	return condition
 }
 
+// Order
+// Order(" id desc")
+// Order(" date asc")
 func (k *Kubectl) Order(order string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Filter.Order = order
