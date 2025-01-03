@@ -32,7 +32,7 @@ func Get(k *kom.Kubectl) error {
 	res, err := utils.GetOrSetCache(stmt.Kubectl.ClusterCache(), cacheKey, stmt.CacheTTL, func() (ret *unstructured.Unstructured, err error) {
 		if namespaced {
 			if ns == "" {
-				ns = "default"
+				ns = metav1.NamespaceDefault
 			}
 			ret, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 		} else {

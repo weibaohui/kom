@@ -29,7 +29,7 @@ func Patch(k *kom.Kubectl) error {
 	}
 	if namespaced {
 		if ns == "" {
-			ns = "default"
+			ns = metav1.NamespaceDefault
 		}
 		res, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Patch(ctx, name, patchType, []byte(patchData), metav1.PatchOptions{})
 	} else {

@@ -34,7 +34,7 @@ func (k *Kubectl) Namespace(ns string) *Kubectl {
 	} else if ns == "" {
 		// 与kubectl 保持一致，不传表示限制在default 命名空间中
 		tx.Statement.AllNamespace = false
-		tx.Statement.Namespace = "default"
+		tx.Statement.Namespace = metav1.NamespaceDefault
 	} else {
 		tx.Statement.AllNamespace = false
 		tx.Statement.Namespace = ns

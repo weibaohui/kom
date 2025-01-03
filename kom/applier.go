@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/weibaohui/kom/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
@@ -64,7 +65,7 @@ func (a *applier) createOrUpdateCRD(obj *unstructured.Unstructured) string {
 	kind := obj.GetKind()
 
 	if ns == "" && namespaced {
-		ns = "default" // 默认命名空间
+		ns = metav1.NamespaceDefault // 默认命名空间
 		obj.SetNamespace(ns)
 	}
 	var cr *unstructured.Unstructured
