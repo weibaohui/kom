@@ -49,7 +49,7 @@ func List(k *kom.Kubectl) error {
 				ns = metav1.NamespaceAll
 			} else {
 				if ns == "" {
-					ns = "default"
+					ns = metav1.NamespaceDefault
 				}
 			}
 			list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
