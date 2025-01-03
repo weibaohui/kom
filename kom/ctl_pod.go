@@ -291,10 +291,14 @@ func parseFileList(path, output string) []*FileInfo {
 func (p *pod) ResourceUsage() *ResourceUsageResult {
 
 	var inst *v1.Pod
+	cacheTime := p.kubectl.Statement.CacheTTL
+	if cacheTime == 0 {
+		cacheTime = 5 * time.Second
+	}
 	err := p.kubectl.newInstance().Resource(&v1.Pod{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		Name(p.kubectl.Statement.Name).
-		WithCache(5 * time.Second).
+		WithCache(cacheTime).
 		Get(&inst).Error
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in pod/%s  error %v\n", p.kubectl.Statement.Name, err.Error())
