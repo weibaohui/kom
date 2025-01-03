@@ -266,6 +266,7 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 	if cacheTime == 0 {
 		cacheTime = 5 * time.Second
 	}
+	klog.V(6).Infof("Node ResourceUsage cacheTime %v\n", cacheTime)
 	var n *corev1.Node
 	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
 		Name(d.kubectl.Statement.Name).WithCache(cacheTime).Get(&n).Error

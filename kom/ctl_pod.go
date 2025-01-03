@@ -295,6 +295,7 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 	if cacheTime == 0 {
 		cacheTime = 5 * time.Second
 	}
+	klog.V(6).Infof("Pod ResourceUsage cacheTime %v\n", cacheTime)
 	err := p.kubectl.newInstance().Resource(&v1.Pod{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		Name(p.kubectl.Statement.Name).
@@ -312,7 +313,7 @@ func (p *pod) ResourceUsage() *ResourceUsageResult {
 
 	var n *v1.Node
 	err = p.kubectl.newInstance().Resource(&v1.Node{}).
-		WithCache(5 * time.Second).
+		WithCache(cacheTime).
 		Name(nodeName).Get(&n).Error
 	if err != nil {
 		klog.V(6).Infof("Get Pod ResourceUsage in node/%s  error %v\n", nodeName, err.Error())
