@@ -223,6 +223,6 @@ func (c *ClusterInstances) Show() {
 			klog.Infof("%s=nil\n", k)
 			continue
 		}
-		klog.Infof("%s[%s,%s.%s]=%s\n", k, v.serverVersion.Platform, v.serverVersion.Major, v.serverVersion.Minor, v.Config.Host)
+		klog.Infof("%s[%s,%s]=%s\n", k, v.serverVersion.Platform, v.serverVersion.GitVersion, v.Config.Host)
 	}
 }
