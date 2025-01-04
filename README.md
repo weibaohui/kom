@@ -620,16 +620,26 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().No
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Drain()
 ```
 #### 查询节点IP资源情况
+支持设置缓存时间，避免频繁查询k8s API
 ```go
-nodeName := "kwok-node-0"
-total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).Name(nodeName).Ctl().Node().IPUsage()
+nodeName := "lima-rancher-desktop"
+total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).WithCache(5 * time.Second).Name(nodeName).Ctl().Node().IPUsage()
 fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
 //Total 256, Used 6, Available 250
 ```
-#### 节点资源用量情况统计
+#### 节点IP资源使用情况统计
+支持设置缓存时间，避免频繁查询k8s API
 ```go
 nodeName := "lima-rancher-desktop"
-usage := kom.DefaultCluster().Resource(&corev1.Node{}).Name(nodeName).Ctl().Node().ResourceUsage()
+total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).WithCache(5 * time.Second).Name(nodeName).Ctl().Node().PodCount()
+fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
+//Total 110, Used 9, Available 101
+```
+#### 节点资源用量情况统计
+支持设置缓存时间，避免频繁查询k8s API
+```go
+nodeName := "lima-rancher-desktop"
+usage := kom.DefaultCluster().Resource(&corev1.Node{}).WithCache(5 * time.Second).Name(nodeName).Ctl().Node().ResourceUsage()
 fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
 ```
 包括当前的请求值、限制值、可分配值、使用比例
