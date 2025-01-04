@@ -231,14 +231,12 @@ func parseTaint(taintStr string) (*corev1.Taint, error) {
 	}, nil
 }
 func (d *node) RunningPods() ([]*corev1.Pod, error) {
-	cacheTime := d.kubectl.Statement.CacheTTL
-	if cacheTime == 0 {
-		cacheTime = 5 * time.Second
-	}
+	cacheTime := d.getCacheTTL()
+
 	var podList []*corev1.Pod
 	// status.phase!=Succeeded,status.phase!=Failed
 	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
-		Where("spec.nodeName=? and status.phase!=Succeeded and status.phase!=Failed", d.kubectl.Statement.Name).
+		Where("spec.nodeName=? and status.phase!='Succeeded' and status.phase!='Failed'", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
@@ -262,14 +260,8 @@ func (d *node) ResourceUsage() *ResourceUsageResult {
 	if reqs == nil || limits == nil {
 		return nil
 	}
-	cacheTime := d.kubectl.Statement.CacheTTL
-	if cacheTime == 0 {
-		cacheTime = 5 * time.Second
-	}
-	klog.V(6).Infof("Node ResourceUsage cacheTime %v\n", cacheTime)
-	var n *corev1.Node
-	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
-		Name(d.kubectl.Statement.Name).WithCache(cacheTime).Get(&n).Error
+	cacheTime := d.getCacheTTL()
+	n, err := d.getNodeWithCache(cacheTime)
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return nil
@@ -351,9 +343,8 @@ func (d *node) ResourceUsageTable() []*ResourceUsageRow {
 
 // IPUsage 计算节点上IP数量状态，返回节点IP总数，已用数量，可用数量
 func (d *node) IPUsage() (total, used, available int) {
-	var n *corev1.Node
-	err := d.kubectl.newInstance().Resource(&corev1.Node{}).
-		Name(d.kubectl.Statement.Name).WithCache(5 * time.Second).Get(&n).Error
+	cacheTime := d.getCacheTTL()
+	n, err := d.getNodeWithCache(cacheTime)
 	if err != nil {
 		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return 0, 0, 0
@@ -371,7 +362,7 @@ func (d *node) IPUsage() (total, used, available int) {
 	var podList []*corev1.Pod
 	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
 		Where("spec.nodeName=? and status.podIP != '' ", d.kubectl.Statement.Name).
-		WithCache(5 * time.Second).List(&podList).Error
+		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
 		return 0, 0, 0
@@ -383,6 +374,67 @@ func (d *node) IPUsage() (total, used, available int) {
 
 }
 
+// getCacheTTL 获取缓存时间
+// 默认5秒
+func (d *node) getCacheTTL(defaultCacheTime ...time.Duration) time.Duration {
+	cacheTime := d.kubectl.Statement.CacheTTL
+
+	if cacheTime == 0 {
+		if len(defaultCacheTime) > 0 {
+			return defaultCacheTime[0]
+		}
+		return 10 * time.Second
+	}
+	return cacheTime
+}
+
+// PodCount 计算节点上Pod数量，已经节点Pod数上限
+func (d *node) PodCount() (total, used, available int) {
+	cacheTime := d.getCacheTTL()
+	n, err := d.getNodeWithCache(cacheTime)
+	if err != nil {
+		klog.V(6).Infof("Get PodCount in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+		return 0, 0, 0
+	}
+
+	total = int(n.Status.Allocatable.Pods().Value())
+
+	// 计算PodIP数量，
+	var podList []*corev1.Pod
+	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		Where("spec.nodeName=? ", d.kubectl.Statement.Name).
+		WithCache(cacheTime).List(&podList).Error
+	if err != nil {
+		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+		return 0, 0, 0
+	}
+
+	used = len(podList)
+	available = total - used
+	return
+
+}
+
+// getNodeWithCache 获取节点的方法，带缓存
+func (d *node) getNodeWithCache(cacheTime time.Duration) (*corev1.Node, error) {
+	node, err := utils.GetOrSetCache(
+		d.kubectl.ClusterCache(),
+		fmt.Sprintf("getNodeWithCache/%s", d.kubectl.Statement.Name),
+		d.getCacheTTL(10*time.Second),
+		func() (*corev1.Node, error) {
+			var n *corev1.Node
+			err := d.kubectl.newInstance().Resource(&corev1.Node{}).
+				Name(d.kubectl.Statement.Name).WithCache(cacheTime).Get(&n).Error
+			if err != nil {
+				klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
+				return nil, err
+			}
+			return n, nil
+		},
+	)
+	return node, err
+
+}
 func getPodsTotalRequestsAndLimits(podList []*corev1.Pod) (reqs map[corev1.ResourceName]resource.Quantity, limits map[corev1.ResourceName]resource.Quantity) {
 	reqs, limits = map[corev1.ResourceName]resource.Quantity{}, map[corev1.ResourceName]resource.Quantity{}
 	for _, pod := range podList {
