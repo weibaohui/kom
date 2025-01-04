@@ -38,7 +38,7 @@ func Example() {
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
-	// NodeIPUsage()
+	NodeIPUsage()
 	// StreamExample()
 	// ALLNodeUsageExample()
 }
@@ -59,7 +59,7 @@ func StreamExample() {
 	}
 }
 func NodeIPUsage() {
-	nodeName := "kwok-node-0"
+	nodeName := "lima-rancher-desktop"
 	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
 		Name(nodeName).Ctl().Node().IPUsage()
 	fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
