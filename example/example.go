@@ -38,9 +38,10 @@ func Example() {
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
-	NodeIPUsage()
+	// NodeIPUsage()
 	// StreamExample()
 	// ALLNodeUsageExample()
+	// NodePodCount()
 }
 
 func StreamExample() {
@@ -57,6 +58,12 @@ func StreamExample() {
 	if err != nil {
 		fmt.Printf("Error StreamExecute pod logs:%v\n", err)
 	}
+}
+func NodePodCount() {
+	nodeName := "lima-rancher-desktop"
+	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
+		Name(nodeName).Ctl().Node().PodCount()
+	fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
 }
 func NodeIPUsage() {
 	nodeName := "lima-rancher-desktop"
