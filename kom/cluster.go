@@ -60,10 +60,16 @@ func DefaultCluster() *Kubectl {
 
 // Cluster 获取集群
 func Cluster(id string) *Kubectl {
+	var cluster *clusterInst
 	if id == "" {
-		return Clusters().DefaultCluster().Kubectl
+		cluster = Clusters().DefaultCluster()
+	} else {
+		cluster = Clusters().GetClusterById(id)
 	}
-	return Clusters().GetClusterById(id).Kubectl
+	if cluster == nil {
+		return nil
+	}
+	return cluster.Kubectl
 }
 
 // RegisterInCluster 注册InCluster集群
