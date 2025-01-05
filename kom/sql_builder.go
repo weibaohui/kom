@@ -129,7 +129,7 @@ func (k *Kubectl) Where(condition string, values ...interface{}) *Kubectl {
 		return tx
 	}
 
-	// 解析Where语句，活的执行条件
+	// 解析Where语句，获得执行条件
 	conditions = parseWhereExpr(conditions, 0, "AND", selectStmt.Where.Expr)
 
 	// 探测 conditions中的条件值类型
