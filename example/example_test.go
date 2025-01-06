@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/kom_starter"
 	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,7 +18,8 @@ func TestMain(m *testing.M) {
 	// 初始化操作
 	fmt.Println("Initializing test environment...")
 	// 在这里可以设置数据库连接、启动服务、创建临时文件等
-	kom_starter.Init()
+
+	Connect()
 
 	// 创建测试必须得Pod，后面不会再创建了
 	InitTestDeploy()
