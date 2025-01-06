@@ -87,7 +87,7 @@ func (k *Kubectl) DynamicClient() *dynamic.DynamicClient {
 	cluster := Clusters().GetClusterById(k.ID)
 	return cluster.DynamicClient
 }
-func (k *Kubectl) parentCluster() *clusterInst {
+func (k *Kubectl) parentCluster() *ClusterInst {
 	cluster := Clusters().GetClusterById(k.ID)
 	return cluster
 }
