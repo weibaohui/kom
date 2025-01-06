@@ -21,12 +21,12 @@ var clusterInstances *ClusterInstances
 
 // ClusterInstances 集群实例管理器
 type ClusterInstances struct {
-	clusters             map[string]*clusterInst
-	callbackRegisterFunc func(clusters *ClusterInstances) func() // 用来注册回调参数的回调方法
+	clusters             map[string]*ClusterInst
+	callbackRegisterFunc func(cluster *ClusterInst) func() // 用来注册回调参数的回调方法
 }
 
-// 集群实例
-type clusterInst struct {
+// ClusterInst 单一集群实例
+type ClusterInst struct {
 	ID            string                       // 集群ID
 	Kubectl       *Kubectl                     // kom
 	Client        *kubernetes.Clientset        // kubernetes 客户端
@@ -49,7 +49,7 @@ func Clusters() *ClusterInstances {
 // 初始化
 func init() {
 	clusterInstances = &ClusterInstances{
-		clusters: make(map[string]*clusterInst),
+		clusters: make(map[string]*ClusterInst),
 	}
 }
 
@@ -60,7 +60,7 @@ func DefaultCluster() *Kubectl {
 
 // Cluster 获取集群
 func Cluster(id string) *Kubectl {
-	var cluster *clusterInst
+	var cluster *ClusterInst
 	if id == "" {
 		cluster = Clusters().DefaultCluster()
 	} else {
@@ -82,7 +82,7 @@ func (c *ClusterInstances) RegisterInCluster() (*Kubectl, error) {
 }
 
 // SetRegisterCallbackFunc 设置回调注册函数
-func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(clusters *ClusterInstances) func()) {
+func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *ClusterInst) func()) {
 	c.callbackRegisterFunc = callback
 }
 
@@ -130,7 +130,7 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 	} else {
 		// key 不存在，进行初始化
 		k := initKubectl(config, id)
-		cluster = &clusterInst{
+		cluster = &ClusterInst{
 			ID:      id,
 			Kubectl: k,
 			Config:  config,
@@ -155,7 +155,7 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		cluster.docs = doc.InitTrees(k.getOpenAPISchema())  // 文档
 		cluster.describerMap = k.initializeDescriberMap()   // 初始化描述器
 		if c.callbackRegisterFunc != nil {                  // 注册回调方法
-			c.callbackRegisterFunc(Clusters())
+			c.callbackRegisterFunc(cluster)
 		}
 
 		cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
@@ -169,7 +169,7 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 }
 
 // GetClusterById 根据集群ID获取集群实例
-func (c *ClusterInstances) GetClusterById(id string) *clusterInst {
+func (c *ClusterInstances) GetClusterById(id string) *ClusterInst {
 	cluster, exists := c.clusters[id]
 	if !exists {
 		return nil
@@ -183,16 +183,16 @@ func (c *ClusterInstances) RemoveClusterById(id string) {
 }
 
 // AllClusters 返回所有集群实例
-func (c *ClusterInstances) AllClusters() map[string]*clusterInst {
+func (c *ClusterInstances) AllClusters() map[string]*ClusterInst {
 	return c.clusters
 }
 
-// DefaultCluster 返回一个默认的 clusterInst 实例。
+// DefaultCluster 返回一个默认的 ClusterInst 实例。
 // 当 clusters 列表为空时，返回 nil。
 // 首先尝试返回 ID 为 "InCluster" 的实例，如果不存在，
 // 则尝试返回 ID 为 "default" 的实例。
 // 如果上述两个实例都不存在，则返回 clusters 列表中的任意一个实例。
-func (c *ClusterInstances) DefaultCluster() *clusterInst {
+func (c *ClusterInstances) DefaultCluster() *ClusterInst {
 	// 检查 clusters 列表是否为空
 	if len(c.clusters) == 0 {
 		return nil
