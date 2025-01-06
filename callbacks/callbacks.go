@@ -1,6 +1,8 @@
 package callbacks
 
 import (
+	"fmt"
+
 	"github.com/weibaohui/kom/kom"
 	"k8s.io/klog/v2"
 )
@@ -17,41 +19,44 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 	all := clusters.AllClusters()
 	for _, c := range all {
+		klog.Infof("RegisterDefaultCallbacks for cluster %s", c.ID)
+		prefix := c.ID
+
 		// 为每一个集群进行注册
 		k := c.Kubectl
 
 		queryCallback := k.Callback().Get()
-		_ = queryCallback.Register("kom:get", Get)
+		_ = queryCallback.Register(fmt.Sprintf("%s:get", prefix), Get)
 
 		listCallback := k.Callback().List()
-		_ = listCallback.Register("kom:list", List)
+		_ = listCallback.Register(fmt.Sprintf("%s:list", prefix), List)
 
 		watchCallback := k.Callback().Watch()
-		_ = watchCallback.Register("kom:watch", Watch)
+		_ = watchCallback.Register(fmt.Sprintf("%s:watch", prefix), Watch)
 
 		createCallback := k.Callback().Create()
-		_ = createCallback.Register("kom:create", Create)
+		_ = createCallback.Register(fmt.Sprintf("%s:create", prefix), Create)
 
 		updateCallback := k.Callback().Update()
-		_ = updateCallback.Register("kom:update", Update)
+		_ = updateCallback.Register(fmt.Sprintf("%s:update", prefix), Update)
 
 		patchCallback := k.Callback().Patch()
-		_ = patchCallback.Register("kom:patch", Patch)
+		_ = patchCallback.Register(fmt.Sprintf("%s:patch", prefix), Patch)
 
 		deleteCallback := k.Callback().Delete()
-		_ = deleteCallback.Register("kom:delete", Delete)
+		_ = deleteCallback.Register(fmt.Sprintf("%s:delete", prefix), Delete)
 
 		execCallback := k.Callback().Exec()
-		_ = execCallback.Register("kom:pod:exec", ExecuteCommand)
+		_ = execCallback.Register(fmt.Sprintf("%s:pod:exec", prefix), ExecuteCommand)
 
 		streamExecCallback := k.Callback().StreamExec()
-		_ = streamExecCallback.Register("kom:pod:stream:exec", StreamExecuteCommand)
+		_ = streamExecCallback.Register(fmt.Sprintf("%s:pod:stream:exec", prefix), StreamExecuteCommand)
 
 		logsCallback := k.Callback().Logs()
-		_ = logsCallback.Register("kom:pod:logs", GetLogs)
+		_ = logsCallback.Register(fmt.Sprintf("%s:pod:logs", prefix), GetLogs)
 
 		describeCallback := k.Callback().Describe()
-		_ = describeCallback.Register("kom:describe", Describe)
+		_ = describeCallback.Register(fmt.Sprintf("%s:describe", prefix), Describe)
 	}
 
 	return nil
