@@ -19,7 +19,7 @@ func RegisterDefaultCallbacks(clusters *kom.ClusterInstances) func() {
 
 	all := clusters.AllClusters()
 	for _, c := range all {
-		klog.Infof("RegisterDefaultCallbacks for cluster %s", c.ID)
+		klog.V(4).Infof("RegisterDefaultCallbacks for cluster %s", c.ID)
 		prefix := c.ID
 
 		// 为每一个集群进行注册
