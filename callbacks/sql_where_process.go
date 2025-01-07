@@ -95,7 +95,7 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 
 // matchCondition 判断单个条件是否匹配
 func matchCondition(resource unstructured.Unstructured, condition kom.Condition) bool {
-	klog.V(6).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
+	klog.V(8).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
 
 	// 获取字段值
 	fieldValue, found, err := getNestedFieldAsString(resource.Object, condition.Field)
@@ -135,7 +135,7 @@ func matchCondition(resource unstructured.Unstructured, condition kom.Condition)
 
 // compareValue 比较值是否相等
 func compareValue(fieldValue string, value interface{}) bool {
-	klog.V(6).Infof("compareValue (=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+	klog.V(8).Infof("compareValue (=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 
 	switch v := value.(type) {
 	case string:
