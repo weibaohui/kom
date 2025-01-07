@@ -278,3 +278,74 @@ spec:
 	}
 
 }
+
+// secret
+func TestPodLinkConfigMap(t *testing.T) {
+	yaml := `
+	apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  config.properties: |
+    property1=value1
+    property2=value2
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+stringData:
+  secret.properties: |
+    secret_property1=secret/value1
+    secret_property2=secret/value2
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod-secret-configmap
+spec:
+  containers:
+  - name: my-container
+    image: nginx:1.23.3
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: config-volume
+      mountPath: /config
+      readOnly: true
+    - name: secret-volume
+      mountPath: /secret
+      readOnly: true
+  volumes:
+  - name: config-volume
+    configMap:
+      name: my-configmap
+  - name: secret-volume
+    secret:
+      secretName: my-secret
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	configMaps, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("my-pod-secret-configmap").Ctl().Pod().LinkedConfigMap()
+	if err != nil {
+		t.Logf("get pod linked configMap error %v\n", err.Error())
+		return
+	}
+
+	configMapNames := []string{}
+	for _, configMap := range configMaps {
+		configMapNames = append(configMapNames, configMap.Name)
+		t.Logf("configMapMounts %s %v\n", configMap.Name, configMap.Annotations["configMapMounts"])
+		//json configmap
+		t.Logf("configMap JSON\n %v\n", utils.ToJSON(configMap))
+	}
+	// 检查configMaps列表是否包含my-configmap
+	if !slices.Contains(configMapNames, "my-configmap") {
+		t.Errorf("my-configmap not found in configMaps")
+	}
+
+}
