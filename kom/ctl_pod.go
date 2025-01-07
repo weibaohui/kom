@@ -626,18 +626,17 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	return secretList, nil
 }
 
-// 设计一个数据接口，容器名称、ENV环境变量。
-// 每行三个值，容器名称、ENV名称、ENV值
+// Env 每行三个值，容器名称、ENV名称、ENV值
 type Env struct {
-	ContainerName string
-	EnvName       string
-	EnvValue      string
+	ContainerName string `json:"containerName,omitempty"`
+	EnvName       string `json:"envName,omitempty"`
+	EnvValue      string `json:"envValue,omitempty"`
 }
 
 func (p *pod) LinkedEnv() ([]*Env, error) {
-	//先获取容器列表，然后获取容器的环境变量，然后组装到Env结构体中
+	// 先获取容器列表，然后获取容器的环境变量，然后组装到Env结构体中
 
-	//先获取pod，从pod中读取容器列表
+	// 先获取pod，从pod中读取容器列表
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
 	if err != nil {
@@ -646,10 +645,10 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 
 	var envs []*Env
 
-	//获取容器名称列表
+	// 获取容器名称列表
 	for _, container := range pod.Spec.Containers {
 
-		//进到容器中执行ENV命令，获取输出字符串
+		// 进到容器中执行ENV命令，获取输出字符串
 		var result []byte
 		err = p.kubectl.newInstance().Resource(&v1.Pod{}).
 			WithContext(p.kubectl.Statement.Context).
@@ -663,7 +662,7 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 			return nil, err
 		}
 
-		//解析result，获取ENV名称和ENV值
+		// 解析result，获取ENV名称和ENV值
 		envArrays := strings.Split(string(result), "\n")
 		for _, envline := range envArrays {
 			envArray := strings.Split(envline, "=")
