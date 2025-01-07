@@ -109,6 +109,31 @@ func TestPodLinkEndpoints(t *testing.T) {
 		t.Errorf("nginx-service not found in endpoints")
 	}
 }
+func TestPodLinkIngress(t *testing.T) {
+	kom.DefaultCluster().Applier().Apply(podLinkYaml)
+	time.Sleep(10 * time.Second)
+	ingresses, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("nginx-pod").Ctl().Pod().LinkedIngress()
+	if err != nil {
+		t.Logf("get pod linked ingress error %v\n", err.Error())
+		return
+	}
+	for _, ingress := range ingresses {
+		t.Logf("ingress name %v\n", ingress.Name)
+	}
+
+	//获取ingressNames列表
+	names := []string{}
+	for _, ingress := range ingresses {
+		names = append(names, ingress.Name)
+	}
+	t.Logf("names %v\n", names)
+	//检查serviceNames列表是否包含nginx-service
+	if !slices.Contains(names, "nginx-ingress") {
+		t.Errorf("nginx-ingress not found in ingresses")
+	}
+}
 func TestPodLinkPVC(t *testing.T) {
 
 	yaml := `
