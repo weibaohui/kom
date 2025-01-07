@@ -89,7 +89,7 @@ func TestPodLinkEndpoints(t *testing.T) {
 	time.Sleep(10 * time.Second)
 	endpoints, err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
-		Name("nginx-pod").Ctl().Pod().LinksEndpoints()
+		Name("nginx-pod").Ctl().Pod().LinkedEndpoints()
 	if err != nil {
 		t.Logf("get pod linked endpoints error %v\n", err.Error())
 		return
@@ -107,5 +107,60 @@ func TestPodLinkEndpoints(t *testing.T) {
 	//检查serviceNames列表是否包含nginx-service
 	if !slices.Contains(names, "nginx-service") {
 		t.Errorf("nginx-service not found in endpoints")
+	}
+}
+func TestPodLinkPVC(t *testing.T) {
+
+	yaml := `
+	 # 定义 PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 定义 Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: my-container
+    image: nginx:1.23.3
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: my-volume
+      mountPath: /data
+  volumes:
+  - name: my-volume
+    persistentVolumeClaim:
+      claimName: my-pvc
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	pvcs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("my-pod").Ctl().Pod().LinkedPVC()
+	if err != nil {
+		t.Logf("get pod linked pvc error %v\n", err.Error())
+		return
+	}
+	for _, pvc := range pvcs {
+		t.Logf("pvc name %v\n", pvc.Name)
+	}
+	pvcNames := []string{}
+	for _, pvc := range pvcs {
+		pvcNames = append(pvcNames, pvc.Name)
+	}
+	//检查pvcs列表是否包含my-pvc
+	if !slices.Contains(pvcNames, "my-pvc") {
+		t.Errorf("my-pvc not found in pvcs")
 	}
 }
