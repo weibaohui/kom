@@ -42,8 +42,17 @@ func Example() {
 	// StreamExample()
 	// ALLNodeUsageExample()
 	// NodePodCount()
+	PodLink()
 }
-
+func PodLink() {
+	services, err := kom.DefaultCluster().Resource(&corev1.Pod{}).
+		Namespace("k8m").
+		Name("k8m-6b56d66cbf-cf222").Ctl().Pod().LinkedService()
+	if err != nil {
+		fmt.Printf("get pod linked service error %v \n", err.Error())
+	}
+	fmt.Printf("pod linked service %v \n", services)
+}
 func StreamExample() {
 	cb := func(data []byte) error {
 		fmt.Printf("Data %s\n", string(data))
