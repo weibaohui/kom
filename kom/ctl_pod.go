@@ -478,19 +478,13 @@ func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.PersistentVolumeClaim{}).
 		Namespace(p.kubectl.Statement.Namespace).
+		Where("metadata.name in " + utils.StringListToSQLIn(pvcNames)).
 		List(&pvcList).Error
 	if err != nil {
 		return nil, err
 	}
 
-	// 过滤pvcList，只保留pvcNames
-	var result []*v1.PersistentVolumeClaim
-	for _, pvc := range pvcList {
-		if slices.Contains(pvcNames, pvc.Name) {
-			result = append(result, pvc)
-		}
-	}
-	return result, nil
+	return pvcList, nil
 }
 
 func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
