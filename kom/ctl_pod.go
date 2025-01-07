@@ -625,3 +625,54 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	}
 	return secretList, nil
 }
+
+// 设计一个数据接口，容器名称、ENV环境变量。
+// 每行三个值，容器名称、ENV名称、ENV值
+type Env struct {
+	ContainerName string
+	EnvName       string
+	EnvValue      string
+}
+
+func (p *pod) LinkedEnv() ([]*Env, error) {
+	//先获取容器列表，然后获取容器的环境变量，然后组装到Env结构体中
+
+	//先获取pod，从pod中读取容器列表
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var envs []*Env
+
+	//获取容器名称列表
+	for _, container := range pod.Spec.Containers {
+
+		//进到容器中执行ENV命令，获取输出字符串
+		var result []byte
+		err = p.kubectl.newInstance().Resource(&v1.Pod{}).
+			WithContext(p.kubectl.Statement.Context).
+			Namespace(p.kubectl.Statement.Namespace).
+			Name(p.kubectl.Statement.Name).
+			ContainerName(container.Name).
+			Command("env").
+			Execute(&result).Error
+		if err != nil {
+			klog.V(6).Infof("get %s/%s/%s env error %v", p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, container.Name, err.Error())
+			return nil, err
+		}
+
+		//解析result，获取ENV名称和ENV值
+		envArrays := strings.Split(string(result), "\n")
+		for _, envline := range envArrays {
+			envArray := strings.Split(envline, "=")
+			if len(envArray) != 2 {
+				continue
+			}
+			envs = append(envs, &Env{ContainerName: container.Name, EnvName: envArray[0], EnvValue: envArray[1]})
+		}
+	}
+
+	return envs, nil
+}
