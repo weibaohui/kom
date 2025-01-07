@@ -400,7 +400,6 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.Service{}).
 		Namespace(p.kubectl.Statement.Namespace).
-		WithCache(p.kubectl.Statement.CacheTTL).
 		List(&services).Error
 
 	if err != nil {
@@ -422,4 +421,41 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 
 	}
 	return result, nil
+}
+
+func (p *pod) LinksEndpoints() ([]v1.Endpoints, error) {
+
+	services, err := p.LinkedService()
+	if err != nil {
+		return nil, err
+	}
+	if len(services) == 0 {
+		return nil, nil
+	}
+	// endpoints 与 svc 同名
+	// 1.获取service 名称
+	// 2.获取endpoints
+	// 3.返回endpoints
+
+	var names []string
+	for _, svc := range services {
+		names = append(names, svc.Name)
+	}
+
+	var endpoints []v1.Endpoints
+
+	for _, name := range names {
+		var endpoint v1.Endpoints
+		err = p.kubectl.newInstance().
+			WithContext(p.kubectl.Statement.Context).
+			Resource(&v1.Endpoints{}).
+			Namespace(p.kubectl.Statement.Namespace).
+			Name(name).
+			Get(&endpoint).Error
+		if err != nil {
+			continue
+		}
+		endpoints = append(endpoints, endpoint)
+	}
+	return endpoints, nil
 }
