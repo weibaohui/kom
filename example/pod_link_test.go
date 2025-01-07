@@ -9,8 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestPodLink(t *testing.T) {
-	yaml := `
+var podLinkYaml = `
 apiVersion: v1
 kind: Pod
 metadata:
@@ -57,7 +56,10 @@ spec:
             port:
               number: 80
 `
-	kom.DefaultCluster().Applier().Apply(yaml)
+
+func TestPodLinkService(t *testing.T) {
+
+	kom.DefaultCluster().Applier().Apply(podLinkYaml)
 	time.Sleep(10 * time.Second)
 	services, err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
@@ -79,5 +81,31 @@ spec:
 	//检查serviceNames列表是否包含nginx-service
 	if !slices.Contains(serviceNames, "nginx-service") {
 		t.Errorf("nginx-service not found in serviceNames")
+	}
+}
+func TestPodLinkEndpoints(t *testing.T) {
+
+	kom.DefaultCluster().Applier().Apply(podLinkYaml)
+	time.Sleep(10 * time.Second)
+	endpoints, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("nginx-pod").Ctl().Pod().LinksEndpoints()
+	if err != nil {
+		t.Logf("get pod linked endpoints error %v\n", err.Error())
+		return
+	}
+	for _, endpoint := range endpoints {
+		t.Logf("endpoint name %v\n", endpoint.Name)
+	}
+
+	//获取serviceNames列表
+	names := []string{}
+	for _, endpoint := range endpoints {
+		names = append(names, endpoint.Name)
+	}
+	t.Logf("names %v\n", names)
+	//检查serviceNames列表是否包含nginx-service
+	if !slices.Contains(names, "nginx-service") {
+		t.Errorf("nginx-service not found in endpoints")
 	}
 }
