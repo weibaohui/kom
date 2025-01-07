@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
@@ -149,4 +150,19 @@ func ParseTime(value string) (time.Time, error) {
 		}
 	}
 	return t, err
+}
+
+// StringListToSQLIn 将字符串列表转换为 SQL IN 子句中使用的格式，例如 ('x', 'xx')
+// 例如 ['x', 'xx'] 转换为 ('x', 'xx')
+func StringListToSQLIn(strList []string) string {
+	if len(strList) == 0 {
+		return "()"
+	}
+
+	var parts []string
+	for _, str := range strList {
+		parts = append(parts, fmt.Sprintf("'%s'", str))
+	}
+
+	return "(" + strings.Join(parts, ", ") + ")"
 }
