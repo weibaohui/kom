@@ -446,18 +446,14 @@ func (p *pod) LinkedEndpoints() ([]*v1.Endpoints, error) {
 
 	var endpoints []*v1.Endpoints
 
-	for _, name := range names {
-		var endpoint v1.Endpoints
-		err = p.kubectl.newInstance().
-			WithContext(p.kubectl.Statement.Context).
-			Resource(&v1.Endpoints{}).
-			Namespace(p.kubectl.Statement.Namespace).
-			Name(name).
-			Get(&endpoint).Error
-		if err != nil {
-			continue
-		}
-		endpoints = append(endpoints, &endpoint)
+	err = p.kubectl.newInstance().
+		WithContext(p.kubectl.Statement.Context).
+		Resource(&v1.Endpoints{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		Where("metadata.name in " + utils.StringListToSQLIn(names)).
+		List(&endpoints).Error
+	if err != nil {
+		return nil, err
 	}
 	return endpoints, nil
 }
