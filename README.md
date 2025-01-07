@@ -324,6 +324,38 @@ kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerNam
 // 删除Pod内/etc/xyz文件
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DeleteFile("/etc/xyz")
 ```
+#### 获取关联资源-Service
+```go
+// 获取Pod关联的Service
+svcs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedService()
+for _, svc := range svcs {
+	fmt.Printf("service name %v\n", svc.Name)
+}
+```
+#### 获取关联资源-Ingress
+```go
+// 获取Pod关联的Ingress
+ingresses, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedIngress()
+for _, ingress := range ingresses {
+	fmt.Printf("ingress name %v\n", ingress.Name)
+}
+```
+#### 获取关联资源-PVC
+```go
+// 获取Pod关联的PVC
+pvcs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedPVC()
+for _, pvc := range pvcs {
+	fmt.Printf("pvc name %v\n", pvc.Name)
+}
+``` 
+#### 获取关联资源-Endpoints
+```go
+// 获取Pod关联的Endpoints
+endpoints, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedEndpoints()
+for _, endpoint := range endpoints {
+	fmt.Printf("endpoint name %v\n", endpoint.Name)
+}
+```
 
 ### 5. 自定义资源定义（CRD）增删改查及Watch操作
 在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
