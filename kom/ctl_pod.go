@@ -566,6 +566,16 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 	return result, nil
 }
 
+// PodMount 是Pod的挂载信息
+// 挂载的类型有：configMap、secret
+type PodMount struct {
+	Name      string `json:"name",omitempty`
+	MountPath string `json:"mountPath",omitempty`
+	SubPath   string `json:"subPath",omitempty`
+	Mode      *int32 `json:"mode",omitempty`
+	ReadOnly  bool   `json:"readOnly",omitempty`
+}
+
 // LinkedConfigMap 获取Pod相关的ConfigMap
 func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	var pod v1.Pod
@@ -593,15 +603,48 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	return configMapList, nil
-}
 
-type PodMount struct {
-	Name      string `json:"name",omitempty`
-	MountPath string `json:"mountPath",omitempty`
-	SubPath   string `json:"subPath",omitempty`
-	Mode      *int32 `json:"mode",omitempty`
-	ReadOnly  bool   `json:"readOnly",omitempty`
+	//pod.Spec.Containers.volumeMounts
+	//pod.Spec.Volumes
+	//通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
+	//通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
+	//提取volumeMounts中的mountPath、subPath
+
+	for i := range configMapList {
+		configMap := configMapList[i]
+		var configMapMounts []*PodMount
+
+		configMapName := configMap.Name
+		for _, volume := range pod.Spec.Volumes {
+			if volume.ConfigMap != nil && volume.ConfigMap.Name == configMapName {
+
+				for _, container := range pod.Spec.Containers {
+					for _, volumeMount := range container.VolumeMounts {
+						if volumeMount.Name == volume.Name {
+							cm := PodMount{
+								Name:      volume.ConfigMap.Name,
+								MountPath: volumeMount.MountPath,
+								SubPath:   volumeMount.SubPath,
+								ReadOnly:  volumeMount.ReadOnly,
+								Mode:      volume.ConfigMap.DefaultMode,
+							}
+							configMapMounts = append(configMapMounts, &cm)
+						}
+					}
+				}
+
+			}
+		}
+
+		if len(configMapMounts) > 0 {
+			if configMap.Annotations == nil {
+				configMap.Annotations = make(map[string]string)
+			}
+			configMap.Annotations["configMapMounts"] = utils.ToJSON(configMapMounts)
+		}
+	}
+
+	return configMapList, nil
 }
 
 // LinkedSecret 获取Pod相关的Secret
