@@ -15,5 +15,8 @@ func TestPodLink(t *testing.T) {
 		t.Logf("get pod linked service error %v\n", err.Error())
 		return
 	}
-	t.Logf("pod linked service %v\n", services)
+	for _, service := range services {
+		t.Logf("service name %v\n", service.Name)
+	}
+
 }
