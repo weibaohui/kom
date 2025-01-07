@@ -213,24 +213,61 @@ func TestPodLinkEnv(t *testing.T) {
 // secret
 func TestPodLinkSecret(t *testing.T) {
 	yaml := `
-	apiVersion: v1
+apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: my-configmap
+  name: my-configmap-multiple-files
 data:
-  config.properties: |
+  file1.properties: |
     property1=value1
     property2=value2
+  file2.properties: |
+    propertyA=valueA
+    propertyB=valueB
+  file3.properties: |
+    propertyX=valueX
+    propertyY=valueY
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: another-configmap
+data:
+  config1.properties: |
+    another_property1=another_value1
+    another_property2=another_value2
+  config2.properties: |
+    another_propertyA=another_valueA
+    another_propertyB=another_valueB
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: my-secret
+  name: my-secret-multiple-files
 type: Opaque
 stringData:
-  secret.properties: |
+  file1.secret: |
     secret_property1=secret/value1
     secret_property2=secret/value2
+  file2.secret: |
+    secret_propertyA=secret/valueA
+    secret_propertyB=secret/valueB
+  file3.secret: |
+    secret_propertyX=secret/valueX
+    secret_propertyY=secret/valueY
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: another-secret
+type: Opaque
+stringData:
+  secret1.secret: |
+    another_secret_property1=secret/another_value1
+    another_secret_property2=secret/another_value2
+  secret2.secret: |
+    another_secret_propertyA=secret/another_valueA
+    another_secret_propertyB=secret/another_valueB
 ---
 apiVersion: v1
 kind: Pod
@@ -243,19 +280,46 @@ spec:
     ports:
     - containerPort: 80
     volumeMounts:
-    - name: config-volume
-      mountPath: /config
+    - name: config-volume-1
+      mountPath: /config1
       readOnly: true
-    - name: secret-volume
-      mountPath: /secret
+    - name: config-volume-2
+      mountPath: /config2
       readOnly: true
+    - name: config-volume-1
+      mountPath: /config3from1
+      readOnly: true
+    - name: config-volume-2
+      mountPath: /config4from2
+      readOnly: true	  	  
+    - name: secret-volume-1
+      mountPath: /secret1
+      readOnly: true
+    - name: secret-volume-2
+      mountPath: /secret2
+      readOnly: true
+    - name: secret-volume-1
+      mountPath: /secret3from1
+      subPath: secret3from1-subpath
+      readOnly: true
+    - name: secret-volume-2
+      mountPath: /secret4from2
+      subPath: secret4from2-subpath
+      readOnly: true	  
   volumes:
-  - name: config-volume
+  - name: config-volume-1
     configMap:
-      name: my-configmap
-  - name: secret-volume
+      name: my-configmap-multiple-files
+  - name: config-volume-2
+    configMap:
+      name: another-configmap
+  - name: secret-volume-1
     secret:
-      secretName: my-secret
+      secretName: my-secret-multiple-files
+  - name: secret-volume-2
+    secret:
+      secretName: another-secret
+
 `
 	kom.DefaultCluster().Applier().Apply(yaml)
 	time.Sleep(10 * time.Second)
@@ -273,8 +337,8 @@ spec:
 		t.Logf("secretMounts %s %v\n", secret.Name, secret.Annotations["secretMounts"])
 	}
 	// 检查secrets列表是否包含my-secret
-	if !slices.Contains(secretNames, "my-secret") {
-		t.Errorf("my-secret not found in secrets")
+	if !slices.Contains(secretNames, "my-secret-multiple-files") {
+		t.Errorf("my-secret-multiple-files not found in secrets")
 	}
 
 }
