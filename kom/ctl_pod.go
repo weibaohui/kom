@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -423,7 +424,7 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 	return result, nil
 }
 
-func (p *pod) LinksEndpoints() ([]v1.Endpoints, error) {
+func (p *pod) LinkedEndpoints() ([]v1.Endpoints, error) {
 
 	services, err := p.LinkedService()
 	if err != nil {
@@ -458,4 +459,39 @@ func (p *pod) LinksEndpoints() ([]v1.Endpoints, error) {
 		endpoints = append(endpoints, endpoint)
 	}
 	return endpoints, nil
+}
+
+func (p *pod) LinkedPVC() ([]v1.PersistentVolumeClaim, error) {
+
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+	// 找打pvc 名称列表
+	var pvcNames []string
+	for _, volume := range pod.Spec.Volumes {
+		if volume.PersistentVolumeClaim != nil {
+			pvcNames = append(pvcNames, volume.PersistentVolumeClaim.ClaimName)
+		}
+	}
+
+	// 找出同ns下pvc的列表，过滤pvcNames
+	var pvcList []v1.PersistentVolumeClaim
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
+		Resource(&v1.PersistentVolumeClaim{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		List(&pvcList).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 过滤pvcList，只保留pvcNames
+	var result []v1.PersistentVolumeClaim
+	for _, pvc := range pvcList {
+		if slices.Contains(pvcNames, pvc.Name) {
+			result = append(result, pvc)
+		}
+	}
+	return result, nil
 }
