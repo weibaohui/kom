@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/duke-git/lancet/v2/slice"
+
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/weibaohui/kom/kom/parser"
 	"github.com/weibaohui/kom/utils"
@@ -98,6 +100,12 @@ func (s *sqlParser) AddBackticks() string {
 
 	// 解析 SQL，遍历解析树
 	antlr.ParseTreeWalkerDefault.Walk(s, p.Sql_stmt())
+
+	// SELECT * FROM fake WHERE metadata.name in ('nginx-service')
+	// 如果filed 为 in 模式的 (xxx) 则跳过
+	s.Fields = slice.Filter(s.Fields, func(index int, item string) bool {
+		return !(strings.HasPrefix(item, "(") && strings.HasSuffix(item, ")"))
+	})
 
 	// 按照字段长度从长到短排序
 	sort.Slice(s.Fields, func(i, j int) bool {
