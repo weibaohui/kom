@@ -209,3 +209,72 @@ func TestPodLinkEnv(t *testing.T) {
 		t.Logf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
 	}
 }
+
+// secret
+func TestPodLinkSecret(t *testing.T) {
+	yaml := `
+	apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  config.properties: |
+    property1=value1
+    property2=value2
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+stringData:
+  secret.properties: |
+    secret_property1=secret/value1
+    secret_property2=secret/value2
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod-secret-configmap
+spec:
+  containers:
+  - name: my-container
+    image: nginx:1.23.3
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: config-volume
+      mountPath: /config
+      readOnly: true
+    - name: secret-volume
+      mountPath: /secret
+      readOnly: true
+  volumes:
+  - name: config-volume
+    configMap:
+      name: my-configmap
+  - name: secret-volume
+    secret:
+      secretName: my-secret
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	secrets, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("my-pod-secret-configmap").Ctl().Pod().LinkedSecret()
+	if err != nil {
+		t.Logf("get pod linked secret error %v\n", err.Error())
+		return
+	}
+
+	secretNames := []string{}
+	for _, secret := range secrets {
+		secretNames = append(secretNames, secret.Name)
+		t.Logf("secretMounts %s %v\n", secret.Name, secret.Annotations["secretMounts"])
+	}
+	// 检查secrets列表是否包含my-secret
+	if !slices.Contains(secretNames, "my-secret") {
+		t.Errorf("my-secret not found in secrets")
+	}
+
+}

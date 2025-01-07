@@ -596,9 +596,15 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	return configMapList, nil
 }
 
+type PodMount struct {
+	Name      string `json:"name",omitempty`
+	MountPath string `json:"mountPath",omitempty`
+	SubPath   string `json:"subPath",omitempty`
+	Mode      *int32 `json:"mode",omitempty`
+	ReadOnly  bool   `json:"readOnly",omitempty`
+}
+
 // LinkedSecret 获取Pod相关的Secret
-// 在Secret 注解中，增加一个reason字段,记录，pod中的SecretVolume对应的Items []KeyToPath
-// 从pod、container的挂载中，找出secret挂载的文件
 func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
@@ -625,6 +631,47 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//pod.Spec.Containers.volumeMounts
+	//pod.Spec.Volumes
+	//通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
+	//通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
+	//提取volumeMounts中的mountPath、subPath
+
+	for i := range secretList {
+		secret := secretList[i]
+		var secretMounts []*PodMount
+
+		secretName := secret.Name
+		for _, volume := range pod.Spec.Volumes {
+			if volume.Secret != nil && volume.Secret.SecretName == secretName {
+
+				for _, container := range pod.Spec.Containers {
+					for _, volumeMount := range container.VolumeMounts {
+						if volumeMount.Name == volume.Name {
+							sm := PodMount{
+								Name:      volume.Secret.SecretName,
+								MountPath: volumeMount.MountPath,
+								SubPath:   volumeMount.SubPath,
+								ReadOnly:  volumeMount.ReadOnly,
+								Mode:      volume.Secret.DefaultMode,
+							}
+							secretMounts = append(secretMounts, &sm)
+						}
+					}
+				}
+
+			}
+		}
+
+		if len(secretMounts) > 0 {
+			if secret.Annotations == nil {
+				secret.Annotations = make(map[string]string)
+			}
+			secret.Annotations["secretMounts"] = utils.ToJSON(secretMounts)
+		}
+	}
+
 	return secretList, nil
 }
 
