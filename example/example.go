@@ -42,7 +42,7 @@ func Example() {
 	// StreamExample()
 	// ALLNodeUsageExample()
 	// NodePodCount()
-	PodLink()
+	// PodLink()
 }
 func PodLink() {
 	services, err := kom.DefaultCluster().Resource(&corev1.Pod{}).
@@ -155,10 +155,7 @@ func drainNode() {
 		fmt.Println(err)
 	}
 }
-func callbacks() {
-	_ = kom.DefaultCluster().Callback().Get().Register("get", GetCB)
-	_ = kom.DefaultCluster().Callback().Exec().Register("get", GetCB)
-}
+
 func GetCB(k *kom.Kubectl) error {
 
 	stmt := k.Statement
