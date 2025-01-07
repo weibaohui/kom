@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -10,10 +11,15 @@ import (
 	"github.com/weibaohui/kom/kom"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/klog/v2"
 )
 
 // TestMain 是测试的入口函数
 func TestMain(m *testing.M) {
+
+	klog.InitFlags(nil)
+	flag.Set("v", "2")
+
 	// 初始化操作
 	fmt.Println("Initializing test environment...")
 	// 在这里可以设置数据库连接、启动服务、创建临时文件等
