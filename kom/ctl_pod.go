@@ -12,6 +12,7 @@ import (
 
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/klog/v2"
 	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 )
@@ -369,7 +370,7 @@ func (p *pod) ResourceUsageTable() []*ResourceUsageRow {
 }
 
 // 获取pod相关的Service
-func (p *pod) LinkedService() ([]v1.Service, error) {
+func (p *pod) LinkedService() ([]*v1.Service, error) {
 	// 	查询流程
 	// 获取目标 Pod 的详细信息：
 
@@ -397,7 +398,7 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 	}
 	podLabels := pod.GetLabels()
 
-	var services []v1.Service
+	var services []*v1.Service
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.Service{}).
 		Namespace(p.kubectl.Statement.Namespace).
@@ -407,7 +408,7 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 		return nil, fmt.Errorf("get service error %v", err.Error())
 	}
 
-	var result []v1.Service
+	var result []*v1.Service
 	for _, svc := range services {
 		serviceLabels := svc.Spec.Selector
 		// 遍历selector
@@ -424,7 +425,7 @@ func (p *pod) LinkedService() ([]v1.Service, error) {
 	return result, nil
 }
 
-func (p *pod) LinkedEndpoints() ([]v1.Endpoints, error) {
+func (p *pod) LinkedEndpoints() ([]*v1.Endpoints, error) {
 
 	services, err := p.LinkedService()
 	if err != nil {
@@ -443,7 +444,7 @@ func (p *pod) LinkedEndpoints() ([]v1.Endpoints, error) {
 		names = append(names, svc.Name)
 	}
 
-	var endpoints []v1.Endpoints
+	var endpoints []*v1.Endpoints
 
 	for _, name := range names {
 		var endpoint v1.Endpoints
@@ -456,12 +457,12 @@ func (p *pod) LinkedEndpoints() ([]v1.Endpoints, error) {
 		if err != nil {
 			continue
 		}
-		endpoints = append(endpoints, endpoint)
+		endpoints = append(endpoints, &endpoint)
 	}
 	return endpoints, nil
 }
 
-func (p *pod) LinkedPVC() ([]v1.PersistentVolumeClaim, error) {
+func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
@@ -477,7 +478,7 @@ func (p *pod) LinkedPVC() ([]v1.PersistentVolumeClaim, error) {
 	}
 
 	// 找出同ns下pvc的列表，过滤pvcNames
-	var pvcList []v1.PersistentVolumeClaim
+	var pvcList []*v1.PersistentVolumeClaim
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.PersistentVolumeClaim{}).
 		Namespace(p.kubectl.Statement.Namespace).
@@ -487,11 +488,78 @@ func (p *pod) LinkedPVC() ([]v1.PersistentVolumeClaim, error) {
 	}
 
 	// 过滤pvcList，只保留pvcNames
-	var result []v1.PersistentVolumeClaim
+	var result []*v1.PersistentVolumeClaim
 	for _, pvc := range pvcList {
 		if slices.Contains(pvcNames, pvc.Name) {
 			result = append(result, pvc)
 		}
 	}
+	return result, nil
+}
+
+func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
+
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+	services, err := p.LinkedService()
+	if err != nil {
+		return nil, err
+	}
+
+	var servicesName []string
+	for _, svc := range services {
+		servicesName = append(servicesName, svc.Name)
+	}
+
+	// 获取ingress
+	// Ingress 通过 spec.rules 或 spec.defaultBackend 中的 service.name 指定关联的 Service。
+	// 遍历services，获取ingress
+	var ingressList []networkingv1.Ingress
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
+		Resource(&networkingv1.Ingress{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		WithCache(p.kubectl.Statement.CacheTTL).
+		List(&ingressList).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 过滤ingressList，只保留与services关联的ingress
+	var result []*networkingv1.Ingress
+	for _, ingress := range ingressList {
+		if slices.Contains(servicesName, ingress.Spec.Rules[0].Host) {
+			result = append(result, &ingress)
+		}
+	}
+	// 遍历 Ingress 检查关联
+	for _, ingress := range ingressList {
+		if ingress.Spec.DefaultBackend != nil {
+			if ingress.Spec.DefaultBackend.Service != nil && ingress.Spec.DefaultBackend.Service.Name != "" {
+				if slices.Contains(servicesName, ingress.Spec.DefaultBackend.Service.Name) {
+					result = append(result, &ingress)
+				}
+			}
+		}
+
+		for _, rule := range ingress.Spec.Rules {
+			if rule.HTTP != nil {
+				for _, path := range rule.HTTP.Paths {
+					if path.Backend.Service != nil && path.Backend.Service.Name != "" {
+
+						backName := path.Backend.Service.Name
+						if slices.Contains(servicesName, backName) {
+							result = append(result, &ingress)
+						}
+					}
+				}
+
+			}
+
+		}
+	}
+
 	return result, nil
 }
