@@ -398,6 +398,10 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 	}
 	podLabels := pod.GetLabels()
 
+	if len(podLabels) == 0 {
+		return nil, nil
+	}
+
 	var services []*v1.Service
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.Service{}).
@@ -473,6 +477,10 @@ func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 		}
 	}
 
+	if len(pvcNames) == 0 {
+		return nil, nil
+	}
+
 	// 找出同ns下pvc的列表，过滤pvcNames
 	var pvcList []*v1.PersistentVolumeClaim
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
@@ -497,6 +505,10 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 	services, err := p.LinkedService()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(services) == 0 {
+		return nil, nil
 	}
 
 	var servicesName []string
@@ -552,4 +564,64 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 	}
 
 	return result, nil
+}
+
+// 获取Pod相关的ConfigMap
+func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+	// 找打configmap 名称列表
+	var configMapNames []string
+	for _, volume := range pod.Spec.Volumes {
+		if volume.ConfigMap != nil {
+			configMapNames = append(configMapNames, volume.ConfigMap.Name)
+		}
+	}
+	if len(configMapNames) == 0 {
+		return nil, nil
+	}
+	// 找出同ns下configmap的列表，过滤configMapNames
+	var configMapList []*v1.ConfigMap
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
+		Resource(&v1.ConfigMap{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		Where("metadata.name in " + utils.StringListToSQLIn(configMapNames)).
+		List(&configMapList).Error
+	if err != nil {
+		return nil, err
+	}
+	return configMapList, nil
+}
+
+// 获取Pod相关的Secret
+func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+	// 找打secret 名称列表
+	var secretNames []string
+	for _, volume := range pod.Spec.Volumes {
+		if volume.Secret != nil {
+			secretNames = append(secretNames, volume.Secret.SecretName)
+		}
+	}
+	if len(secretNames) == 0 {
+		return nil, nil
+	}
+	// 找出同ns下secret的列表，过滤secretNames
+	var secretList []*v1.Secret
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
+		Resource(&v1.Secret{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		Where("metadata.name in " + utils.StringListToSQLIn(secretNames)).
+		List(&secretList).Error
+	if err != nil {
+		return nil, err
+	}
+	return secretList, nil
 }
