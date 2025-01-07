@@ -141,7 +141,7 @@ func TestPodLinkPVC(t *testing.T) {
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: my-pvc
+  name: my-pod-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -153,7 +153,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: my-pod
+  name: my-pod-pvc
 spec:
   containers:
   - name: my-container
@@ -166,13 +166,13 @@ spec:
   volumes:
   - name: my-volume
     persistentVolumeClaim:
-      claimName: my-pvc
+      claimName: my-pod-pvc
 `
 	kom.DefaultCluster().Applier().Apply(yaml)
 	time.Sleep(10 * time.Second)
 	pvcs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
-		Name("my-pod").Ctl().Pod().LinkedPVC()
+		Name("my-pod-pvc").Ctl().Pod().LinkedPVC()
 	if err != nil {
 		t.Logf("get pod linked pvc error %v\n", err.Error())
 		return
@@ -185,7 +185,7 @@ spec:
 		pvcNames = append(pvcNames, pvc.Name)
 	}
 	//检查pvcs列表是否包含my-pvc
-	if !slices.Contains(pvcNames, "my-pvc") {
-		t.Errorf("my-pvc not found in pvcs")
+	if !slices.Contains(pvcNames, "my-pod-pvc") {
+		t.Errorf("my-pod-pvc not found in pvcs")
 	}
 }
