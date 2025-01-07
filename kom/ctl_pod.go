@@ -597,6 +597,8 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 }
 
 // LinkedSecret 获取Pod相关的Secret
+// 在Secret 注解中，增加一个reason字段,记录，pod中的SecretVolume对应的Items []KeyToPath
+// 从pod、container的挂载中，找出secret挂载的文件
 func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
