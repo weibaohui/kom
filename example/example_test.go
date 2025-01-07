@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -68,13 +67,13 @@ spec:
 		fmt.Printf("%s\n", s)
 	}
 
-	if utils.WaitUntil(checkCondition, interval, timeout) {
-		fmt.Println("Check succeeded, main process exiting.")
-	} else {
-		fmt.Println("Check failed due to timeout.")
-	}
+	// if utils.WaitUntil(checkCondition, interval, timeout) {
+	// 	fmt.Println("Check succeeded, main process exiting.")
+	// } else {
+	// 	fmt.Println("Check failed due to timeout.")
+	// }
 
-	fmt.Println("Stopped checking condition.")
+	// fmt.Println("Stopped checking condition.")
 
 }
 func CleanTestDeploy() {
