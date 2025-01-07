@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -187,5 +188,24 @@ spec:
 	//检查pvcs列表是否包含my-pvc
 	if !slices.Contains(pvcNames, "my-pod-pvc") {
 		t.Errorf("my-pod-pvc not found in pvcs")
+	}
+}
+
+func TestPodLinkEnv(t *testing.T) {
+	kom.DefaultCluster().Applier().Apply(podLinkYaml)
+	time.Sleep(10 * time.Second)
+	envs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("nginx-pod").Ctl().Pod().LinkedEnv()
+	if err != nil {
+		t.Logf("get pod linked env error %v\n", err.Error())
+		return
+	}
+
+	//json输出
+	t.Logf("envs %v\n", utils.ToJSON(envs))
+	//逐行输出
+	for _, env := range envs {
+		t.Logf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
 	}
 }
