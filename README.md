@@ -356,6 +356,13 @@ for _, endpoint := range endpoints {
 	fmt.Printf("endpoint name %v\n", endpoint.Name)
 }
 ```
+#### 获取关联资源-Env
+```go
+envs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedEnv()
+for _, env := range envs {
+		fmt.Printf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
+	}
+```
 
 ### 5. 自定义资源定义（CRD）增删改查及Watch操作
 在没有CR定义的情况下，如何进行增删改查操作。操作方式同k8s内置资源。
