@@ -566,7 +566,7 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 	return result, nil
 }
 
-// 获取Pod相关的ConfigMap
+// LinkedConfigMap 获取Pod相关的ConfigMap
 func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
@@ -596,7 +596,7 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	return configMapList, nil
 }
 
-// 获取Pod相关的Secret
+// LinkedSecret 获取Pod相关的Secret
 func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	var pod v1.Pod
 	err := p.kubectl.Get(&pod).Error
@@ -653,7 +653,7 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 		err = p.kubectl.newInstance().Resource(&v1.Pod{}).
 			WithContext(p.kubectl.Statement.Context).
 			Namespace(p.kubectl.Statement.Namespace).
-			Name(p.kubectl.Statement.Name).
+			Name(p.kubectl.Statement.Name).Ctl().Pod().
 			ContainerName(container.Name).
 			Command("env").
 			Execute(&result).Error
