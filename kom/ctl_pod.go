@@ -767,3 +767,86 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 
 	return envs, nil
 }
+
+// 提取pod 定义中的env 定义
+func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
+	// 先获取pod，从pod中读取容器列表
+	var pod v1.Pod
+	err := p.kubectl.Get(&pod).Error
+	if err != nil {
+		return nil, err
+	}
+	var envs []*Env
+	for _, container := range pod.Spec.Containers {
+
+		for _, env := range container.Env {
+
+			envHolder := &Env{ContainerName: container.Name, EnvName: env.Name, EnvValue: env.Value}
+			if envHolder.EnvValue != "" {
+				envs = append(envs, envHolder)
+				continue
+			}
+
+			//ref 有多种情况，需要判断
+			//FieldRef\ResourceFieldRef\ConfigMapKeyRef\SecretKeyRef
+			//分别获取这四种情况的值，应该是四种中的某一种
+			// 获取env.ValueFrom.FieldRef.FieldPath的值
+			if env.ValueFrom != nil && env.ValueFrom.FieldRef != nil && env.ValueFrom.FieldRef.FieldPath != "" {
+				envHolder.EnvValue = fmt.Sprintf("[Field] %s", env.ValueFrom.FieldRef.FieldPath)
+			}
+
+			// 		 - name: CPU_REQUEST
+			//     valueFrom:
+			//       resourceFieldRef:
+			//         containerName: multi-env-container
+			//         resource: requests.cpu
+			//   - name: MEMORY_LIMIT
+			//     valueFrom:
+			//       resourceFieldRef:
+			//         containerName: multi-env-container
+			//         resource: limits.memory
+			if env.ValueFrom != nil && env.ValueFrom.ResourceFieldRef != nil && env.ValueFrom.ResourceFieldRef.Resource != "" {
+				envHolder.EnvValue = fmt.Sprintf("[Container] %s/%s", env.ValueFrom.ResourceFieldRef.ContainerName, env.ValueFrom.ResourceFieldRef.Resource)
+			}
+
+			// configMapKeyRef:
+			// name: my-env-configmap
+			// key: env.list
+			if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil && env.ValueFrom.ConfigMapKeyRef.Key != "" {
+				envHolder.EnvValue = fmt.Sprintf("[ConfigMap] %s/%s", env.ValueFrom.ConfigMapKeyRef.Name, env.ValueFrom.ConfigMapKeyRef.Key)
+			}
+
+			//secretKeyRef:
+			// name: db-credentials
+			// key: DB_PASSWORD
+			if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil && env.ValueFrom.SecretKeyRef.Key != "" {
+				envHolder.EnvValue = fmt.Sprintf("[Secret] %s/%s", env.ValueFrom.SecretKeyRef.Name, env.ValueFrom.SecretKeyRef.Key)
+			}
+			envs = append(envs, envHolder)
+
+		}
+
+		for _, envFrom := range container.EnvFrom {
+
+			if envFrom.ConfigMapRef != nil && envFrom.ConfigMapRef.Name != "" {
+				envs = append(envs,
+					&Env{
+						ContainerName: container.Name,
+						EnvName:       envFrom.ConfigMapRef.Name,
+						EnvValue:      fmt.Sprintf("[ConfigMap] %s", envFrom.ConfigMapRef.Name),
+					},
+				)
+			}
+			if envFrom.SecretRef != nil && envFrom.SecretRef.Name != "" {
+				envs = append(envs,
+					&Env{
+						ContainerName: container.Name,
+						EnvName:       envFrom.SecretRef.Name,
+						EnvValue:      fmt.Sprintf("[Secret] %s", envFrom.SecretRef.Name),
+					},
+				)
+			}
+		}
+	}
+	return envs, nil
+}
