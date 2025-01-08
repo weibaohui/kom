@@ -73,13 +73,13 @@ func TestPodLinkService(t *testing.T) {
 		t.Logf("service name %v\n", service.Name)
 	}
 
-	//获取serviceNames列表
+	// 获取serviceNames列表
 	serviceNames := []string{}
 	for _, service := range services {
 		serviceNames = append(serviceNames, service.Name)
 	}
 	t.Logf("serviceNames %v\n", serviceNames)
-	//检查serviceNames列表是否包含nginx-service
+	// 检查serviceNames列表是否包含nginx-service
 	if !slices.Contains(serviceNames, "nginx-service") {
 		t.Errorf("nginx-service not found in serviceNames")
 	}
@@ -99,13 +99,13 @@ func TestPodLinkEndpoints(t *testing.T) {
 		t.Logf("endpoint name %v\n", endpoint.Name)
 	}
 
-	//获取serviceNames列表
+	// 获取serviceNames列表
 	names := []string{}
 	for _, endpoint := range endpoints {
 		names = append(names, endpoint.Name)
 	}
 	t.Logf("names %v\n", names)
-	//检查serviceNames列表是否包含nginx-service
+	// 检查serviceNames列表是否包含nginx-service
 	if !slices.Contains(names, "nginx-service") {
 		t.Errorf("nginx-service not found in endpoints")
 	}
@@ -124,13 +124,13 @@ func TestPodLinkIngress(t *testing.T) {
 		t.Logf("ingress name %v\n", ingress.Name)
 	}
 
-	//获取ingressNames列表
+	// 获取ingressNames列表
 	names := []string{}
 	for _, ingress := range ingresses {
 		names = append(names, ingress.Name)
 	}
 	t.Logf("names %v\n", names)
-	//检查serviceNames列表是否包含nginx-service
+	// 检查serviceNames列表是否包含nginx-service
 	if !slices.Contains(names, "nginx-ingress") {
 		t.Errorf("nginx-ingress not found in ingresses")
 	}
@@ -185,7 +185,7 @@ spec:
 	for _, pvc := range pvcs {
 		pvcNames = append(pvcNames, pvc.Name)
 	}
-	//检查pvcs列表是否包含my-pvc
+	// 检查pvcs列表是否包含my-pvc
 	if !slices.Contains(pvcNames, "my-pod-pvc") {
 		t.Errorf("my-pod-pvc not found in pvcs")
 	}
@@ -202,9 +202,9 @@ func TestPodLinkEnv(t *testing.T) {
 		return
 	}
 
-	//json输出
+	// json输出
 	t.Logf("envs %v\n", utils.ToJSON(envs))
-	//逐行输出
+	// 逐行输出
 	for _, env := range envs {
 		t.Logf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
 	}
@@ -404,7 +404,7 @@ spec:
 	for _, configMap := range configMaps {
 		configMapNames = append(configMapNames, configMap.Name)
 		t.Logf("configMapMounts %s %v\n", configMap.Name, configMap.Annotations["configMapMounts"])
-		//json configmap
+		// json configmap
 		t.Logf("configMap JSON\n %v\n", utils.ToJSON(configMap))
 	}
 	// 检查configMaps列表是否包含my-configmap
@@ -412,4 +412,258 @@ spec:
 		t.Errorf("my-configmap not found in configMaps")
 	}
 
+}
+
+func TestPodLinkEnvFrom(t *testing.T) {
+	yaml := `
+# ConfigMap 定义
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_COLOR: blue
+  APP_MODE: prod
+---
+# Secret 定义
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+type: Opaque
+data:
+  DB_USERNAME: dXNlcm5hbWU=  # 这是 "username" 的 Base64 编码
+  DB_PASSWORD: cGFzc3dvcmQ=  # 这是 "password" 的 Base64 编码
+---
+# 用于从文件加载环境变量的 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-env-configmap
+data:
+  env.list: "FROM_FILE_VARIABLE=This is a variable from file"	
+---
+# Pod 定义
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-env-pod-1
+spec:
+  containers:
+  - name: multi-env-container
+    image: busybox:1.35.0
+    command: ["tail", "-f", "/dev/null"]
+    env:
+      # 直接定义环境变量
+      - name: DIRECT_VARIABLE
+        value: "This is a direct variable"
+      # 从文件加载环境变量
+      - name: FROM_FILE_VARIABLE
+        valueFrom:
+          configMapKeyRef:
+            name: my-env-configmap
+            key: env.list
+      # 从 ConfigMap 中获取环境变量
+      - name: CONFIGMAP_VARIABLE
+        valueFrom:
+          configMapKeyRef:
+            name: app-config
+            key: APP_COLOR
+      # 从 Secret 中单个获取环境变量
+      - name: DB_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: db-credentials
+            key: DB_USERNAME
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: db-credentials
+            key: DB_PASSWORD
+      # 从 Pod 字段中获取环境变量
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      # 从 Downward API 中通过 resourceFieldRef 获取环境变量
+      - name: CPU_REQUEST
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: requests.cpu
+      - name: MEMORY_LIMIT
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: limits.memory
+    envFrom:
+      # 从文件加载环境变量的另一种方式
+      - configMapRef:
+          name: my-env-configmap
+      # 从 Secret 中一次性获取多个环境变量
+      - secretRef:
+          name: db-credentials
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "128Mi"
+      limits:
+        cpu: "400m"
+        memory: "256Mi"
+  volumes:
+    - name: envfile-volume
+      configMap:
+        name: my-env-configmap
+
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	envs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("multi-env-pod-1").Ctl().Pod().LinkedEnvFromPod()
+	if err != nil {
+		t.Logf("get pod linked env error %v\n", err.Error())
+		return
+	}
+	t.Logf("envs %v\n", utils.ToJSON(envs))
+}
+func TestPodLinkEnvFrom2(t *testing.T) {
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-env-pod-2
+spec:
+  containers:
+  - name: multi-env-container
+    image: busybox:1.35.0
+    command: ["tail", "-f", "/dev/null"]
+    env:
+      # 直接定义环境变量
+      - name: DIRECT_VARIABLE
+        value: "This is a direct variable"
+      # 从 Pod 字段中获取环境变量
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      # 从 Downward API 中通过 resourceFieldRef 获取环境变量
+      - name: CPU_REQUEST
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: requests.cpu
+      - name: MEMORY_LIMIT
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: limits.memory
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "128Mi"
+      limits:
+        cpu: "400m"
+        memory: "256Mi"
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	envs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("multi-env-pod-2").Ctl().Pod().LinkedEnvFromPod()
+	if err != nil {
+		t.Logf("get pod linked env error %v\n", err.Error())
+		return
+	}
+	t.Logf("envs %v\n", utils.ToJSON(envs))
+}
+
+func TestPodLinkEnvFrom3(t *testing.T) {
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-env-pod-3
+spec:
+  containers:
+  - name: c4
+    image: busybox:1.35.0
+    command: ["tail", "-f", "/dev/null"]
+    env:
+      # 直接定义环境变量
+      - name: DIRECT_VARIABLE
+        value: "This is a direct variable"
+      # 从 Pod 字段中获取环境变量
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      # 从 Downward API 中通过 resourceFieldRef 获取环境变量
+      - name: CPU_REQUEST
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: requests.cpu
+      - name: MEMORY_LIMIT
+        valueFrom:
+          resourceFieldRef:
+            containerName: multi-env-container
+            resource: limits.memory  
+  - name: multi-env-container
+    image: busybox:1.35.0
+    command: ["tail", "-f", "/dev/null"]
+    env:
+      # 直接定义环境变量
+      - name: DIRECT_VARIABLE
+        value: "This is a direct variable"
+      # 从 Pod 字段中获取环境变量
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      # 从 Downward API 中通过 resourceFieldRef 获取环境变量
+      - name: CPU_REQUEST
+        valueFrom:
+          resourceFieldRef:
+            containerName: c4
+            resource: requests.cpu
+      - name: MEMORY_LIMIT
+        valueFrom:
+          resourceFieldRef:
+            containerName: c4
+            resource: limits.memory
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "128Mi"
+      limits:
+        cpu: "400m"
+        memory: "256Mi"
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	envs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("multi-env-pod-3").Ctl().Pod().LinkedEnvFromPod()
+	if err != nil {
+		t.Logf("get pod linked env error %v\n", err.Error())
+		return
+	}
+	t.Logf("envs %v\n", utils.ToJSON(envs))
 }
