@@ -406,6 +406,7 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.Service{}).
 		Namespace(p.kubectl.Statement.Namespace).
+		RemoveManagedFields().
 		List(&services).Error
 
 	if err != nil {
@@ -455,6 +456,7 @@ func (p *pod) LinkedEndpoints() ([]*v1.Endpoints, error) {
 		Resource(&v1.Endpoints{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		Where("metadata.name in " + utils.StringListToSQLIn(names)).
+		RemoveManagedFields().
 		List(&endpoints).Error
 	if err != nil {
 		return nil, err
@@ -487,6 +489,7 @@ func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 		Resource(&v1.PersistentVolumeClaim{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		Where("metadata.name in " + utils.StringListToSQLIn(pvcNames)).
+		RemoveManagedFields().
 		List(&pvcList).Error
 	if err != nil {
 		return nil, err
@@ -524,6 +527,7 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 		Resource(&networkingv1.Ingress{}).
 		Namespace(p.kubectl.Statement.Namespace).
 		WithCache(p.kubectl.Statement.CacheTTL).
+		RemoveManagedFields().
 		List(&ingressList).Error
 	if err != nil {
 		return nil, err
@@ -598,6 +602,7 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.ConfigMap{}).
 		Namespace(p.kubectl.Statement.Namespace).
+		RemoveManagedFields().
 		Where("metadata.name in " + utils.StringListToSQLIn(configMapNames)).
 		List(&configMapList).Error
 	if err != nil {
@@ -669,6 +674,7 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
 		Resource(&v1.Secret{}).
 		Namespace(p.kubectl.Statement.Namespace).
+		RemoveManagedFields().
 		Where("metadata.name in " + utils.StringListToSQLIn(secretNames)).
 		List(&secretList).Error
 	if err != nil {
