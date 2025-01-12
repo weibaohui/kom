@@ -759,7 +759,7 @@ spec:
 		return
 	}
 }
-func TestPodLinkNode(t *testing.T) {
+func TestPodLinkNodeNodeSelector(t *testing.T) {
 
 	yaml := `
 apiVersion: v1
@@ -785,6 +785,33 @@ spec:
 	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
 		Name("cpu-node-affinity-pod").Ctl().Pod().LinkedNode()
+	if err != nil {
+		t.Logf("get pod linked node error %v\n", err.Error())
+		return
+	}
+	t.Logf("获取调度节点 %d 个", len(nodes))
+	for _, node := range nodes {
+		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
+	}
+
+}
+func TestPodLinkNodeNoSpec(t *testing.T) {
+
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: normal-pod
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("normal-pod").Ctl().Pod().LinkedNode()
 	if err != nil {
 		t.Logf("get pod linked node error %v\n", err.Error())
 		return
