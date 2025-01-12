@@ -190,6 +190,42 @@ spec:
 		t.Errorf("my-pod-pvc not found in pvcs")
 	}
 }
+func TestPodLinkNode(t *testing.T) {
+
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-node-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+  containers:
+    - name: nginx
+      image: nginx
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("cpu-node-affinity-pod").Ctl().Pod().LinkedNode()
+	if err != nil {
+		t.Logf("get pod linked node error %v\n", err.Error())
+		return
+	}
+	t.Logf("获取调度节点 %d 个", len(nodes))
+	for _, node := range nodes {
+		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
+	}
+
+}
 func TestPodLinkPV(t *testing.T) {
 
 	yaml := `
@@ -714,4 +750,48 @@ spec:
 		return
 	}
 	t.Logf("envs %v\n", utils.ToJSON(envs))
+}
+func TestPodLinkNodeTaint(t *testing.T) {
+
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: arm-tolerant-pod
+spec:
+  tolerations:
+    - key: "architecture"
+      operator: "Equal"
+      value: "arm64"
+      effect: "NoSchedule"
+  containers:
+    - name: nginx
+      image: nginx
+
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	err := kom.DefaultCluster().Resource(&v1.Node{}).Name("kind-control-plane").Ctl().Node().Taint(
+		"architecture=arm64:NoSchedule")
+	if err != nil {
+		t.Logf("taint node error %v\n", err)
+		return
+	}
+	time.Sleep(10 * time.Second)
+	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("arm-tolerant-pod").Ctl().Pod().LinkedNode()
+	if err != nil {
+		t.Logf("get pod linked node error %v\n", err.Error())
+		return
+	}
+	t.Logf("获取调度节点 %d 个", len(nodes))
+	for _, node := range nodes {
+		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
+	}
+	err = kom.DefaultCluster().Resource(&v1.Node{}).Name("kind-control-plane").Ctl().Node().UnTaint(
+		"architecture=arm64:NoSchedule")
+	if err != nil {
+		t.Logf("taint node error %v\n", err)
+		return
+	}
 }
