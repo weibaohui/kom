@@ -949,8 +949,15 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 
 	// 污点 容忍度
 	// 容忍度只要有一个满足即可。
+	// 如果节点有污点，需要判断
+	// 如果节点没有污点，不需要判断
 	if item.Spec.Tolerations != nil && len(item.Spec.Tolerations) > 0 {
+
 		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+			// 如果节点没有污点，不需要判断
+			if n.Spec.Taints == nil || len(n.Spec.Taints) == 0 {
+				return true
+			}
 			for _, t := range n.Spec.Taints {
 				if isTaintTolerated(t, item.Spec.Tolerations) {
 					selectedNodeList = append(selectedNodeList, &SelectedNode{
