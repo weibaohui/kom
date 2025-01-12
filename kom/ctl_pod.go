@@ -877,7 +877,7 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 }
 
 type SelectedNode struct {
-	Reason string `json:"type,omitempty"`      // 选中类型，NodeSelector/NodeAffinity/Tolerations/NodeName
+	Reason string `json:"reason,omitempty"`    // 选中类型，NodeSelector/NodeAffinity/Tolerations/NodeName
 	Name   string `json:"node_name,omitempty"` // 节点名称
 }
 
