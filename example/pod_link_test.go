@@ -190,42 +190,6 @@ spec:
 		t.Errorf("my-pod-pvc not found in pvcs")
 	}
 }
-func TestPodLinkNode(t *testing.T) {
-
-	yaml := `
-apiVersion: v1
-kind: Pod
-metadata:
-  name: cpu-node-affinity-pod
-spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                  - arm64
-  containers:
-    - name: nginx
-      image: nginx
-`
-	kom.DefaultCluster().Applier().Apply(yaml)
-	time.Sleep(10 * time.Second)
-	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
-		Namespace("default").
-		Name("cpu-node-affinity-pod").Ctl().Pod().LinkedNode()
-	if err != nil {
-		t.Logf("get pod linked node error %v\n", err.Error())
-		return
-	}
-	t.Logf("获取调度节点 %d 个", len(nodes))
-	for _, node := range nodes {
-		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
-	}
-
-}
 func TestPodLinkPV(t *testing.T) {
 
 	yaml := `
@@ -794,4 +758,40 @@ spec:
 		t.Logf("taint node error %v\n", err)
 		return
 	}
+}
+func TestPodLinkNode(t *testing.T) {
+
+	yaml := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-node-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+  containers:
+    - name: nginx
+      image: nginx
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	nodes, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("cpu-node-affinity-pod").Ctl().Pod().LinkedNode()
+	if err != nil {
+		t.Logf("get pod linked node error %v\n", err.Error())
+		return
+	}
+	t.Logf("获取调度节点 %d 个", len(nodes))
+	for _, node := range nodes {
+		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
+	}
+
 }
