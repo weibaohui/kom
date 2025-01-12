@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -418,14 +419,9 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 		serviceLabels := svc.Spec.Selector
 		// 遍历selector
 		// serviceLabels中所有的kv,都必须在podLabels中存在,且值相等
-		// 如果有一个不满足,则跳过
-		for k, v := range serviceLabels {
-			if podLabels[k] != v {
-				continue
-			}
+		if utils.CompareMapContains(serviceLabels, podLabels) {
 			result = append(result, svc)
 		}
-
 	}
 	return result, nil
 }
@@ -605,14 +601,14 @@ type PodMount struct {
 
 // LinkedConfigMap 获取Pod相关的ConfigMap
 func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
-	var pod v1.Pod
-	err := p.kubectl.Get(&pod).Error
+	var item *v1.Pod
+	err := p.kubectl.Get(&item).Error
 	if err != nil {
 		return nil, err
 	}
 	// 找打configmap 名称列表
 	var configMapNames []string
-	for _, volume := range pod.Spec.Volumes {
+	for _, volume := range item.Spec.Volumes {
 		if volume.ConfigMap != nil {
 			configMapNames = append(configMapNames, volume.ConfigMap.Name)
 		}
@@ -632,8 +628,8 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 		return nil, err
 	}
 
-	// pod.Spec.Containers.volumeMounts
-	// pod.Spec.Volumes
+	// item.Spec.Containers.volumeMounts
+	// item.Spec.Volumes
 	// 通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
 	// 通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
 	// 提取volumeMounts中的mountPath、subPath
@@ -643,10 +639,10 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 		var configMapMounts []*PodMount
 
 		configMapName := configMap.Name
-		for _, volume := range pod.Spec.Volumes {
+		for _, volume := range item.Spec.Volumes {
 			if volume.ConfigMap != nil && volume.ConfigMap.Name == configMapName {
 
-				for _, container := range pod.Spec.Containers {
+				for _, container := range item.Spec.Containers {
 					for _, volumeMount := range container.VolumeMounts {
 						if volumeMount.Name == volume.Name {
 							cm := PodMount{
@@ -677,14 +673,14 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 
 // LinkedSecret 获取Pod相关的Secret
 func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
-	var pod v1.Pod
-	err := p.kubectl.Get(&pod).Error
+	var item *v1.Pod
+	err := p.kubectl.Get(&item).Error
 	if err != nil {
 		return nil, err
 	}
 	// 找打secret 名称列表
 	var secretNames []string
-	for _, volume := range pod.Spec.Volumes {
+	for _, volume := range item.Spec.Volumes {
 		if volume.Secret != nil {
 			secretNames = append(secretNames, volume.Secret.SecretName)
 		}
@@ -704,8 +700,8 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 		return nil, err
 	}
 
-	// pod.Spec.Containers.volumeMounts
-	// pod.Spec.Volumes
+	// item.Spec.Containers.volumeMounts
+	// item.Spec.Volumes
 	// 通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
 	// 通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
 	// 提取volumeMounts中的mountPath、subPath
@@ -715,10 +711,10 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 		var secretMounts []*PodMount
 
 		secretName := secret.Name
-		for _, volume := range pod.Spec.Volumes {
+		for _, volume := range item.Spec.Volumes {
 			if volume.Secret != nil && volume.Secret.SecretName == secretName {
 
-				for _, container := range pod.Spec.Containers {
+				for _, container := range item.Spec.Containers {
 					for _, volumeMount := range container.VolumeMounts {
 						if volumeMount.Name == volume.Name {
 							sm := PodMount{
@@ -758,8 +754,8 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 	// 先获取容器列表，然后获取容器的环境变量，然后组装到Env结构体中
 
 	// 先获取pod，从pod中读取容器列表
-	var pod v1.Pod
-	err := p.kubectl.Get(&pod).Error
+	var item *v1.Pod
+	err := p.kubectl.Get(&item).Error
 	if err != nil {
 		return nil, err
 	}
@@ -767,7 +763,7 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 	var envs []*Env
 
 	// 获取容器名称列表
-	for _, container := range pod.Spec.Containers {
+	for _, container := range item.Spec.Containers {
 
 		// 进到容器中执行ENV命令，获取输出字符串
 		var result []byte
@@ -878,4 +874,42 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 		}
 	}
 	return envs, nil
+}
+
+// LinkedNode 可调度主机
+// 暂不支持针对资源限定的cpu 内存主机筛选
+func (p *pod) LinkedNode() ([]*v1.Node, error) {
+
+	var item *v1.Pod
+	err := p.kubectl.Get(&item).Error
+	if err != nil {
+		return nil, err
+	}
+	if item == nil {
+		return nil, fmt.Errorf("")
+	}
+	var nodeList []*v1.Node
+	err = p.kubectl.newInstance().Resource(&v1.Node{}).
+		List(&nodeList).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 0. 配置了nodeName，就只有这一个
+	if item.Spec.NodeName != "" {
+		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+			return n.Name == item.Spec.NodeName
+		})
+	}
+	// 1. NodeSelector
+	// 这个配置表示 Pod 只能调度到带有标签 disktype=ssd 的节点上。
+	// NodeSelector中的标签，Node上必须全部满足
+	if item.Spec.NodeSelector != nil {
+		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+			labels := n.Labels
+			return utils.CompareMapContains(item.Spec.NodeSelector, labels)
+		})
+	}
+
+	return nodeList, nil
 }
