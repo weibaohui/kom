@@ -190,6 +190,54 @@ spec:
 		t.Errorf("my-pod-pvc not found in pvcs")
 	}
 }
+func TestPodLinkPV(t *testing.T) {
+
+	yaml := `
+	 # 定义 PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pod-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 定义 Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod-pvc
+spec:
+  containers:
+  - name: my-container
+    image: nginx:1.23.3
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: my-volume
+      mountPath: /data
+  volumes:
+  - name: my-volume
+    persistentVolumeClaim:
+      claimName: my-pod-pvc
+`
+	kom.DefaultCluster().Applier().Apply(yaml)
+	time.Sleep(10 * time.Second)
+	pvs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("my-pod-pvc").Ctl().Pod().LinkedPV()
+	if err != nil {
+		t.Logf("get pod linked pv error %v\n", err.Error())
+		return
+	}
+	for _, pv := range pvs {
+		t.Logf("pv name %v\n", pv.Name)
+	}
+
+}
 
 func TestPodLinkEnv(t *testing.T) {
 	kom.DefaultCluster().Applier().Apply(podLinkYaml)
