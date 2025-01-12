@@ -973,7 +973,7 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 				// 无法区分是因为nodeSelector，还是nodeAffinity导致的调度成功
 				for _, selectedNode := range selectedNodeList {
 					if selectedNode.Name == item.Spec.NodeName {
-						return true
+						return false
 					}
 				}
 				// 第一次
