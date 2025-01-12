@@ -31,6 +31,7 @@ type TreeNode struct {
 	group           string      // 从ID中尝试解析GVK，方便查询，不一定准确
 	version         string      // 从ID中尝试解析GVK，方便查询
 	kind            string      // 从ID中尝试解析GVK，方便查询
+	FullId          string      `json:"full_id,omitempty"` // 完全ID
 }
 
 // SchemaDefinition 表示根定义
@@ -125,7 +126,7 @@ func parseOpenAPISchema(schemaJSON string) (TreeNode, error) {
 	definitionsMap[def.Name] = def
 	// klog.V(2).Infof("add def length %d", len(definitionsMap))
 
-	return buildTree(def), nil
+	return buildTree(def, ""), nil
 }
 func parseID(id string) (group, version, kind string) {
 	parts := strings.Split(id, ".")
@@ -149,7 +150,7 @@ func parseID(id string) (group, version, kind string) {
 }
 
 // buildTree 根据 SchemaDefinition 构建 TreeNode
-func buildTree(def SchemaDefinition) TreeNode {
+func buildTree(def SchemaDefinition, parentId string) TreeNode {
 	// todo 应该使用GVK作为
 	klog.V(6).Infof("buildTree %s", def.Name)
 
@@ -163,12 +164,13 @@ func buildTree(def SchemaDefinition) TreeNode {
 	var children []*TreeNode
 
 	for _, prop := range def.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(prop))
+		children = append(children, buildPropertyNode(prop, def.Name))
 	}
 
 	group, version, kind := parseID(def.Name)
 	return TreeNode{
 		ID:          def.Name,
+		FullId:      parentId + "." + def.Name,
 		Label:       label,
 		Value:       utils.RandNLengthString(20),
 		Description: def.Value.Description,
@@ -182,9 +184,10 @@ func buildTree(def SchemaDefinition) TreeNode {
 }
 
 // buildPropertyNode 根据 Property 构建 TreeNode
-func buildPropertyNode(prop Property) *TreeNode {
+func buildPropertyNode(prop Property, parentId string) *TreeNode {
 	label := prop.Name
 	nodeID := prop.Name
+	fullID := parentId + "." + prop.Name
 	description := prop.Value.Description
 	nodeType := ""
 	ref := ""
@@ -209,13 +212,14 @@ func buildPropertyNode(prop Property) *TreeNode {
 		// 这个可能会导致 循环引用溢出
 		if def, exists := definitionsMap[refName]; exists {
 			if !slice.Contain(blackList, refName) {
-				childNode := buildTree(def)
+				childNode := buildTree(def, fullID)
 				children = append(children, &childNode)
 			}
 		} else {
 			// 如果引用的定义不存在，可以记录为一个叶子节点或处理为需要进一步扩展
 			children = append(children, &TreeNode{
 				ID:          refName,
+				FullId:      fullID + "." + refName,
 				Label:       refName,
 				Value:       refName,
 				Description: "Referenced definition not found",
@@ -224,11 +228,12 @@ func buildPropertyNode(prop Property) *TreeNode {
 	}
 
 	for _, pp := range prop.Value.Properties.AdditionalProperties {
-		children = append(children, buildPropertyNode(pp))
+		children = append(children, buildPropertyNode(pp, fullID))
 	}
 
 	return &TreeNode{
 		ID:          nodeID,
+		FullId:      fullID,
 		Label:       label,
 		Value:       nodeID,
 		Description: description,
