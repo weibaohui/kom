@@ -876,9 +876,16 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 	return envs, nil
 }
 
+type SelectedNode struct {
+	Reason string `json:"type,omitempty"`      // 选中类型
+	Name   string `json:"node_name,omitempty"` // 节点名称
+}
+
 // LinkedNode 可调度主机
 // 暂不支持针对资源限定的cpu 内存主机筛选
-func (p *pod) LinkedNode() ([]*v1.Node, error) {
+func (p *pod) LinkedNode() ([]*SelectedNode, error) {
+
+	var selectedNodeList []*SelectedNode
 
 	var item *v1.Pod
 	err := p.kubectl.Get(&item).Error
@@ -895,21 +902,130 @@ func (p *pod) LinkedNode() ([]*v1.Node, error) {
 		return nil, err
 	}
 
-	// 0. 配置了nodeName，就只有这一个
-	if item.Spec.NodeName != "" {
-		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
-			return n.Name == item.Spec.NodeName
-		})
-	}
 	// 1. NodeSelector
 	// 这个配置表示 Pod 只能调度到带有标签 disktype=ssd 的节点上。
 	// NodeSelector中的标签，Node上必须全部满足
 	if item.Spec.NodeSelector != nil {
 		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
 			labels := n.Labels
-			return utils.CompareMapContains(item.Spec.NodeSelector, labels)
+
+			if utils.CompareMapContains(item.Spec.NodeSelector, labels) {
+				selectedNodeList = append(selectedNodeList, &SelectedNode{
+					Reason: "NodeSelector",
+					Name:   n.Name,
+				})
+				return true
+			}
+			return false
 		})
 	}
 
-	return nodeList, nil
+	// 2. nodeAffinity
+	// requiredDuringSchedulingIgnoredDuringExecution
+	if item.Spec.Affinity != nil && item.Spec.Affinity.NodeAffinity != nil && item.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+		terms := item.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		for _, term := range terms {
+			if term.MatchExpressions != nil && len(term.MatchExpressions) > 0 {
+
+				for _, exp := range term.MatchExpressions {
+					nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+						labels := n.Labels
+
+						if utils.MatchNodeSelectorRequirement(labels, exp) {
+							selectedNodeList = append(selectedNodeList, &SelectedNode{
+								Reason: "NodeAffinity",
+								Name:   n.Name,
+							})
+							return true
+						}
+						return false
+					})
+				}
+
+			}
+		}
+
+	}
+
+	// 污点 容忍度
+	// 容忍度只要有一个满足即可。
+	if item.Spec.Tolerations != nil && len(item.Spec.Tolerations) > 0 {
+		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+			for _, t := range n.Spec.Taints {
+				if isTaintTolerated(t, item.Spec.Tolerations) {
+					selectedNodeList = append(selectedNodeList, &SelectedNode{
+						Reason: "Tolerations",
+						Name:   n.Name,
+					})
+					return true
+				}
+			}
+			return false
+		})
+	}
+	// 最后 配置了nodeName，就只有这一个
+	if item.Spec.NodeName != "" {
+		nodeList = slice.Filter(nodeList, func(index int, n *v1.Node) bool {
+			if n.Name == item.Spec.NodeName {
+
+				// 看看之前有没有，如果有，就不再添加
+				// 因为只要匹配上了，都要填到pod.spec.NodeName上
+				// 无法区分是因为nodeSelector，还是nodeAffinity导致的调度成功
+				for _, selectedNode := range selectedNodeList {
+					if selectedNode.Name == item.Spec.NodeName {
+						return true
+					}
+				}
+				// 第一次
+				selectedNodeList = append(selectedNodeList, &SelectedNode{
+					Reason: "NodeName",
+					Name:   n.Name,
+				})
+				return true
+			}
+			return false
+		})
+
+	}
+	return selectedNodeList, nil
+}
+
+// matchTaintAndToleration checks if a single taint matches a single toleration.
+func matchTaintAndToleration(taint v1.Taint, toleration v1.Toleration) bool {
+	// Check Effect (must match or be empty in toleration)
+	if toleration.Effect != "" && toleration.Effect != taint.Effect {
+		return false
+	}
+
+	// Check Operator and Key
+	switch toleration.Operator {
+	case "Equal":
+		// Key and Value must match
+		if toleration.Key != taint.Key {
+			return false
+		}
+		if toleration.Value != taint.Value {
+			return false
+		}
+	case "Exists":
+		// Only Key needs to match
+		if toleration.Key != "" && toleration.Key != taint.Key {
+			return false
+		}
+	default:
+		// Invalid operator
+		return false
+	}
+
+	return true
+}
+
+// isTaintTolerated checks if a taint on a node is tolerated by any toleration of a pod.
+func isTaintTolerated(taint v1.Taint, tolerations []v1.Toleration) bool {
+	for _, toleration := range tolerations {
+		if matchTaintAndToleration(taint, toleration) {
+			return true
+		}
+	}
+	return false
 }
