@@ -932,6 +932,11 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 						labels := n.Labels
 
 						if utils.MatchNodeSelectorRequirement(labels, exp) {
+							for _, selectedNode := range selectedNodeList {
+								if selectedNode.Name == n.Name {
+									return false
+								}
+							}
 							selectedNodeList = append(selectedNodeList, &SelectedNode{
 								Reason: "NodeAffinity",
 								Name:   n.Name,
@@ -958,8 +963,14 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 			if n.Spec.Taints == nil || len(n.Spec.Taints) == 0 {
 				return true
 			}
+
 			for _, t := range n.Spec.Taints {
 				if isTaintTolerated(t, item.Spec.Tolerations) {
+					for _, selectedNode := range selectedNodeList {
+						if selectedNode.Name == n.Name {
+							return false
+						}
+					}
 					selectedNodeList = append(selectedNodeList, &SelectedNode{
 						Reason: "Tolerations",
 						Name:   n.Name,
