@@ -497,6 +497,29 @@ func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 
 	return pvcList, nil
 }
+func (p *pod) LinkedPV() ([]*v1.PersistentVolume, error) {
+
+	pvcList, err := p.LinkedPVC()
+	if err != nil {
+		return nil, err
+	}
+	var pvNames []string
+	for _, pvc := range pvcList {
+		pvNames = append(pvNames, pvc.Spec.VolumeName)
+	}
+	// 找出同ns下pvc的列表，过滤pvcNames
+	var pvList []*v1.PersistentVolume
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).
+		Resource(&v1.PersistentVolume{}).
+		Namespace(p.kubectl.Statement.Namespace).
+		Where("metadata.name in " + utils.StringListToSQLIn(pvNames)).
+		RemoveManagedFields().
+		List(&pvList).Error
+	if err != nil {
+		return nil, err
+	}
+	return pvList, nil
+}
 
 func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 
@@ -609,11 +632,11 @@ func (p *pod) LinkedConfigMap() ([]*v1.ConfigMap, error) {
 		return nil, err
 	}
 
-	//pod.Spec.Containers.volumeMounts
-	//pod.Spec.Volumes
-	//通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
-	//通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
-	//提取volumeMounts中的mountPath、subPath
+	// pod.Spec.Containers.volumeMounts
+	// pod.Spec.Volumes
+	// 通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
+	// 通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
+	// 提取volumeMounts中的mountPath、subPath
 
 	for i := range configMapList {
 		configMap := configMapList[i]
@@ -681,11 +704,11 @@ func (p *pod) LinkedSecret() ([]*v1.Secret, error) {
 		return nil, err
 	}
 
-	//pod.Spec.Containers.volumeMounts
-	//pod.Spec.Volumes
-	//通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
-	//通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
-	//提取volumeMounts中的mountPath、subPath
+	// pod.Spec.Containers.volumeMounts
+	// pod.Spec.Volumes
+	// 通过遍历secretNames，可以找到pod.Spec.Volumes中的volumeName。
+	// 通过volumeName，可以找到pod.Spec.Containers.volumeMounts中的volumeMounts，提取mode
+	// 提取volumeMounts中的mountPath、subPath
 
 	for i := range secretList {
 		secret := secretList[i]
@@ -774,7 +797,7 @@ func (p *pod) LinkedEnv() ([]*Env, error) {
 	return envs, nil
 }
 
-// 提取pod 定义中的env 定义
+// LinkedEnvFromPod 提取pod 定义中的env 定义
 func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 	// 先获取pod，从pod中读取容器列表
 	var pod v1.Pod
@@ -793,9 +816,9 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 				continue
 			}
 
-			//ref 有多种情况，需要判断
-			//FieldRef\ResourceFieldRef\ConfigMapKeyRef\SecretKeyRef
-			//分别获取这四种情况的值，应该是四种中的某一种
+			// ref 有多种情况，需要判断
+			// FieldRef\ResourceFieldRef\ConfigMapKeyRef\SecretKeyRef
+			// 分别获取这四种情况的值，应该是四种中的某一种
 			// 获取env.ValueFrom.FieldRef.FieldPath的值
 			if env.ValueFrom != nil && env.ValueFrom.FieldRef != nil && env.ValueFrom.FieldRef.FieldPath != "" {
 				envHolder.EnvValue = fmt.Sprintf("[Field] %s", env.ValueFrom.FieldRef.FieldPath)
@@ -822,7 +845,7 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 				envHolder.EnvValue = fmt.Sprintf("[ConfigMap] %s/%s", env.ValueFrom.ConfigMapKeyRef.Name, env.ValueFrom.ConfigMapKeyRef.Key)
 			}
 
-			//secretKeyRef:
+			// secretKeyRef:
 			// name: db-credentials
 			// key: DB_PASSWORD
 			if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil && env.ValueFrom.SecretKeyRef.Key != "" {
