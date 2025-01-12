@@ -18,7 +18,7 @@ import (
 func TestMain(m *testing.M) {
 
 	klog.InitFlags(nil)
-	flag.Set("v", "2")
+	flag.Set("v", "6")
 
 	// 初始化操作
 	fmt.Println("Initializing test environment...")
