@@ -7,6 +7,7 @@ import (
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/kom/describe"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 )
@@ -17,6 +18,7 @@ func Describe(k *kom.Kubectl) error {
 	ns := stmt.Namespace
 	name := stmt.Name
 	gvk := k.Statement.GVK
+	namespaced := stmt.Namespaced
 
 	if stmt.GVK.Empty() {
 		return fmt.Errorf("请调用GVK()方法设置GroupVersionKind")
@@ -28,6 +30,18 @@ func Describe(k *kom.Kubectl) error {
 	// 确保 dest 是一个指向字节切片的指针
 	if !(destValue.Kind() == reflect.Ptr && destValue.Elem().Kind() == reflect.Slice) || destValue.Elem().Type().Elem().Kind() != reflect.Uint8 {
 		return fmt.Errorf("请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s")
+	}
+
+	if namespaced {
+		if stmt.AllNamespace {
+			ns = metav1.NamespaceAll
+		} else {
+			if ns == "" {
+				ns = metav1.NamespaceDefault
+			}
+		}
+	} else {
+		ns = metav1.NamespaceNone
 	}
 
 	var output string
