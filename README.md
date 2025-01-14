@@ -348,6 +348,14 @@ for _, pvc := range pvcs {
 	fmt.Printf("pvc name %v\n", pvc.Name)
 }
 ``` 
+#### 获取关联资源-PV
+```go
+// 获取Pod关联的PVC
+pvs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedPV()
+for _, pv := range pvs {
+	fmt.Printf("pv name %v\n", pv.Name)
+}
+``` 
 #### 获取关联资源-Endpoints
 ```go
 // 获取Pod关联的Endpoints
@@ -356,12 +364,29 @@ for _, endpoint := range endpoints {
 	fmt.Printf("endpoint name %v\n", endpoint.Name)
 }
 ```
-#### 获取关联资源-Env
+#### 获取关联资源-运行时Env
+从Pod内执行env命令获得ENV配置信息
 ```go
 envs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedEnv()
 for _, env := range envs {
 		fmt.Printf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
 	}
+```
+#### 获取关联资源-定义Env
+从pod定义上提取ENV配置信息
+```go
+envs, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedEnvFromPod()
+for _, env := range envs {
+		fmt.Printf("env %s %s=%s\n", env.ContainerName, env.EnvName, env.EnvValue)
+	}
+```
+#### 获取关联资源-节点
+根据Pod 定义中声明的NodeSelector、NodeAffinity、污点容忍度、NodeName等配置信息，返回可用节点列表。暂未考虑Pod亲和性、CPU内存等运行时调度因素。
+```go
+nodes, err := kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().LinkedNode()
+for _, node := range nodes {
+    fmt.Printf("reason:%s\t node name %s\n", node.Reason, node.Name)
+}
 ```
 
 ### 5. 自定义资源定义（CRD）增删改查及Watch操作
