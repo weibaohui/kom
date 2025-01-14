@@ -409,3 +409,18 @@ spec:
 	}
 
 }
+func TestForceDelete(t *testing.T) {
+
+	// 删除
+	var pod corev1.Pod
+	err := kom.DefaultCluster().
+		Resource(&pod).
+		Namespace("default").
+		Name("delete-test").
+		ForceDelete().Error
+	if err != nil {
+		t.Errorf("Delete Pod Error %v\n", err)
+	}
+	t.Logf("已经执行删除Pod delete-test 命令")
+
+}
