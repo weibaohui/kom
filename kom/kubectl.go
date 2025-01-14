@@ -61,6 +61,7 @@ func (k *Kubectl) getInstance() *Kubectl {
 			Name:         k.Statement.Name,
 			CacheTTL:     k.Statement.CacheTTL,
 			Filter:       k.Statement.Filter,
+			ForceDelete:  k.Statement.ForceDelete,
 		}
 		return tx
 	}
