@@ -94,43 +94,92 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 }
 
 // matchCondition 判断单个条件是否匹配
+// 如果要处理的字段，对应的是k8s的列表，如 status.addresses[type=InternalIP].address
+// status.addresses是一个数组，status.addresses[type=InternalIP].address 那么取出的address是一个数组，但是这样使用type进行了过滤
+// status.addresses是一个数组，status.addresses.address 那么取出的address也是一个数组，没有按type过滤
+// status:
+//
+//	addresses:
+//	    - address: 172.18.0.2
+//	      type: InternalIP
+//	    - address: kind-control-plane
+//	      type: Hostname
+//
+// 对于 正向操作符（如 =, like, in, between），只要找到一个匹配的值就返回 true。
+// 对于 负向操作符（如 !=, not in, not between），则要确保所有值都不匹配才返回 true。
 func matchCondition(resource unstructured.Unstructured, condition kom.Condition) bool {
 	klog.V(8).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
 
 	// 获取字段值
-	fieldValue, found, err := getNestedFieldAsString(resource.Object, condition.Field)
+	fieldValues, found, err := getNestedFieldAsString(resource.Object, condition.Field)
 	if err != nil || !found {
 		klog.V(6).Infof("not found %s,%v", condition.Field, err)
 		return false
 	}
 
-	// 判断字段类型并进行相应的比较
-	switch condition.Operator {
-	case "=":
-		return compareValue(fieldValue, condition.Value)
-	case "!=":
-		return compareValue(fieldValue, condition.Value) == false
-	case "like":
-		return compareLike(fieldValue, condition.Value)
-	case ">":
-		return compareGreater(fieldValue, condition.Value)
-	case "<":
-		return compareLess(fieldValue, condition.Value)
-	case ">=":
-		return compareGreaterOrEqual(fieldValue, condition.Value)
-	case "<=":
-		return compareLessOrEqual(fieldValue, condition.Value)
-	case "in":
-		return compareIn(fieldValue, condition.Value)
-	case "not in":
-		return compareIn(fieldValue, condition.Value) == false
-	case "between":
-		return compareBetween(fieldValue, condition.Value)
-	case "not between":
-		return compareBetween(fieldValue, condition.Value) == false
-	default:
-		return false
+	// 判断是正向条件还是负向条件
+	isNegativeCondition := condition.Operator == "!=" || condition.Operator == "not in" || condition.Operator == "not between"
+
+	// 处理每个字段值
+	for _, fieldValue := range fieldValues {
+		// 对于负向条件（!=, not in, not between），需要确保所有值都不满足条件
+		switch condition.Operator {
+		case "=":
+			if !isNegativeCondition && compareValue(fieldValue, condition.Value) {
+				return true // 正向条件，找到一个值匹配即返回 true
+			}
+		case "!=":
+			if isNegativeCondition && compareValue(fieldValue, condition.Value) {
+				return false // 负向条件，找到一个匹配值即返回 false
+			}
+		case "like":
+			if !isNegativeCondition && compareLike(fieldValue, condition.Value) {
+				return true
+			}
+		case "in":
+			if !isNegativeCondition && compareIn(fieldValue, condition.Value) {
+				return true
+			}
+		case "not in":
+			if isNegativeCondition && compareIn(fieldValue, condition.Value) {
+				return false
+			}
+		case ">":
+			if !isNegativeCondition && compareGreater(fieldValue, condition.Value) {
+				return true
+			}
+		case "<":
+			if !isNegativeCondition && compareLess(fieldValue, condition.Value) {
+				return true
+			}
+		case ">=":
+			if !isNegativeCondition && compareGreaterOrEqual(fieldValue, condition.Value) {
+				return true
+			}
+		case "<=":
+			if !isNegativeCondition && compareLessOrEqual(fieldValue, condition.Value) {
+				return true
+			}
+		case "between":
+			if !isNegativeCondition && compareBetween(fieldValue, condition.Value) {
+				return true
+			}
+		case "not between":
+			if isNegativeCondition && compareBetween(fieldValue, condition.Value) {
+				return false
+			}
+		default:
+			return false
+		}
 	}
+
+	// 负向条件的情况：只有所有值都不满足条件，才认为不满足条件
+	if isNegativeCondition {
+		return true // 所有值都不满足条件，返回 true
+	}
+
+	// 默认返回 false，表示没有任何一个值满足条件
+	return false
 }
 
 // compareValue 比较值是否相等
@@ -459,22 +508,107 @@ func compareBetween(fieldValue string, value interface{}) bool {
 	return fieldValue >= from && fieldValue <= to
 }
 
-// getNestedFieldAsString 获取嵌套字段值，返回字符串
-func getNestedFieldAsString(obj map[string]interface{}, path string) (string, bool, error) {
-	// todo 目前只能从一层一层的属性下取值，需要优化
-	// 需要增加对数组下的取值判断，如pod container是数组，如何从数组中某一个项的属性中取值？
-	fields := strings.Split(path, ".")
-	value, found, err := unstructured.NestedFieldCopy(obj, fields...)
-	if err != nil || !found {
-		return "", false, err
+// getNestedFieldAsString 获取嵌套字段值，支持数组筛选并处理数组返回值
+func getNestedFieldAsString(obj interface{}, path string) ([]string, bool, error) {
+	fields, arrayCondition, err := parsePathWithCondition(path)
+	if err != nil {
+		return nil, false, err
+	}
+	return getFieldValues(obj, fields, arrayCondition)
+}
+
+// parsePathWithCondition 解析路径，支持数组条件筛选
+func parsePathWithCondition(path string) ([]string, map[string]string, error) {
+	// 用 . 分割路径
+	parts := strings.Split(path, ".")
+	var arrayCondition map[string]string
+
+	// 检查是否包含条件（如 [type=InternalIP]）
+	if len(parts) > 1 && strings.Contains(parts[1], "[") {
+		// 提取字段和条件
+		conditionPart := parts[1]
+		startIndex := strings.Index(conditionPart, "[")
+		endIndex := strings.Index(conditionPart, "]")
+
+		// 提取字段和条件
+		field := conditionPart[:startIndex]
+		condition := conditionPart[startIndex+1 : endIndex]
+		conditionParts := strings.Split(condition, "=")
+
+		if len(conditionParts) == 2 {
+			arrayCondition = map[string]string{conditionParts[0]: conditionParts[1]}
+			// 重新组装路径，去掉条件部分
+			parts[1] = field
+		}
 	}
 
-	switch v := value.(type) {
-	case string:
-		return v, true, nil
-	case bool, int, int64, float64:
-		return fmt.Sprintf("%v", v), true, nil
-	default:
-		return "", false, nil
+	return parts, arrayCondition, nil
+}
+
+// getFieldValues 递归获取字段值，支持数组筛选并返回多个值
+func getFieldValues(obj interface{}, fields []string, arrayCondition map[string]string) ([]string, bool, error) {
+	if len(fields) == 0 {
+		if obj != nil {
+			return []string{fmt.Sprintf("%v", obj)}, true, nil
+		}
+		return nil, false, nil
 	}
+
+	currentField := fields[0]
+	remainingFields := fields[1:]
+
+	switch v := obj.(type) {
+	case map[string]interface{}:
+		// 从 map 中获取值
+		if val, exists := v[currentField]; exists {
+			return getFieldValues(val, remainingFields, arrayCondition)
+		}
+		return nil, false, nil
+	case []map[string]interface{}:
+		// 遍历数组，筛选符合条件的项
+		var results []string
+		for _, item := range v {
+			if matchCondition2(item, arrayCondition) {
+				// 条件匹配，递归获取剩余字段
+				if val, found, err := getFieldValues(item, remainingFields, nil); found || err != nil {
+					results = append(results, val...)
+				}
+			}
+		}
+		return results, len(results) > 0, nil
+	case []interface{}:
+		// 如果是 interface{} 数组，逐项判断
+		var results []string
+		for _, item := range v {
+			if val, found, err := getFieldValues(item, fields, arrayCondition); found || err != nil {
+				results = append(results, val...)
+			}
+		}
+		return results, len(results) > 0, nil
+	case string:
+		if len(fields) == 0 {
+			return []string{v}, true, nil
+		}
+		return nil, false, nil
+	case bool, int, int64, float64:
+		if len(fields) == 0 {
+			return []string{fmt.Sprintf("%v", v)}, true, nil
+		}
+		return nil, false, nil
+	default:
+		return nil, false, nil
+	}
+}
+
+// matchCondition 检查数组中的元素是否符合条件
+func matchCondition2(value interface{}, condition map[string]string) bool {
+	for key, val := range condition {
+		if valueMap, ok := value.(map[string]interface{}); ok {
+			if mapVal, exists := valueMap[key]; exists && fmt.Sprintf("%v", mapVal) == val {
+				continue
+			}
+			return false
+		}
+	}
+	return true
 }
