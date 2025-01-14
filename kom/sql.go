@@ -187,6 +187,12 @@ func (k *Kubectl) Delete() *Kubectl {
 	tx.Error = tx.Callback().Delete().Execute(tx)
 	return tx
 }
+func (k *Kubectl) ForceDelete() *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.ForceDelete = true
+	tx.Error = tx.Callback().Delete().Execute(tx)
+	return tx
+}
 func (k *Kubectl) Patch(dest interface{}, pt types.PatchType, data string) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
