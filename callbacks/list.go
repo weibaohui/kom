@@ -140,14 +140,25 @@ func executeOrderBy(result []unstructured.Unstructured, order string) {
 
 		slice.SortBy(result, func(a, b unstructured.Unstructured) bool {
 			// 获取字段值
-			aFieldValue, found, err := getNestedFieldAsString(a.Object, field)
+			aFieldValues, found, err := getNestedFieldAsString(a.Object, field)
 			if err != nil || !found {
 				return false
 			}
-			bFieldValue, found, err := getNestedFieldAsString(b.Object, field)
+			bFieldValues, found, err := getNestedFieldAsString(b.Object, field)
 			if err != nil || !found {
 				return false
 			}
+
+			// order by 必须把数组变为单一的值
+			if len(aFieldValues) > 1 || len(bFieldValues) > 1 {
+				return false
+			}
+			if len(aFieldValues) == 0 || len(bFieldValues) == 0 {
+				return false
+			}
+			aFieldValue := aFieldValues[0]
+			bFieldValue := bFieldValues[0]
+
 			t, va := utils.DetectType(aFieldValue)
 			_, vb := utils.DetectType(bFieldValue)
 
