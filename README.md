@@ -185,6 +185,11 @@ err := kom.DefaultCluster().Resource(&item).Patch(&item, types.MergePatchType, p
 // 删除名为 nginx 的 Deployment
 err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").Delete().Error
 ```
+#### 强制删除资源
+```go
+// 删除名为 nginx 的 Deployment
+err := kom.DefaultCluster().Resource(&item).Namespace("default").Name("nginx").ForceDelete().Error
+```
 #### 通用类型资源的获取（适用于k8s内置类型以及CRD）
 ```go
 // 指定GVK获取资源
@@ -481,6 +486,10 @@ err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(cron
 #### 删除CR对象
 ```go
 err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Delete().Error
+```
+#### 强制删除CR对象
+```go
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).ForceDelete().Error
 ```
 #### Watch CR对象
 ```go
