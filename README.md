@@ -621,6 +621,17 @@ err := kom.DefaultCluster().From("pod").
 		Order("metadata.creationTimestamp desc").
 		List(&list).Error
 ```
+#### k8s资源嵌套列表属性支持
+```go
+// spec.containers为列表，其下的ports也为列表，我们查询ports的name
+sql := "select * from pod where spec.containers.ports.name like '%k8m%'  "
+var list []v1.Pod
+err := kom.DefaultCluster().Sql(sql).List(&list).Error
+for _, d := range list {
+	t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+}
+```
+
 ### 9. 其他操作
 #### Deployment重启
 ```go
