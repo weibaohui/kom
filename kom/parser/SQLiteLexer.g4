@@ -218,12 +218,18 @@ OTHERS_            : 'OTHERS';
 DO_                : 'DO';
 NOTHING_           : 'NOTHING';
 
-IDENTIFIER:
-    '"' (~'"' | '""')* '"'
-    | '`' (~'`' | '``')* '`'
-    | '[' ~']'* ']'
-    | ( [A-Za-z_] [A-Za-z_0-9]* ( '.' [A-Za-z_] [A-Za-z_0-9]* )* )
-;
+//IDENTIFIER:
+//    '"' (~'"' | '""')* '"'
+//    | '`' (~'`' | '``')* '`'
+//    | '[' ~']'* ']'
+//    | ( [A-Za-z_] [A-Za-z_0-9]* ( '.' [A-Za-z_] [A-Za-z_0-9]* )* )
+//;
+IDENTIFIER
+    : [A-Za-z_][A-Za-z_0-9]*
+      ( ( '.' [A-Za-z_][A-Za-z_0-9]* )
+        | ( '[' ( ~']' )* ']' ) )*
+    ;
+
 
 
 NUMERIC_LITERAL: ((DIGIT+ ('.' DIGIT*)?) | ('.' DIGIT+)) ('E' [-+]? DIGIT+)? | '0x' HEX_DIGIT+;
