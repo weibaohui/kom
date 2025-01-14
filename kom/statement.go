@@ -40,7 +40,8 @@ type Statement struct {
 	Filter              Filter                      `json:"filter,omitempty"`
 	StdoutCallback      func(data []byte) error     `json:"-"`
 	StderrCallback      func(data []byte) error     `json:"-"`
-	CacheTTL            time.Duration               `json:"cacheTTL,omitempty"` // 设置缓存时间
+	CacheTTL            time.Duration               `json:"cacheTTL,omitempty"`    // 设置缓存时间
+	ForceDelete         bool                        `json:"forceDelete,omitempty"` // 强制删除标志
 }
 type Filter struct {
 	Columns    []string    `json:"columns,omitempty"`
