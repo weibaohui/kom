@@ -74,9 +74,49 @@ func TestPodSQL(t *testing.T) {
 }
 func TestNodeIPSQL(t *testing.T) {
 	sql := "select * from node where status.addresses[type=InternalIP].address like '%10%'  "
-	// sql = "select * from node where status.addresses.address like '%10%'  "
+	sql = "select * from node where status.addresses.address like '%10%'  "
 
 	var list []v1.Node
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	if err != nil {
+		t.Logf("List error %v", err)
+	}
+	t.Logf("Count %d", len(list))
+	for _, d := range list {
+		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+}
+func TestPodImageSql(t *testing.T) {
+	sql := "select * from pod where spec.containers.image like '%k8m%'  "
+
+	var list []v1.Pod
+	err := kom.DefaultCluster().Sql(sql).List(&list).Error
+	if err != nil {
+		t.Logf("List error %v", err)
+	}
+	t.Logf("Count %d", len(list))
+	for _, d := range list {
+		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+}
+
+// spec:
+//
+//	containers:
+//	- command:
+//	  - k8m
+//	  - -d
+//	  image: weibh/k8m:0.0.21-sp1
+//	  imagePullPolicy: Always
+//	  name: k8m
+//	  ports:
+//	  - containerPort: 3618
+//	    name: http-k8m
+//	    protocol: TCP
+func TestPodPorts2Sql(t *testing.T) {
+	sql := "select * from pod where spec.containers.ports.name like '%k8m%'  "
+
+	var list []v1.Pod
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	if err != nil {
 		t.Logf("List error %v", err)
