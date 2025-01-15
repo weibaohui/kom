@@ -23,6 +23,7 @@ func List(k *kom.Kubectl) error {
 	ns := stmt.Namespace
 	ctx := stmt.Context
 	conditions := stmt.Filter.Conditions
+	namespaceList := stmt.NamespaceList
 
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
@@ -45,15 +46,20 @@ func List(k *kom.Kubectl) error {
 	list, err := utils.GetOrSetCache(stmt.ClusterCache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
 		// TODO 获取列表改为使用Option,解决大数据量获取问题。
 		if namespaced {
-			if stmt.AllNamespace {
+			if stmt.AllNamespace || len(namespaceList) > 1 {
+				// 全部命名空间 或者  传入多个命名空间
+				// client-go 不支持跨命名空间查询，就全部查出来，后面再过滤
 				ns = metav1.NamespaceAll
+				list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 			} else {
+				// 不是全部，也没有传多个命名空间
 				if ns == "" {
 					ns = metav1.NamespaceDefault
 				}
+				list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 			}
-			list, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).List(ctx, listOptions)
 		} else {
+			// 集群级查询，不需要namespace
 			list, err = stmt.Kubectl.DynamicClient().Resource(gvr).List(ctx, listOptions)
 		}
 		return
