@@ -65,8 +65,9 @@ func (k *Kubectl) Namespace(namespaces ...string) *Kubectl {
 	}
 	result := strings.Join(parts, " or ")
 	result = fmt.Sprintf("(%s)", result)
-	k.Where(result)
-
+	if result != "()" {
+		k.Where(result)
+	}
 	return tx
 }
 func (k *Kubectl) AllNamespace() *Kubectl {
