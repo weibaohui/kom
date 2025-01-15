@@ -17,7 +17,7 @@ import (
 
 // 解析 WHERE 表达式
 func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlparser.Expr) []Condition {
-	klog.V(6).Infof("expr type %v,string %s", reflect.TypeOf(expr), sqlparser.String(expr))
+	klog.V(6).Infof("expr type [%v],string %s, type [%s]", reflect.TypeOf(expr), sqlparser.String(expr), andor)
 	d := depth + 1 // 深度递增
 	switch node := expr.(type) {
 	case *sqlparser.ComparisonExpr:
@@ -33,7 +33,7 @@ func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlpar
 	case *sqlparser.ParenExpr:
 		// 处理括号表达式
 		// 括号内的表达式是一个独立的子表达式，增加深度
-		conditions = parseWhereExpr(conditions, d+1, "()", node.Expr)
+		conditions = parseWhereExpr(conditions, d+1, "AND", node.Expr)
 
 	case *sqlparser.AndExpr:
 		// 递归解析 AND 表达式
