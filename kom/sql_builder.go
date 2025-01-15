@@ -103,6 +103,11 @@ func (k *Kubectl) Where(condition string, values ...interface{}) *Kubectl {
 	originalSql := tx.Statement.Filter.Sql
 	sql := formatSql(condition, values)
 
+	trimSql := strings.ReplaceAll(sql, " ", "")
+	if trimSql == "(())" || trimSql == "()" || trimSql == "" {
+		// 没有内容
+		return tx
+	}
 	if originalSql != "" {
 		sql = originalSql + " and ( " + sql + " ) "
 	} else {
