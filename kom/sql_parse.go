@@ -3,13 +3,7 @@ package kom
 import (
 	"fmt"
 	"reflect"
-	"sort"
-	"strings"
 
-	"github.com/duke-git/lancet/v2/slice"
-
-	"github.com/antlr4-go/antlr/v4"
-	"github.com/weibaohui/kom/kom/parser"
 	"github.com/weibaohui/kom/utils"
 	"github.com/xwb1989/sqlparser"
 	"k8s.io/klog/v2"
@@ -61,74 +55,4 @@ func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlpar
 		fmt.Printf("Unhandled expression at depth %d: %s\n", depth, sqlparser.String(expr))
 	}
 	return conditions
-}
-
-// EnterColumn_name 处理字段名
-// 不要重命名，因为是一个方法的实现
-func (s *sqlParser) EnterColumn_name(ctx *parser.Column_nameContext) {
-	// 这里可以处理 SELECT 语句的其他部分，如果需要
-	field := ctx.GetText()
-	// 将识别出来的字段保存下来
-	s.Fields = append(s.Fields, field)
-}
-
-type sqlParser struct {
-	*parser.BaseSQLiteParserListener
-	Sql    string
-	Fields []string
-}
-
-func NewSqlParse(sql string) *sqlParser {
-	return &sqlParser{
-		Sql:    sql,
-		Fields: []string{},
-	}
-}
-
-// AddBackticks 给 SQL 中的字段名加反引号，保留多级路径
-// 添加反引号，将metadata.name 转为`metadata.name`,
-// k8s中很多类似json的字段，需要用反引号进行包裹，避免被作为db.table形式使用
-func (s *sqlParser) AddBackticks() string {
-	klog.V(6).Infof("sql before add backticks [ %s ]", s.Sql)
-	// 创建输入流
-	input := antlr.NewInputStream(s.Sql)
-
-	// 创建词法分析器和解析器
-	lexer := parser.NewSQLiteLexer(input)
-	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-	p := parser.NewSQLiteParser(stream)
-
-	// 解析 SQL，遍历解析树
-	antlr.ParseTreeWalkerDefault.Walk(s, p.Sql_stmt())
-
-	// SELECT * FROM fake WHERE metadata.name in ('nginx-service')
-	// 如果filed 为 in 模式的 (xxx) 则跳过
-	s.Fields = slice.Filter(s.Fields, func(index int, item string) bool {
-		return !(strings.HasPrefix(item, "(") && strings.HasSuffix(item, ")"))
-	})
-
-	// 按照字段长度从长到短排序
-	sort.Slice(s.Fields, func(i, j int) bool {
-		return len(s.Fields[i]) > len(s.Fields[j])
-	})
-	// 逐个替换字段
-	// 创建一个占位符的映射
-	fieldPlaceholders := make(map[string]string)
-	for _, field := range s.Fields {
-		// 为每个字段分配一个唯一的占位符
-		hashValue := utils.FNV1([]byte(field))
-		placeholder := fmt.Sprintf("__%d__", hashValue)
-		fieldPlaceholders[field] = placeholder
-		// 将 SQL 中的字段替换成占位符
-		s.Sql = strings.ReplaceAll(s.Sql, field, placeholder)
-	}
-	klog.V(6).Infof("sql temp add backticks [ %s ]", s.Sql)
-
-	// 替换占位符为带反引号的字段
-	for field, placeholder := range fieldPlaceholders {
-		quotedField := "`" + field + "`"
-		s.Sql = strings.ReplaceAll(s.Sql, placeholder, quotedField)
-	}
-	klog.V(6).Infof("sql after add backticks [ %s ]", s.Sql)
-	return s.Sql
 }
