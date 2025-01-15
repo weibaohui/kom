@@ -21,9 +21,10 @@ func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 	tx.AllNamespace()
 
 	sql = formatSql(sql, values)
+
 	// 添加反引号，将metadata.name 转为`metadata.name`,
 	// k8s中很多类似json的字段，需要用反引号进行包裹，避免被作为db.table形式使用
-	sql = NewSqlParse(sql).AddBackticks()
+	// sql = NewSqlParse(sql).AddBackticks()
 
 	stmt, err := sqlparser.Parse(sql)
 	if err != nil {
@@ -99,18 +100,20 @@ func (k *Kubectl) From(tableName string) *Kubectl {
 }
 func (k *Kubectl) Where(condition string, values ...interface{}) *Kubectl {
 	tx := k.getInstance()
-
+	originalSql := tx.Statement.Filter.Sql
 	sql := formatSql(condition, values)
 
-	// 组装完整的 SQL
-	sql = fmt.Sprintf("SELECT * FROM fake WHERE %s", sql)
+	if originalSql != "" {
+		sql = originalSql + " and ( " + sql + " ) "
+	} else {
+		sql = fmt.Sprintf(" select * from fake where ( %s )", sql)
+	}
+
 	// 添加反引号，将metadata.name 转为`metadata.name`,
 	// k8s中很多类似json的字段，需要用反引号进行包裹，避免被作为db.table形式使用
-	sql = NewSqlParse(sql).AddBackticks()
+	// sql = NewSqlParse(sql).AddBackticks()
 
 	tx.Statement.Filter.Sql = sql
-
-	tx.AllNamespace()
 
 	stmt, err := sqlparser.Parse(sql)
 	if err != nil {
@@ -136,6 +139,7 @@ func (k *Kubectl) Where(condition string, values ...interface{}) *Kubectl {
 	for i, cond := range conditions {
 		conditions[i].ValueType, conditions[i].Value = utils.DetectType(cond.Value)
 	}
+
 	tx.Statement.Filter.Conditions = conditions
 
 	tx.Statement.Filter.Parsed = true
