@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -21,29 +20,26 @@ func executeFilter(result []unstructured.Unstructured, conditions []kom.Conditio
 
 	// 最终的结果，按照条件列表，逐一执行过滤
 
-	// 2. 按 depth 分组
-	groupedConditions := groupByDepth(conditions)
+	// 2. 按 and or 分组
+	groupedConditions := groupByOperator(conditions)
 
-	// 3. 从小到大逐层过滤
-	// 3.1. 提取所有的 key
-	keys := make([]int, 0, len(groupedConditions))
+	// 3. 目前暂时改为支持简单的 and or 逻辑。不管括号。
+	// TODO 需要处理复杂的括号等逻辑情况
+	// keys and or
+	keys := make([]string, 0, len(groupedConditions))
 	for k := range groupedConditions {
 		keys = append(keys, k)
 	}
 
-	// 3.2. 对 keys 进行排序,从小到大
-	sort.Ints(keys)
-	slice.SortBy(keys, func(a, b int) bool {
-		return a < b
-	})
-	// 3. 按排序后的 keys 顺序逐个访问 map 并处理
+	// 3. 按and or 两组 逐个访问 map 并处理
 	for _, key := range keys {
-		// 这个key 就是depth 的distinct值
+		// 这个key == and or
 		group := slice.Filter(conditions, func(index int, item kom.Condition) bool {
-			return item.Depth == key
+			return item.AndOr == key
 		})
 		// 按组进行过滤，一般一组为相同的and or 条件
 		result = evaluateCondition(result, group)
+
 	}
 
 	return result
@@ -57,9 +53,17 @@ func groupByDepth(conditions []kom.Condition) map[int][]kom.Condition {
 	}
 	return groups
 }
-
+func groupByOperator(conditions []kom.Condition) map[string][]kom.Condition {
+	groups := make(map[string][]kom.Condition)
+	for _, p := range conditions {
+		operator := p.AndOr
+		groups[operator] = append(groups[operator], p)
+	}
+	return groups
+}
 func evaluateCondition(result []unstructured.Unstructured, group []kom.Condition) []unstructured.Unstructured {
 
+	// 一般一组 and or 都相同
 	if group[0].AndOr == "OR" {
 		return matchAny(result, group)
 	} else {
@@ -72,7 +76,9 @@ func matchAll(result []unstructured.Unstructured, conditions []kom.Condition) []
 	return slice.Filter(result, func(index int, item unstructured.Unstructured) bool {
 		// 遍历所有条件，只有全部条件成立才返回 true
 		for _, c := range conditions {
-			if !matchCondition(item, c) {
+			condition := matchCondition(item, c)
+			klog.V(8).Infof("matchAny %s/%s  %s  %s  %s = %v", item.GetNamespace(), item.GetName(), c.Field, c.Operator, c.Value, condition)
+			if !condition {
 				return false // 只要有一个条件不成立，直接返回 false
 			}
 		}
@@ -85,15 +91,16 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 	return slice.Filter(result, func(index int, item unstructured.Unstructured) bool {
 		// 遍历所有条件，任意一个条件成立就返回 true
 		for _, c := range conditions {
-			if matchCondition(item, c) {
-				return true
-			}
+			condition := matchCondition(item, c)
+			klog.V(8).Infof("matchAny %s/%s  %s  %s  %s = %v", item.GetNamespace(), item.GetName(), c.Field, c.Operator, c.Value, condition)
+			return condition
 		}
 		return false
 	})
 }
 
 // matchCondition 判断单个条件是否匹配
+// 如果要处理的字段，是一个值而不是列表，那么直接进行比较。
 // 如果要处理的字段，对应的是k8s的列表，如 status.addresses[type=InternalIP].address
 // status.addresses是一个数组，status.addresses[type=InternalIP].address 那么取出的address是一个数组，但是这样使用type进行了过滤
 // status.addresses是一个数组，status.addresses.address 那么取出的address也是一个数组，没有按type过滤
@@ -108,7 +115,7 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 // 对于 正向操作符（如 =, like, in, between），只要找到一个匹配的值就返回 true。
 // 对于 负向操作符（如 !=, not in, not between），则要确保所有值都不匹配才返回 true。
 func matchCondition(resource unstructured.Unstructured, condition kom.Condition) bool {
-	klog.V(8).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
+	klog.V(6).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
 
 	// 获取字段值
 	fieldValues, found, err := getNestedFieldAsString(resource.Object, condition.Field)
@@ -116,6 +123,61 @@ func matchCondition(resource unstructured.Unstructured, condition kom.Condition)
 		klog.V(6).Infof("not found %s,%v", condition.Field, err)
 		return false
 	}
+
+	// 获取到的值是一个值，不是列表，直接处理
+	if len(fieldValues) == 1 {
+		fieldValue := fieldValues[0]
+		switch condition.Operator {
+		case "=":
+			if compareValue(fieldValue, condition.Value) {
+				return true
+			}
+		case "!=":
+			if compareValue(fieldValue, condition.Value) {
+				return false // 负向条件，找到一个匹配值即返回 false
+			}
+		case "like":
+			if compareLike(fieldValue, condition.Value) {
+				return true
+			}
+		case "in":
+			if compareIn(fieldValue, condition.Value) {
+				return true
+			}
+		case "not in":
+			if compareIn(fieldValue, condition.Value) {
+				return false
+			}
+		case ">":
+			if compareGreater(fieldValue, condition.Value) {
+				return true
+			}
+		case "<":
+			if compareLess(fieldValue, condition.Value) {
+				return true
+			}
+		case ">=":
+			if compareGreaterOrEqual(fieldValue, condition.Value) {
+				return true
+			}
+		case "<=":
+			if compareLessOrEqual(fieldValue, condition.Value) {
+				return true
+			}
+		case "between":
+			if compareBetween(fieldValue, condition.Value) {
+				return true
+			}
+		case "not between":
+			if compareBetween(fieldValue, condition.Value) {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+
+	// 获取到的值，是一个列表，属于yaml中的列表属性，那么需要综合思考了。
 
 	// 判断是正向条件还是负向条件
 	isNegativeCondition := condition.Operator == "!=" || condition.Operator == "not in" || condition.Operator == "not between"
