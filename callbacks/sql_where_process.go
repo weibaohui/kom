@@ -93,7 +93,11 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 		for _, c := range conditions {
 			condition := matchCondition(item, c)
 			klog.V(8).Infof("matchAny %s/%s  %s  %s  %s = %v", item.GetNamespace(), item.GetName(), c.Field, c.Operator, c.Value, condition)
-			return condition
+			if condition {
+				// 任意一个条件达成，就返回。
+				// 没有达成不要返回，让他执行下一个条件
+				return true
+			}
 		}
 		return false
 	})
