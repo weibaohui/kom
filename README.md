@@ -655,7 +655,18 @@ err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("ng
 #### Deployment扩缩容
 ```go
 // 将名称为nginx的deployment的副本数设置为3
-err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Scale(3)
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Scaler().Scale(3)
+```
+#### Deployment 停止
+```go
+// 将名称为nginx的deployment的副本数设置为0
+// 当前运行副本数量记录到注解中
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Scaler().Stop()
+```
+#### Deployment 恢复
+```go
+// 将名称为nginx的deployment的副本数从注解中恢复，如果没有注解，默认恢复到1
+err = kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Scaler().Restore()
 ```
 #### Deployment更新Tag
 ```go
