@@ -114,7 +114,7 @@ func TestPodImageSql(t *testing.T) {
 //	    name: http-k8m
 //	    protocol: TCP
 func TestPodPorts2Sql(t *testing.T) {
-	sql := "select * from pod where spec.containers.ports.name like '%k8m%'  "
+	sql := "select * from pod where 'spec.containers.ports.name' like '%k8m%'  "
 
 	var list []v1.Pod
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
