@@ -55,6 +55,11 @@ func (c *ctl) Scale(replicas int32) error {
 	}
 	return item.Scale(replicas)
 }
+func (c *ctl) Scaler() *scale {
+	return &scale{
+		kubectl: c.kubectl,
+	}
+}
 
 // Label 更新label
 // 新增label : x=y
