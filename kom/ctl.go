@@ -49,6 +49,8 @@ func (c *ctl) Rollout() *rollout {
 		kubectl: c.kubectl,
 	}
 }
+
+// Deprecated: use ctl().Scaler().Scale() instead.
 func (c *ctl) Scale(replicas int32) error {
 	item := &scale{
 		kubectl: c.kubectl,
