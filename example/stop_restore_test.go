@@ -44,7 +44,6 @@ spec:
 }
 
 func TestDeployRestore(t *testing.T) {
-
 	var deploy v1.Deployment
 	err := kom.DefaultCluster().Resource(&deploy).
 		Namespace("default").
