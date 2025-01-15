@@ -10,6 +10,12 @@ type deploy struct {
 	kubectl *Kubectl
 }
 
+func (d *deploy) Stop() error {
+	return d.kubectl.Ctl().Scaler().Stop()
+}
+func (d *deploy) Restore() error {
+	return d.kubectl.Ctl().Scaler().Restore()
+}
 func (d *deploy) Restart() error {
 	return d.kubectl.Ctl().Rollout().Restart()
 }

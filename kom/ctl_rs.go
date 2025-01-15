@@ -10,3 +10,9 @@ func (r *replicaSet) Restart() error {
 func (r *replicaSet) Scale(replicas int32) error {
 	return r.kubectl.Ctl().Scale(replicas)
 }
+func (r *replicaSet) Stop() error {
+	return r.kubectl.Ctl().Scaler().Stop()
+}
+func (r *replicaSet) Restore() error {
+	return r.kubectl.Ctl().Scaler().Restore()
+}
