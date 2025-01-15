@@ -21,6 +21,7 @@ type Statement struct {
 	TotalCount          *int64                      `json:"totalCount,omitempty"`          // 返回查询总数，分页使用。只在List查询列表方法中生效。
 	AllNamespace        bool                        `json:"allNamespace,omitempty"`        // 所有名空间
 	Namespace           string                      `json:"namespace,omitempty"`           // 资源所属命名空间
+	NamespaceList       []string                    `json:"namespace_list,omitempty"`      // 多个命名空间，查询列表专用，只有查询列表时会出现跨命名空间查询的情况。在使用时，如果是所有命名空间，就不用NamespaceList
 	Name                string                      `json:"name,omitempty"`                // 资源名称
 	GVR                 schema.GroupVersionResource `json:"GVR"`                           // 资源类型
 	GVK                 schema.GroupVersionKind     `json:"GVK"`                           // 资源类型
