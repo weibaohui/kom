@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -24,21 +25,48 @@ func (k *Kubectl) Resource(obj runtime.Object) *Kubectl {
 	return tx
 }
 
-// Namespace 设置命名空间
+// Namespace 设置命名空间 *
 // 传入*代表取所有的命名空间，等同于调用AllNamespace()方法
-func (k *Kubectl) Namespace(ns string) *Kubectl {
+func (k *Kubectl) Namespace(namespaces ...string) *Kubectl {
 	tx := k.getInstance()
-	if ns == "*" {
-		// all namespaces
-		tx.Statement.AllNamespace = true
-	} else if ns == "" {
-		// 与kubectl 保持一致，不传表示限制在default 命名空间中
-		tx.Statement.AllNamespace = false
-		tx.Statement.Namespace = metav1.NamespaceDefault
-	} else {
-		tx.Statement.AllNamespace = false
-		tx.Statement.Namespace = ns
+	if tx.Statement.NamespaceList == nil {
+		tx.Statement.NamespaceList = make([]string, 0)
 	}
+	if len(namespaces) == 1 {
+		ns := namespaces[0]
+		if ns == "*" {
+			// all namespaces
+			tx.Statement.AllNamespace = true
+			tx.Statement.Namespace = metav1.NamespaceAll
+		} else if ns == "" {
+			// 与kubectl 保持一致，不传表示限制在default 命名空间中
+			tx.Statement.AllNamespace = false
+			tx.Statement.Namespace = metav1.NamespaceDefault
+		} else {
+			tx.Statement.AllNamespace = false
+			tx.Statement.Namespace = ns
+		}
+		return tx
+	}
+	for _, ns := range namespaces {
+		if ns == "*" {
+			// 只要出现了*，那么就是所有命名空间
+			// 在使用时，如果是所有，就不用NamespaceList
+			tx.Statement.AllNamespace = true
+			tx.Statement.NamespaceList = make([]string, 0)
+			break
+		}
+		tx.Statement.NamespaceList = append(tx.Statement.NamespaceList, ns)
+	}
+
+	var parts []string
+	for _, ns := range tx.Statement.NamespaceList {
+		parts = append(parts, fmt.Sprintf("metadata.namespace='%s'", ns))
+	}
+	result := strings.Join(parts, " or ")
+	result = fmt.Sprintf("(%s)", result)
+	k.Where(result)
+
 	return tx
 }
 func (k *Kubectl) AllNamespace() *Kubectl {
