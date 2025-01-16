@@ -18,7 +18,7 @@
 5. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
 6. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
 7. 支持POD内文件操作，轻松上传、下载、删除文件。
-8. 支持高频操作封装，如deployment的restart重启、scale扩缩容等20余项操作功能。
+8. 支持高频操作封装，如deployment的restart重启、scale扩缩容、启停等20余项操作功能。
 9. 支持SQL查询k8s资源。select * from pod where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp desc 
 10. 支持查询缓存，在高频、批量查询场景下，可设置缓存过期时间，提升查询性能。列表过滤条件不受缓存影响。
 
