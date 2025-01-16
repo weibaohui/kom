@@ -54,8 +54,8 @@ func TestDeployRestore(t *testing.T) {
 	}
 }
 func TestDaemonSetRestore(t *testing.T) {
-	var deploy v1.DaemonSet
-	err := kom.DefaultCluster().Resource(&deploy).
+	var ds v1.DaemonSet
+	err := kom.DefaultCluster().Resource(&ds).
 		Namespace("default").
 		Name("nginx-daemonset-test").
 		Ctl().DaemonSet().Restore()
@@ -83,8 +83,8 @@ spec:
         name: nginx
        `
 	kom.DefaultCluster().Applier().Apply(yaml)
-	var deploy v1.DaemonSet
-	err := kom.DefaultCluster().Resource(&deploy).
+	var ds v1.DaemonSet
+	err := kom.DefaultCluster().Resource(&ds).
 		Namespace("default").
 		Name("nginx-daemonset-test").
 		Ctl().DaemonSet().Stop()
