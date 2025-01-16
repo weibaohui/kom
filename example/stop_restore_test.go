@@ -53,3 +53,42 @@ func TestDeployRestore(t *testing.T) {
 		t.Log(err)
 	}
 }
+func TestDaemonSetRestore(t *testing.T) {
+	var deploy v1.DaemonSet
+	err := kom.DefaultCluster().Resource(&deploy).
+		Namespace("default").
+		Name("nginx-daemonset-test").
+		Ctl().DaemonSet().Restore()
+	if err != nil {
+		t.Log(err)
+	}
+}
+func TestDaemonSetStop(t *testing.T) {
+	yaml := `apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset-test
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx:alpine
+        name: nginx
+       `
+	kom.DefaultCluster().Applier().Apply(yaml)
+	var deploy v1.DaemonSet
+	err := kom.DefaultCluster().Resource(&deploy).
+		Namespace("default").
+		Name("nginx-daemonset-test").
+		Ctl().DaemonSet().Stop()
+	if err != nil {
+		t.Log(err)
+	}
+}
