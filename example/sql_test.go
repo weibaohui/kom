@@ -126,3 +126,20 @@ func TestPodPorts2Sql(t *testing.T) {
 		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
 	}
 }
+func TestCRD2Sql(t *testing.T) {
+
+	var list []unstructured.Unstructured
+	err := kom.DefaultCluster().GVK(
+		"apiextensions.k8s.io",
+		"v1",
+		"CustomResourceDefinition").
+		Where(" 'spec.names.kind' like '%exec%'").
+		List(&list).Error
+	if err != nil {
+		t.Logf("List error %v", err)
+	}
+	t.Logf("Count %d", len(list))
+	for _, d := range list {
+		t.Logf("List Items foreach %s,%s\n", d.GetNamespace(), d.GetName())
+	}
+}
