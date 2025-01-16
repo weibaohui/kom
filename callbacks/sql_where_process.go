@@ -248,13 +248,13 @@ func matchCondition(resource unstructured.Unstructured, condition kom.Condition)
 	return false
 }
 
-// compareValue 比较值是否相等
+// compareValue 比较值是否相等，不区分大小写
 func compareValue(fieldValue string, value interface{}) bool {
 	klog.V(8).Infof("compareValue (=) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
 
 	switch v := value.(type) {
 	case string:
-		return fieldValue == v
+		return strings.ToLower(fieldValue) == strings.ToLower(v)
 	case float64, int, int64:
 		fieldValFloat, err := strconv.ParseFloat(fieldValue, 64)
 		if err != nil {
@@ -273,15 +273,19 @@ func compareValue(fieldValue string, value interface{}) bool {
 	}
 }
 
-// compareLike 判断字符串是否匹配
+// compareLike 判断字符串是否匹配,不区分大小写
 func compareLike(fieldValue string, value interface{}) bool {
 	klog.V(6).Infof("compareLike (like) %s,%v(%v)", fieldValue, value, reflect.TypeOf(value))
+	// 处理为小写
+	fieldValue = strings.ToLower(fieldValue)
 
 	targetValue := fmt.Sprintf("%v", value)
 
 	// 提取值
 	val := strings.TrimPrefix(targetValue, "%")
 	val = strings.TrimSuffix(val, "%")
+	// 处理为小写
+	val = strings.ToLower(val)
 
 	// 判断是否包含%
 	if strings.HasSuffix(targetValue, "%") && strings.HasPrefix(targetValue, "%") {
