@@ -14,6 +14,10 @@ type tools struct {
 	kubectl *Kubectl
 }
 
+func (u *tools) ClearCache() {
+	u.kubectl.ClusterCache().Clear()
+}
+
 // ConvertRuntimeObjectToTypedObject 是一个通用的转换函数，将 runtime.Object 转换为指定的目标类型
 func (u *tools) ConvertRuntimeObjectToTypedObject(obj runtime.Object, target interface{}) error {
 	// 将 obj 断言为 *unstructured.Unstructured 类型
