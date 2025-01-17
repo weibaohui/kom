@@ -2,6 +2,7 @@ package kom
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/weibaohui/kom/kom/describe"
@@ -148,13 +149,13 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		cluster.Client = client               // kubernetes 客户端
 		cluster.DynamicClient = dynamicClient // 动态客户端
 		// 缓存
-		cluster.apiResources = k.initializeAPIResources()   // API 资源
-		cluster.crdList = k.initializeCRDList()             // CRD列表
-		cluster.callbacks = k.initializeCallbacks()         // 回调
-		cluster.serverVersion = k.initializeServerVersion() // 服务器版本
-		cluster.docs = doc.InitTrees(k.getOpenAPISchema())  // 文档
-		cluster.describerMap = k.initializeDescriberMap()   // 初始化描述器
-		if c.callbackRegisterFunc != nil {                  // 注册回调方法
+		cluster.apiResources = k.initializeAPIResources()       // API 资源
+		cluster.crdList = k.initializeCRDList(time.Minute * 10) // CRD列表,10分钟缓存
+		cluster.callbacks = k.initializeCallbacks()             // 回调
+		cluster.serverVersion = k.initializeServerVersion()     // 服务器版本
+		cluster.docs = doc.InitTrees(k.getOpenAPISchema())      // 文档
+		cluster.describerMap = k.initializeDescriberMap()       // 初始化描述器
+		if c.callbackRegisterFunc != nil {                      // 注册回调方法
 			c.callbackRegisterFunc(cluster)
 		}
 
