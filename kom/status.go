@@ -3,10 +3,12 @@ package kom
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
+	"github.com/weibaohui/kom/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -57,9 +59,16 @@ func (k *Kubectl) getOpenAPISchema() *openapi_v2.Document {
 	return openAPISchema
 }
 
-func (k *Kubectl) initializeCRDList() []*unstructured.Unstructured {
-	crdList, _ := k.listResources(context.TODO(), "CustomResourceDefinition", "")
-	return crdList
+func (k *Kubectl) initializeCRDList(ttl time.Duration) []*unstructured.Unstructured {
+	cache, err := utils.GetOrSetCache(k.ClusterCache(), "crdList", ttl, func() (ret []*unstructured.Unstructured, err error) {
+		crdList, err := k.listResources(context.TODO(), "CustomResourceDefinition", "")
+		return crdList, err
+	})
+	if err != nil {
+		return nil
+	}
+	return cache
+
 }
 func (k *Kubectl) initializeAPIResources() (apiResources []*metav1.APIResource) {
 	// 提取ApiResources
