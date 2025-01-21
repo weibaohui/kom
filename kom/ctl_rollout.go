@@ -186,6 +186,11 @@ type RolloutHistory struct {
 	CreationTimestamp metav1.Time             `json:"creationTimestamp"`
 	GVK               schema.GroupVersionKind `json:"gvk,omitempty"`
 	ExtraInfo         map[string]string       `json:"extraInfo,omitempty"`
+	Containers        []ContainerInfo         `json:"containers,omitempty"`
+}
+type ContainerInfo struct {
+	Name  string `json:"name,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 func (d *rollout) History() ([]RolloutHistory, error) {
@@ -246,6 +251,14 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		var historyEntries []RolloutHistory
 		for _, rs := range rsList {
 			revision := rs.Annotations["deployment.kubernetes.io/revision"]
+			cs := rs.Spec.Template.Spec.Containers
+			var containers []ContainerInfo
+			for _, c := range cs {
+				containers = append(containers, ContainerInfo{
+					Name:  c.Name,
+					Image: c.Image,
+				})
+			}
 			historyEntries = append(historyEntries, RolloutHistory{
 				Kind:              "ReplicaSet",
 				Name:              rs.GetName(),
@@ -253,6 +266,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 				GVK:               rs.GetObjectKind().GroupVersionKind(),
 				CreationTimestamp: rs.GetCreationTimestamp(),
 				Revision:          revision,
+				Containers:        containers,
 			})
 		}
 		return historyEntries, nil
@@ -275,6 +289,20 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 
 		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
+			var containers []ContainerInfo
+			var stsTemplate v1.StatefulSet
+			if err = json.Unmarshal(rv.Data.Raw, &stsTemplate); err == nil {
+				if stsTemplate.Spec.Template.Spec.Containers != nil {
+					cs := stsTemplate.Spec.Template.Spec.Containers
+					for _, c := range cs {
+						containers = append(containers, ContainerInfo{
+							Name:  c.Name,
+							Image: c.Image,
+						})
+					}
+				}
+
+			}
 			historyEntries = append(historyEntries, RolloutHistory{
 				Kind:              "ControllerRevision",
 				Name:              rv.GetName(),
@@ -282,6 +310,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 				GVK:               rv.GetObjectKind().GroupVersionKind(),
 				CreationTimestamp: rv.GetCreationTimestamp(),
 				Revision:          fmt.Sprintf("%d", rv.Revision),
+				Containers:        containers,
 			})
 		}
 		return historyEntries, nil
@@ -302,6 +331,22 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 
 		var historyEntries []RolloutHistory
 		for _, rv := range versionList {
+
+			var containers []ContainerInfo
+			var dsTemplate v1.DaemonSet
+			if err = json.Unmarshal(rv.Data.Raw, &dsTemplate); err == nil {
+				if dsTemplate.Spec.Template.Spec.Containers != nil {
+					cs := dsTemplate.Spec.Template.Spec.Containers
+					for _, c := range cs {
+						containers = append(containers, ContainerInfo{
+							Name:  c.Name,
+							Image: c.Image,
+						})
+					}
+				}
+
+			}
+
 			historyEntries = append(historyEntries, RolloutHistory{
 				Kind:              "ControllerRevision",
 				Name:              rv.GetName(),
@@ -309,6 +354,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 				CreationTimestamp: rv.GetCreationTimestamp(),
 				GVK:               rv.GetObjectKind().GroupVersionKind(),
 				Revision:          fmt.Sprintf("%d", rv.Revision),
+				Containers:        containers,
 			})
 		}
 		return historyEntries, nil
