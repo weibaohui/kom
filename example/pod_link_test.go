@@ -818,7 +818,7 @@ spec:
 	}
 	t.Logf("获取调度节点 %d 个", len(nodes))
 	for _, node := range nodes {
-		t.Logf("reason:%s\t node name %s\n", node.Reason, node.Name)
+		t.Logf("node name %s \t reason:%s\t  isCurrent: %v \n", node.Name, node.Reason, node.Current)
 	}
 
 }

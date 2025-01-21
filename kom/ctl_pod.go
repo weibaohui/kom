@@ -877,8 +877,9 @@ func (p *pod) LinkedEnvFromPod() ([]*Env, error) {
 }
 
 type SelectedNode struct {
-	Reason string `json:"reason,omitempty"`    // 选中类型，NodeSelector/NodeAffinity/Tolerations/NodeName
-	Name   string `json:"node_name,omitempty"` // 节点名称
+	Reason  string `json:"reason,omitempty"`    // 选中类型，NodeSelector/NodeAffinity/Tolerations/NodeName
+	Name    string `json:"node_name,omitempty"` // 节点名称
+	Current bool   `json:"current,omitempty"`   // 是否是当前节点
 }
 
 // LinkedNode 可调度主机
@@ -1005,6 +1006,14 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 		})
 
 	}
+
+	//设置是否当前节点
+	for _, selectedNode := range selectedNodeList {
+		if selectedNode.Name == item.Spec.NodeName {
+			selectedNode.Current = true
+		}
+	}
+
 	return selectedNodeList, nil
 }
 
