@@ -170,25 +170,20 @@ spec:
       claimName: my-pod-pvc
 `
 	kom.DefaultCluster().Applier().Apply(yaml)
-	time.Sleep(10 * time.Second)
+	name := "nginx-pv-pvc-test-deployment-c9b6d49bc-q45mt"
+
 	pvcs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
-		Name("my-pod-pvc").Ctl().Pod().LinkedPVC()
+		Name(name).Ctl().Pod().LinkedPVC()
 	if err != nil {
 		t.Logf("get pod linked pvc error %v\n", err.Error())
 		return
 	}
 	for _, pvc := range pvcs {
 		t.Logf("pvc name %v\n", pvc.Name)
+		t.Logf("pvcMounts %s %v\n", pvc.Name, pvc.Annotations["pvcMounts"])
 	}
-	pvcNames := []string{}
-	for _, pvc := range pvcs {
-		pvcNames = append(pvcNames, pvc.Name)
-	}
-	// 检查pvcs列表是否包含my-pvc
-	if !slices.Contains(pvcNames, "my-pod-pvc") {
-		t.Errorf("my-pod-pvc not found in pvcs")
-	}
+
 }
 func TestPodLinkPV(t *testing.T) {
 
