@@ -251,14 +251,17 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		var historyEntries []RolloutHistory
 		for _, rs := range rsList {
 			revision := rs.Annotations["deployment.kubernetes.io/revision"]
-			cs := rs.Spec.Template.Spec.Containers
 			var containers []ContainerInfo
-			for _, c := range cs {
-				containers = append(containers, ContainerInfo{
-					Name:  c.Name,
-					Image: c.Image,
-				})
+			if rs.Spec.Template.Spec.Containers != nil {
+				cs := rs.Spec.Template.Spec.Containers
+				for _, c := range cs {
+					containers = append(containers, ContainerInfo{
+						Name:  c.Name,
+						Image: c.Image,
+					})
+				}
 			}
+
 			historyEntries = append(historyEntries, RolloutHistory{
 				Kind:              "ReplicaSet",
 				Name:              rs.GetName(),
