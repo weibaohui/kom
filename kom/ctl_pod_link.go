@@ -141,6 +141,9 @@ func (p *pod) LinkedPV() ([]*v1.PersistentVolume, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(pvcList) == 0 {
+		return nil, nil
+	}
 	var pvNames []string
 	for _, pvc := range pvcList {
 		pvNames = append(pvNames, pvc.Spec.VolumeName)
