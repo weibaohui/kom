@@ -225,14 +225,14 @@ spec:
       claimName: my-pod-pvc
 `
 	kom.DefaultCluster().Applier().Apply(yaml)
-	time.Sleep(10 * time.Second)
 	pvs, err := kom.DefaultCluster().Resource(&v1.Pod{}).
-		Namespace("default").
-		Name("my-pod-pvc").Ctl().Pod().LinkedPV()
+		Namespace("k8m").
+		Name("k8m-55d745985b-9tvm2").Ctl().Pod().LinkedPV()
 	if err != nil {
 		t.Logf("get pod linked pv error %v\n", err.Error())
 		return
 	}
+	t.Logf("pv count %d\n", len(pvs))
 	for _, pv := range pvs {
 		t.Logf("pv name %v\n", pv.Name)
 	}
