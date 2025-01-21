@@ -133,6 +133,38 @@ func (p *pod) LinkedPVC() ([]*v1.PersistentVolumeClaim, error) {
 		return nil, err
 	}
 
+	for i := range pvcList {
+		pvc := pvcList[i]
+		var pvcMounts []*PodMount
+
+		for _, volume := range pod.Spec.Volumes {
+			if volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == pvc.Name {
+
+				for _, container := range pod.Spec.Containers {
+					for _, volumeMount := range container.VolumeMounts {
+						if volumeMount.Name == volume.Name {
+							pm := PodMount{
+								Name:      volume.PersistentVolumeClaim.ClaimName,
+								MountPath: volumeMount.MountPath,
+								SubPath:   volumeMount.SubPath,
+								ReadOnly:  volumeMount.ReadOnly,
+							}
+							pvcMounts = append(pvcMounts, &pm)
+						}
+					}
+				}
+
+			}
+		}
+
+		if len(pvcMounts) > 0 {
+			if pvc.Annotations == nil {
+				pvc.Annotations = make(map[string]string)
+			}
+			pvc.Annotations["pvcMounts"] = utils.ToJSON(pvcMounts)
+		}
+	}
+
 	return pvcList, nil
 }
 func (p *pod) LinkedPV() ([]*v1.PersistentVolume, error) {
