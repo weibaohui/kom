@@ -795,6 +795,27 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
 ```
+#### 获取所有节点的标签集合
+```go
+// labels 类型为map[string]string
+labels, err := kom.DefaultCluster().Resource(&v1.Node{}).Ctl().Node().AllNodeLabels()
+fmt.Printf("%s", utils.ToJSON(labels))
+```
+```json
+{
+          "beta.kubernetes.io/arch": "arm64",
+          "beta.kubernetes.io/os": "linux",
+          "kubernetes.io/arch": "arm64",
+          "kubernetes.io/hostname": "kind-control-plane",
+          "kubernetes.io/os": "linux",
+          "kubernetes.io/role": "agent",
+          "node-role.kubernetes.io/agent": "",
+          "node-role.kubernetes.io/control-plane": "",
+          "type": "kwok",
+          "uat": "test",
+          "x": "x"
+}
+```
 #### 查看Pod资源占用率
 ```go
 podName := "coredns-ccb96694c-jprpf"
