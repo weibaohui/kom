@@ -70,7 +70,7 @@ func TestNodeDrain(t *testing.T) {
 func TestNodeLabels(t *testing.T) {
 	labels, err := kom.DefaultCluster().Resource(&v1.Node{}).Ctl().Node().AllNodeLabels()
 	if err != nil {
-		t.Logf("Node Cordon %s error:%v", nodeName, err.Error())
+		t.Logf("Node get labels error:%v", err.Error())
 		return
 	}
 	t.Logf("Node Labels %s", utils.ToJSON(labels))
