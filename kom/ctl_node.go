@@ -39,6 +39,16 @@ func (d *node) UnCordon() error {
 	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
 	return err
 }
+
+// Taint node
+// taint 命令用于给节点打标签，以表示节点上某些 Pod 不应该运行。
+// taint 命令的语法格式为：kubectl taint node <node-name> <key>=<value>:<effect>
+// 其中，<key>、<value> 和 <effect> 分别表示标签的键、值和作用域。
+// effect 的值可以是 NoSchedule、PreferNoSchedule 或 NoExecute。
+// taint 命令会向节点的 metadata.annotations 字段中添加一个名为 taints 的键值对，
+// Example
+// Taint("dedicated2=special-user:NoSchedule")
+// Taint("dedicated2:NoSchedule")
 func (d *node) Taint(str string) error {
 	taint, err := parseTaint(str)
 	if err != nil {
