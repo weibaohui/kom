@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -93,6 +94,24 @@ func (d *node) UnTaint(str string) error {
 	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
 	err = d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
 	return err
+}
+
+// AllNodeLabels 获取所有节点的标签
+func (d *node) AllNodeLabels() (map[string]string, error) {
+
+	var list []*corev1.Node
+	err := d.kubectl.newInstance().Resource(&corev1.Node{}).WithCache(d.kubectl.Statement.CacheTTL).
+		List(&list).Error
+	if err != nil {
+		return nil, err
+	}
+	var labels map[string]string
+	for _, n := range list {
+		if len(n.Labels) > 0 {
+			labels = maputil.Merge(labels, n.Labels)
+		}
+	}
+	return labels, nil
 }
 
 // Drain node
