@@ -175,7 +175,7 @@ func isDaemonSetPod(pod *corev1.Pod) bool {
 
 // 检查是否为 Mirror Pod
 func isMirrorPod(pod *corev1.Pod) bool {
-	_, exists := pod.Annotations["kubernetes.io/config.mirror"]
+	_, exists := pod.Annotations[corev1.MirrorPodAnnotationKey]
 	return exists
 }
 
