@@ -53,6 +53,10 @@ spec:
 	if err != nil {
 		t.Logf("ManagedLatestReplicaSet error: %v", err)
 	}
+	if rs == nil {
+		t.Logf("ManagedLatestReplicaSet error: %v", err)
+		return
+	}
 	t.Logf("ManagedLatestReplicaSet: %v", rs.Name)
 }
 func TestDeployManagedPods(t *testing.T) {
@@ -88,6 +92,10 @@ spec:
 		t.Logf("ManagedPods error: %v", err)
 	}
 	t.Logf("ManagedPods Count %d", len(list))
+	if len(list) == 0 {
+		t.Logf("ManagedPods error: %v", err)
+		return
+	}
 	for _, pod := range list {
 		t.Logf("ManagedPods: %v", pod.Name)
 	}
@@ -124,6 +132,10 @@ spec:
 	if err != nil {
 		t.Logf("ManagedPod error: %v", err)
 	}
+	if item == nil {
+		t.Logf("ManagedPod error: %v", err)
+		return
+	}
 	t.Logf("ManagedPod: %v", item.Name)
 }
 
@@ -133,6 +145,13 @@ func TestStatefulSetManagedPod(t *testing.T) {
 		Name("svc-not-exists-web").
 		Ctl().StatefulSet().
 		ManagedPod()
+	if err != nil {
+		t.Logf("ManagedPod error: %v", err)
+	}
+	if item == nil {
+		t.Logf("ManagedPod error: %v", err)
+		return
+	}
 	if err != nil {
 		t.Logf("ManagedPod error: %v", err)
 	}
@@ -146,6 +165,10 @@ func TestDaemonSetManagedPod(t *testing.T) {
 	if err != nil {
 		t.Logf("ManagedPod error: %v", err)
 	}
+	if item == nil {
+		t.Logf("ManagedPod error: %v", err)
+		return
+	}
 	t.Logf("ManagedPod: %v", item.Name)
 }
 func TestReplicaSetManagedPod(t *testing.T) {
@@ -155,6 +178,10 @@ func TestReplicaSetManagedPod(t *testing.T) {
 		ManagedPod()
 	if err != nil {
 		t.Logf("ManagedPod error: %v", err)
+	}
+	if item == nil {
+		t.Logf("ManagedPod error: %v", err)
+		return
 	}
 	t.Logf("ManagedPod: %v", item.Name)
 }
