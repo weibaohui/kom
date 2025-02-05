@@ -32,7 +32,7 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 
 	// 将所有匹配的 Service 名称及相关信息返回。
 	var pod *v1.Pod
-	err := p.kubectl.Get(&pod).Error
+	err := p.kubectl.WithCache(p.kubectl.Statement.CacheTTL).Get(&pod).Error
 	if err != nil {
 		return nil, fmt.Errorf("get pod %s/%s error %v", p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, err.Error())
 	}
