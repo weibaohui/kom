@@ -6,6 +6,21 @@ import (
 	"github.com/weibaohui/kom/kom"
 )
 
+func TestDeployManagedRsMuiltiple(t *testing.T) {
+
+	rs, err := kom.DefaultCluster().Namespace("k8m").
+		Name("k8m").
+		Ctl().Deployment().
+		ManagedLatestReplicaSet()
+	if err != nil {
+		t.Logf("ManagedLatestReplicaSet error: %v", err)
+	}
+	if rs == nil {
+		t.Logf("ManagedLatestReplicaSet error: %v", err)
+		return
+	}
+	t.Logf("ManagedLatestReplicaSet: %v", rs.Name)
+}
 func TestDeployManagedRs(t *testing.T) {
 	yaml := `
 apiVersion: apps/v1
