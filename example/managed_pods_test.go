@@ -111,3 +111,35 @@ spec:
 	}
 	t.Logf("ManagedPod: %v", item.Name)
 }
+
+func TestStatefulSetManagedPod(t *testing.T) {
+
+	item, err := kom.DefaultCluster().Namespace("default").
+		Name("svc-not-exists-web").
+		Ctl().StatefulSet().
+		ManagedPod()
+	if err != nil {
+		t.Logf("ManagedPod error: %v", err)
+	}
+	t.Logf("ManagedPod: %v", item.Name)
+}
+func TestDaemonSetManagedPod(t *testing.T) {
+	item, err := kom.DefaultCluster().Namespace("default").
+		Name("nginx-daemonset").
+		Ctl().DaemonSet().
+		ManagedPod()
+	if err != nil {
+		t.Logf("ManagedPod error: %v", err)
+	}
+	t.Logf("ManagedPod: %v", item.Name)
+}
+func TestReplicaSetManagedPod(t *testing.T) {
+	item, err := kom.DefaultCluster().Namespace("default").
+		Name("managed-pods-9c65654f4").
+		Ctl().ReplicaSet().
+		ManagedPod()
+	if err != nil {
+		t.Logf("ManagedPod error: %v", err)
+	}
+	t.Logf("ManagedPod: %v", item.Name)
+}
