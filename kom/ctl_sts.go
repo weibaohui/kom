@@ -25,29 +25,29 @@ func (s *statefulSet) Restore() error {
 	return s.kubectl.Ctl().Scaler().Restore()
 }
 
-func (r *statefulSet) ManagedPods() ([]*corev1.Pod, error) {
+func (s *statefulSet) ManagedPods() ([]*corev1.Pod, error) {
 	//先找到sts
 	var sts v1.StatefulSet
-	err := r.kubectl.Resource(&sts).Get(&sts).Error
+	err := s.kubectl.WithCache(s.kubectl.Statement.CacheTTL).Resource(&sts).Get(&sts).Error
 
 	if err != nil {
 		return nil, err
 	}
 	// 通过sts 获取pod
 	var podList []*corev1.Pod
-	err = r.kubectl.newInstance().Resource(&corev1.Pod{}).
-		Namespace(r.kubectl.Statement.Namespace).
+	err = s.kubectl.newInstance().WithCache(s.kubectl.Statement.CacheTTL).Resource(&corev1.Pod{}).
+		Namespace(s.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("metadata.ownerReferences.name='%s' and metadata.ownerReferences.kind='%s'", sts.GetName(), "StatefulSet")).
 		List(&podList).Error
 	return podList, err
 }
-func (r *statefulSet) ManagedPod() (*corev1.Pod, error) {
-	podList, err := r.ManagedPods()
+func (s *statefulSet) ManagedPod() (*corev1.Pod, error) {
+	podList, err := s.ManagedPods()
 	if err != nil {
 		return nil, err
 	}
 	if len(podList) > 0 {
 		return podList[0], nil
 	}
-	return nil, fmt.Errorf("未发现StatefulSet[%s]下的Pod", r.kubectl.Statement.Name)
+	return nil, fmt.Errorf("未发现StatefulSet[%s]下的Pod", s.kubectl.Statement.Name)
 }
