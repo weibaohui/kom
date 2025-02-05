@@ -78,16 +78,13 @@ func (d *deploy) ManagedLatestReplicaSet() (*v1.ReplicaSet, error) {
 	//   annotations:
 	//     deployment.kubernetes.io/revision: "50"
 	var revision string
-	for _, v := range item.GetAnnotations() {
-		if strings.HasPrefix(v, "deployment.kubernetes.io/revision") {
+	for k, v := range item.GetAnnotations() {
+		if strings.HasPrefix(k, "deployment.kubernetes.io/revision") {
 			// 找到 revision
 			// deployment.kubernetes.io/revision: "50"
 			// 50
-			s := strings.Split(v, ":")
-			if len(s) == 2 {
-				revision = s[1]
-				break
-			}
+			revision = v
+			break
 		}
 	}
 
