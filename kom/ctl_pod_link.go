@@ -59,6 +59,10 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 	var result []*v1.Service
 	for _, svc := range services {
 		serviceLabels := svc.Spec.Selector
+		//如果为空，标明没有特定的pod selector，则跳过这个svc
+		if len(serviceLabels) == 0 {
+			continue
+		}
 		// 遍历selector
 		// serviceLabels中所有的kv,都必须在podLabels中存在,且值相等
 		if utils.CompareMapContains(serviceLabels, podLabels) {
