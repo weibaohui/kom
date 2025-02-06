@@ -795,6 +795,18 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Annotate("name-")
 ```
+#### 统计StorageClass下的PVC数量
+```go
+count, err := kom.DefaultCluster().Resource(&v1.StorageClass{}).Name("hostpath").Ctl().StorageClass().PVCCount()
+fmt.Printf("pvc count %d\n", count)
+```
+#### 统计Deployment/StatefulSet/DaemonSet下的Pod列表
+```go
+list, err := kom.DefaultCluster().Namespace("default").Name("managed-pods").Ctl().Deployment().ManagedPods()
+for _, pod := range list {
+	fmt.Printf("ManagedPod: %v", pod.Name)
+}
+```
 #### 获取所有节点的标签集合
 ```go
 // labels 类型为map[string]string
