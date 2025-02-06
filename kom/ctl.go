@@ -44,6 +44,13 @@ func (c *ctl) CronJob() *cronJob {
 		kubectl: c.kubectl,
 	}
 }
+
+func (c *ctl) StorageClass() *storageClass {
+	return &storageClass{
+		kubectl: c.kubectl,
+	}
+}
+
 func (c *ctl) Rollout() *rollout {
 	return &rollout{
 		kubectl: c.kubectl,
