@@ -809,6 +809,10 @@ fmt.Printf("pv count %d\n", count)
 ```go
 err := kom.DefaultCluster().Resource(&v1.StorageClass{}).Name("hostpath").Ctl().StorageClass().SetDefault()
 ```
+#### 设置IngressClass为默认
+```go
+err := kom.DefaultCluster().Resource(&v1.IngressClass{}).Name("nginx").Ctl().IngressClass().SetDefault()
+```
 #### 统计Deployment/StatefulSet/DaemonSet下的Pod列表
 ```go
 list, err := kom.DefaultCluster().Namespace("default").Name("managed-pods").Ctl().Deployment().ManagedPods()

@@ -51,6 +51,11 @@ func (c *ctl) StorageClass() *storageClass {
 	}
 }
 
+func (c *ctl) IngressClass() *ingressClass {
+	return &ingressClass{
+		kubectl: c.kubectl,
+	}
+}
 func (c *ctl) Rollout() *rollout {
 	return &rollout{
 		kubectl: c.kubectl,
