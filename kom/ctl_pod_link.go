@@ -273,11 +273,11 @@ func (p *pod) LinkedIngress() ([]*networkingv1.Ingress, error) {
 // PodMount 是Pod的挂载信息
 // 挂载的类型有：configMap、secret
 type PodMount struct {
-	Name      string `json:"name",omitempty`
-	MountPath string `json:"mountPath",omitempty`
-	SubPath   string `json:"subPath",omitempty`
-	Mode      *int32 `json:"mode",omitempty`
-	ReadOnly  bool   `json:"readOnly",omitempty`
+	Name      string `json:"name,omitempty"`
+	MountPath string `json:"mountPath,omitempty"`
+	SubPath   string `json:"subPath,omitempty"`
+	Mode      *int32 `json:"mode,omitempty"`
+	ReadOnly  bool   `json:"readOnly,omitempty"`
 }
 
 // LinkedConfigMap 获取Pod相关的ConfigMap
