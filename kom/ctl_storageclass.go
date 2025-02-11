@@ -15,9 +15,25 @@ func (s *storageClass) PVCCount() (int, error) {
 		Resource(&v1.PersistentVolumeClaim{}).
 		AllNamespace().
 		Where("spec.storageClassName=?", s.kubectl.Statement.Name).
+		RemoveManagedFields().
 		List(&pvcList).Error
 	if err != nil {
 		return 0, err
 	}
 	return len(pvcList), nil
+}
+func (s *storageClass) PVCount() (int, error) {
+	var pvList []*v1.PersistentVolume
+	err := s.kubectl.newInstance().
+		WithContext(s.kubectl.Statement.Context).
+		WithCache(s.kubectl.Statement.CacheTTL).
+		Resource(&v1.PersistentVolume{}).
+		AllNamespace().
+		Where("spec.storageClassName=?", s.kubectl.Statement.Name).
+		RemoveManagedFields().
+		List(&pvList).Error
+	if err != nil {
+		return 0, err
+	}
+	return len(pvList), nil
 }
