@@ -68,18 +68,7 @@ func StreamExample() {
 		fmt.Printf("Error StreamExecute pod logs:%v\n", err)
 	}
 }
-func NodePodCount() {
-	nodeName := "lima-rancher-desktop"
-	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
-		Name(nodeName).Ctl().Node().PodCount()
-	fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
-}
-func NodeIPUsage() {
-	nodeName := "lima-rancher-desktop"
-	total, used, available := kom.DefaultCluster().Resource(&corev1.Node{}).
-		Name(nodeName).Ctl().Node().IPUsage()
-	fmt.Printf("Total %d, Used %d, Available %d\n", total, used, available)
-}
+
 func PodUsageExample() {
 	podName := "coredns-ccb96694c-jprpf"
 	ns := "kube-system"
@@ -89,20 +78,7 @@ func PodUsageExample() {
 	fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
 
 }
-func NodeUsageExample() {
-	// 打印开始时间
-	startTime := time.Now()
-	nodeName := "lima-rancher-desktop"
-	usage := kom.DefaultCluster().Resource(&corev1.Node{}).
-		Name(nodeName).WithCache(5 * time.Second).Ctl().Node().ResourceUsageTable()
-	fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
-	// 打印结束时间
-	endTime := time.Now()
-	// 计算耗时
-	duration := endTime.Sub(startTime)
-	fmt.Printf("Node 统计 耗时  %d  毫秒\n", duration.Milliseconds())
 
-}
 func ALLNodeUsageExample() {
 
 	// 打印开始时间

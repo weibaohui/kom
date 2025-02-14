@@ -571,7 +571,7 @@ func cb(k *kom.Kubectl) error {
 ```go
 // Query the pod list
 err := kom.DefaultCluster().From("pod").
-		Where("metadata.namespace =?  or metadata.namespace=? ", "kube-system", "default").
+		Where("metadata.namespace ='?'  or metadata.namespace='?' ", "kube-system", "default").
 		Order("metadata.creationTimestamp desc").
 		List(&list).Error
 ``` 
