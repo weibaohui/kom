@@ -322,6 +322,11 @@ kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerNam
 // 下载Pod内/etc/hosts文件
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DownloadFile("/etc/hosts")
 ```
+#### 文件下载(Tar压缩)
+```go
+// 下载Pod内/etc/hosts文件，以tar方式进行打包后，获取，下载
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").DownloadTarFile("/etc/hosts")
+```
 #### 文件上传
 ```go
 // 上传文件内容到Pod内/etc/demo.txt文件
