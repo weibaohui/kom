@@ -11,7 +11,7 @@ import (
 func TestSelectEqual(t *testing.T) {
 	var list []corev1.Pod
 	err := kom.DefaultCluster().From("pod").
-		Where("metadata.namespace ='?'  or metadata.namespace='?'", "kube-system", "default").
+		Where("metadata.namespace =?  or metadata.namespace=?", "kube-system", "default").
 		Order("metadata.creationTimestamp` desc").
 		List(&list).Error
 
@@ -26,7 +26,7 @@ func TestSelectEqual(t *testing.T) {
 func TestSelectLike(t *testing.T) {
 	var list []corev1.Pod
 	err := kom.DefaultCluster().From("pod").
-		Where("metadata.name like '?'", "%random%").
+		Where("metadata.name like ?", "%random%").
 		Order("metadata.creationTimestamp` desc").
 		List(&list).Error
 
