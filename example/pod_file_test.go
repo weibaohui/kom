@@ -59,7 +59,7 @@ func TestSaveFile(t *testing.T) {
 	context := utils.RandNLengthString(20)
 	t.Logf("将%s写入/etc/xyz\n", context)
 	err := kom.DefaultCluster().Namespace("default").
-		Name("random").
+		Name("random2").
 		Ctl().
 		Pod().
 		ContainerName("random").
@@ -69,7 +69,7 @@ func TestSaveFile(t *testing.T) {
 	}
 
 	result, err := kom.DefaultCluster().Namespace("default").
-		Name("random").
+		Name("random2").
 		Ctl().
 		Pod().
 		ContainerName("random").

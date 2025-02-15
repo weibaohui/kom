@@ -37,17 +37,55 @@ func (p *pod) ListFiles(path string) ([]*FileInfo, error) {
 
 	return parseFileList(path, string(result)), nil
 }
-
-// DownloadFile 从指定容器下载文件
 func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+
+	// 规范化文件路径
+	filePath = strings.TrimPrefix(filePath, "/")
+
 	var result []byte
-	err := p.Command("cat", filePath).Execute(&result).Error
+	err := p.Command("tar", "cf", "-", filePath).Execute(&result).Error
 	if err != nil {
 		return nil, fmt.Errorf("error executing DownloadFile: %v", err)
 	}
 
-	return result, nil
+	tr := tar.NewReader(bytes.NewReader(result))
+	var fileContent []byte
+	found := false
+
+	// 遍历 tar 中的每个文件
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error reading tar header: %v", err)
+		}
+
+		// 规范化 header 中的文件名以进行比较
+		headerName := strings.TrimPrefix(header.Name, "/")
+		if headerName == filePath {
+			found = true
+			// 使用带有大小限制的读取方式
+			if header.Size > 500*1024*1024 { // 500MB 限制
+				return nil, fmt.Errorf("file size %d exceeds maximum allowed size", header.Size)
+			}
+
+			buf := bytes.NewBuffer(make([]byte, 0, header.Size))
+			if _, err := io.Copy(buf, tr); err != nil {
+				return nil, fmt.Errorf("error reading file content: %v", err)
+			}
+			fileContent = buf.Bytes()
+			break
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("file %s not found in container", filePath)
+	}
+
+	return fileContent, nil
 }
 func (p *pod) DeleteFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DeleteFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
