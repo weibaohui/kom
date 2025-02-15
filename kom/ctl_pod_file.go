@@ -39,14 +39,12 @@ func (p *pod) ListFiles(path string) ([]*FileInfo, error) {
 }
 func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
-
 	// 规范化文件路径
 	filePath = strings.TrimPrefix(filePath, "/")
 
-	var result []byte
-	err := p.Command("tar", "cf", "-", filePath).Execute(&result).Error
+	result, err := p.DownloadTarFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("error executing DownloadFile: %v", err)
+		return nil, fmt.Errorf("error executing DownloadTarFile: %v", err)
 	}
 
 	tr := tar.NewReader(bytes.NewReader(result))
@@ -86,6 +84,20 @@ func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	}
 
 	return fileContent, nil
+}
+func (p *pod) DownloadTarFile(filePath string) ([]byte, error) {
+	klog.V(6).Infof("DownloadTarFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+
+	// 规范化文件路径
+	filePath = strings.TrimPrefix(filePath, "/")
+
+	var result []byte
+	err := p.Command("tar", "cf", "-", filePath).Execute(&result).Error
+	if err != nil {
+		return nil, fmt.Errorf("error executing DownloadTarFile: %v", err)
+	}
+
+	return result, nil
 }
 func (p *pod) DeleteFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DeleteFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
