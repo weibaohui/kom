@@ -390,7 +390,7 @@ func (d *node) IPUsage() (total, used, available int) {
 	// 计算PodIP数量，
 	var podList []*corev1.Pod
 	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
-		Where("'spec.nodeName'=? and 'status.podIP' != '' ", d.kubectl.Statement.Name).
+		Where("spec.nodeName=? and 'status.podIP' != '' ", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
 		klog.V(6).Infof("list pods in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
