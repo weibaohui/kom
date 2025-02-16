@@ -39,8 +39,6 @@ func (p *pod) ListFiles(path string) ([]*FileInfo, error) {
 }
 func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
-	// 规范化文件路径
-	filePath = strings.TrimPrefix(filePath, "/")
 
 	result, err := p.DownloadTarFile(filePath)
 	if err != nil {
@@ -61,9 +59,7 @@ func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 			return nil, fmt.Errorf("error reading tar header: %v", err)
 		}
 
-		// 规范化 header 中的文件名以进行比较
-		headerName := strings.TrimPrefix(header.Name, "/")
-		if headerName == filePath {
+		if header.Name == strings.TrimPrefix(filePath, "/") {
 			found = true
 			// 使用带有大小限制的读取方式
 			if header.Size > 500*1024*1024 { // 500MB 限制
@@ -87,9 +83,6 @@ func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 }
 func (p *pod) DownloadTarFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadTarFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
-
-	// 规范化文件路径
-	filePath = strings.TrimPrefix(filePath, "/")
 
 	var result []byte
 	err := p.Command("tar", "cf", "-", filePath).Execute(&result).Error

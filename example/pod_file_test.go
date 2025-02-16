@@ -54,6 +54,20 @@ func TestUploadFile(t *testing.T) {
 		t.Fatalf("未找到上传文件，测试失败")
 	}
 }
+func TestGetFileK8m(t *testing.T) {
+
+	result, err := kom.DefaultCluster().Namespace("k8m").
+		Name("k8m-bfdf6c6d8-pwbzc").
+		Ctl().
+		Pod().
+		ContainerName("k8m").
+		DownloadFile("/app/reload.sh")
+	if err != nil {
+		t.Errorf("Error executing command: %v", err)
+	}
+	t.Logf("从/app/reload.sh读取到%s\n", string(result))
+
+}
 func TestSaveFile(t *testing.T) {
 
 	context := utils.RandNLengthString(20)
