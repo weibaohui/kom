@@ -37,6 +37,17 @@ func (p *pod) ListFiles(path string) ([]*FileInfo, error) {
 
 	return parseFileList(path, string(result)), nil
 }
+func (p *pod) ListAllFiles(path string) ([]*FileInfo, error) {
+	klog.V(6).Infof("ListFiles %s from [%s/%s:%s]\n", path, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
+
+	var result []byte
+	err := p.Command("ls", "-l", "-a", path).Execute(&result).Error
+	if err != nil {
+		return nil, fmt.Errorf("error executing ListFiles: %v", err)
+	}
+
+	return parseFileList(path, string(result)), nil
+}
 func (p *pod) DownloadFile(filePath string) ([]byte, error) {
 	klog.V(6).Infof("DownloadFile %s from [%s/%s:%s]\n", filePath, p.kubectl.Statement.Namespace, p.kubectl.Statement.Name, p.kubectl.Statement.ContainerName)
 

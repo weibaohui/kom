@@ -317,6 +317,11 @@ err := kom.DefaultCluster().Namespace("kube-system").Name("traefik-d7c9c5778-p9n
 // 获取Pod内/etc文件夹列表
 kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").ListFiles("/etc")
 ```
+#### 所有文件列表，包括隐藏文件
+```go
+// 获取Pod内/etc文件夹列表
+kom.DefaultCluster().Namespace("default").Name("nginx").Ctl().Pod().ContainerName("nginx").ListAllFiles("/etc")
+```
 #### 文件下载
 ```go
 // 下载Pod内/etc/hosts文件

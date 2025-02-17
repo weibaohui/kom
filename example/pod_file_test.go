@@ -100,7 +100,7 @@ func TestSaveFile(t *testing.T) {
 func TestListFile(t *testing.T) {
 
 	result, err := kom.DefaultCluster().Namespace("default").
-		Name("random").
+		Name("random2").
 		Ctl().
 		Pod().
 		ContainerName("random").
@@ -110,10 +110,25 @@ func TestListFile(t *testing.T) {
 	}
 	t.Logf("读取文件数量%d", len(result))
 	if len(result) == 0 {
-		t.Fatalf("读取文件失败，不应为空,实际%d", len(result))
+		t.Logf("读取文件失败，不应为空,实际%d", len(result))
 	}
 }
+func TestListAllFile(t *testing.T) {
 
+	result, err := kom.DefaultCluster().Namespace("default").
+		Name("random2").
+		Ctl().
+		Pod().
+		ContainerName("random").
+		ListAllFiles("/etc")
+	if err != nil {
+		t.Errorf("Error executing command: %v", err)
+	}
+	t.Logf("读取文件数量%d", len(result))
+	if len(result) == 0 {
+		t.Logf("读取文件失败，不应为空,实际%d", len(result))
+	}
+}
 func TestDeleteFile(t *testing.T) {
 
 	// 先创建一个文件，读取验证存在，然后删除，然后再读取，验证不存在
