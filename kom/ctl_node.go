@@ -265,6 +265,7 @@ func (d *node) RunningPods() ([]*corev1.Pod, error) {
 	var podList []*corev1.Pod
 	// status.phase!=Succeeded,status.phase!=Failed
 	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		AllNamespace().
 		Where("spec.nodeName=? and 'status.phase'!='Succeeded' and 'status.phase'!='Failed'", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
@@ -390,6 +391,7 @@ func (d *node) IPUsage() (total, used, available int) {
 	// 计算PodIP数量，
 	var podList []*corev1.Pod
 	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		AllNamespace().
 		Where("spec.nodeName=? and 'status.podIP' != '' ", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
 	if err != nil {
@@ -431,6 +433,7 @@ func (d *node) PodCount() (total, used, available int) {
 	// 计算PodIP数量，
 	var podList []*corev1.Pod
 	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		AllNamespace().
 		Where("spec.nodeName=? ", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
 	if err != nil {

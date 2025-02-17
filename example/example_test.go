@@ -27,14 +27,14 @@ func TestMain(m *testing.M) {
 	Connect()
 
 	// 创建测试必须得Pod，后面不会再创建了
-	InitTestDeploy()
+	// InitTestDeploy()
 	// 调用 m.Run() 运行所有测试
 	exitCode := m.Run()
 
 	// 清理操作
 	fmt.Println("Cleaning up test environment...")
 	// 在这里可以关闭数据库连接、删除临时文件等
-	CleanTestDeploy()
+	// CleanTestDeploy()
 	// 退出程序
 	os.Exit(exitCode)
 }
