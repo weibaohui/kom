@@ -38,7 +38,6 @@ func (s *storageClass) PVCount() (int, error) {
 		WithContext(s.kubectl.Statement.Context).
 		WithCache(s.kubectl.Statement.CacheTTL).
 		Resource(&v1.PersistentVolume{}).
-		AllNamespace().
 		Where("spec.storageClassName=? ", s.kubectl.Statement.Name).
 		RemoveManagedFields().
 		List(&pvList).Error
