@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/duke-git/lancet/v2/maputil"
+	"github.com/duke-git/lancet/v2/random"
 	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -190,6 +191,60 @@ func (d *node) Drain() error {
 
 	klog.V(8).Infof("node/%s drained", name)
 	return nil
+}
+
+// CreateNodeShell 获取节点NodeShell
+func (d *node) CreateNodeShell(image ...string) (string, error) {
+	// 获取节点
+	runImage := "alpine:latest"
+	if len(image) > 0 {
+		runImage = image[0]
+	}
+
+	shellID := fmt.Sprintf("node-shell-%s", strings.ToLower(random.RandString(8)))
+	var yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: %s
+  namespace: kube-system
+spec:
+  containers:
+  - args:
+    - -t
+    - "1"
+    - -m
+    - -u
+    - -i
+    - -n
+    - sleep
+    - "14000"
+    command:
+    - nsenter
+    image: %s
+    name: shell
+    securityContext:
+      privileged: true
+  hostIPC: true
+  hostNetwork: true
+  hostPID: true
+  restartPolicy: Never
+  nodeName: %s	
+  tolerations:
+  - operator: Exists
+`
+	yaml = fmt.Sprintf(yaml, shellID, runImage, d.kubectl.Statement.Name)
+
+	ret := d.kubectl.Applier().Apply(yaml)
+	// [Pod/node-shell-xqrbqqvt created]
+	// 检查是否包含 created
+	klog.V(6).Infof("%s Node Shell 创建 结果 %s", d.kubectl.Statement.Name, ret)
+
+	if len(ret) > 0 && strings.Contains(ret[0], "created") {
+		return shellID, nil
+	}
+	return "", fmt.Errorf("shell 创建失败 %s", ret)
+
 }
 
 // 检查是否为 DaemonSet 创建的 Pod

@@ -75,3 +75,15 @@ func TestNodeLabels(t *testing.T) {
 	}
 	t.Logf("Node Labels %s", utils.ToJSON(labels))
 }
+
+func TestNodeShell(t *testing.T) {
+	name := "kind-control-plane"
+	shellID, err := kom.DefaultCluster().Resource(&v1.Node{}).Name(name).Ctl().Node().CreateNodeShell()
+
+	if err != nil {
+		t.Logf("Node Shell error:%v", err.Error())
+		return
+	}
+	t.Logf("Node Shell %s", shellID)
+
+}
