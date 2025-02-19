@@ -807,8 +807,8 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 ```
 #### 创建NodeSell
 ```go
-shellID, err := kom.DefaultCluster().Resource(&v1.Node{}).Name("kind-control-plane").Ctl().Node().CreateNodeShell()
-t.Logf("Node Shell %s", shellID)
+ns, pod, container, err  := kom.DefaultCluster().Resource(&v1.Node{}).Name("kind-control-plane").Ctl().Node().CreateNodeShell()
+fmt.Printf("Node Shell ns=%s podName=%s containerName=%s", ns, pod, container)
 ```
 #### 统计StorageClass下的PVC数量
 ```go

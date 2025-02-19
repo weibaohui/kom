@@ -194,20 +194,22 @@ func (d *node) Drain() error {
 }
 
 // CreateNodeShell 获取节点NodeShell
-func (d *node) CreateNodeShell(image ...string) (string, error) {
+// 要求容器内必须含有nsenter
+func (d *node) CreateNodeShell(image ...string) (namespace, podName, containerName string, err error) {
 	// 获取节点
 	runImage := "alpine:latest"
 	if len(image) > 0 {
 		runImage = image[0]
 	}
-
-	shellID := fmt.Sprintf("node-shell-%s", strings.ToLower(random.RandString(8)))
+	namespace = "kube-system"
+	containerName = "shell"
+	podName = fmt.Sprintf("node-shell-%s", strings.ToLower(random.RandString(8)))
 	var yaml = `
 apiVersion: v1
 kind: Pod
 metadata:
   name: %s
-  namespace: kube-system
+  namespace: %s
 spec:
   containers:
   - args:
@@ -222,7 +224,7 @@ spec:
     command:
     - nsenter
     image: %s
-    name: shell
+    name: %s
     securityContext:
       privileged: true
   hostIPC: true
@@ -233,18 +235,21 @@ spec:
   tolerations:
   - operator: Exists
 `
-	yaml = fmt.Sprintf(yaml, shellID, runImage, d.kubectl.Statement.Name)
+	yaml = fmt.Sprintf(yaml, podName, namespace, runImage, containerName, d.kubectl.Statement.Name)
 
 	ret := d.kubectl.Applier().Apply(yaml)
 	// [Pod/node-shell-xqrbqqvt created]
 	// 检查是否包含 created
 	klog.V(6).Infof("%s Node Shell 创建 结果 %s", d.kubectl.Statement.Name, ret)
 
+	//创建成功
 	if len(ret) > 0 && strings.Contains(ret[0], "created") {
-		return shellID, nil
+		return
 	}
-	return "", fmt.Errorf("shell 创建失败 %s", ret)
 
+	//创建失败
+	err = fmt.Errorf("shell 创建失败 %s", ret)
+	return
 }
 
 // 检查是否为 DaemonSet 创建的 Pod
