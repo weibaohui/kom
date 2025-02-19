@@ -3,6 +3,7 @@ package kom
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/duke-git/lancet/v2/slice"
 	"github.com/weibaohui/kom/utils"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -225,6 +227,7 @@ spec:
     - nsenter
     image: %s
     name: %s
+    imagePullPolicy: IfNotPresent
     securityContext:
       privileged: true
   hostIPC: true
@@ -244,11 +247,175 @@ spec:
 
 	//创建成功
 	if len(ret) > 0 && strings.Contains(ret[0], "created") {
+		//等待启动或者超时,超时采用默认的超时时间
+		err = d.waitPodReady(namespace, podName, d.kubectl.Statement.CacheTTL)
 		return
 	}
 
 	//创建失败
-	err = fmt.Errorf("shell 创建失败 %s", ret)
+	err = fmt.Errorf("node shell 创建失败 %s", ret)
+	return
+}
+func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
+	var p *v1.Pod
+	if ttl == 0 {
+		//设置一个默认的等待时间
+		ttl = 30
+	}
+	timeout := time.After(ttl * time.Second)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("等待Pod启动超时")
+		case <-ticker.C:
+			err := d.kubectl.newInstance().Resource(&v1.Pod{}).Name(podName).Namespace(ns).Get(&p).Error
+			if err != nil {
+				klog.V(6).Infof("等待Pod %s/%s 创建中...", ns, podName)
+				continue
+			}
+
+			if p == nil {
+				klog.V(6).Infof("Pod %s/%s 未创建", ns, podName)
+				continue
+			}
+
+			if len(p.Status.ContainerStatuses) == 0 {
+				klog.V(6).Infof("Pod %s/%s 容器状态未就绪", ns, podName)
+				continue
+			}
+
+			// 检查所有容器是否都Ready
+			allContainersReady := true
+			for _, status := range p.Status.ContainerStatuses {
+				if !status.Ready {
+					allContainersReady = false
+					klog.V(6).Infof("容器 %s 在Pod %s/%s 中未就绪", status.Name, ns, podName)
+					break
+				}
+			}
+
+			if allContainersReady {
+				klog.V(6).Infof("Pod %s/%s 所有容器已就绪", ns, podName)
+				break
+			}
+		}
+
+		// 如果所有容器都Ready，退出循环
+		if p != nil && len(p.Status.ContainerStatuses) > 0 {
+			allReady := true
+			for _, status := range p.Status.ContainerStatuses {
+				if !status.Ready {
+					allReady = false
+					break
+				}
+			}
+			if allReady {
+				break
+			}
+		}
+
+		klog.V(6).Infof("继续等待Pod %s/%s 完全就绪...", ns, podName)
+	}
+
+	return nil
+}
+
+// CreateKubectlShell kubectl 操作shell
+// 要求容器内必须含有nsenter
+// CreateKubectlShell 创建一个用于运行 kubectl 的 Pod，并传入 kubeconfig 配置内容
+func (d *node) CreateKubectlShell(kubeconfig string, image ...string) (namespace, podName, containerName string, err error) {
+	// 默认的 kubectl 镜像
+	runImage := "bitnami/kubectl:latest"
+	if len(image) > 0 {
+		runImage = image[0]
+	}
+
+	namespace = "kube-system"
+	containerName = "shell"
+	podName = fmt.Sprintf("kubectl-shell-%s", strings.ToLower(random.RandString(8)))
+
+	// 将 kubeconfig 字符串中的换行符替换为 \n
+	kubeconfigEscaped := strings.Replace(kubeconfig, "\n", `\n`, -1)
+	// 使用模板字符串来创建 YAML 配置
+	podTemplate := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{.PodName}}
+  namespace: {{.Namespace}}
+spec:
+  initContainers:
+  - name: init-container
+    image: {{.RunImage}}
+    imagePullPolicy: IfNotPresent
+    command: ['sh', '-c', 'echo -e "{{.Kubeconfig}}" > /.kube/config || (echo "Failed to write kubeconfig" && exit 1)']
+    volumeMounts:
+     - name: kube-config
+       mountPath: /.kube
+  containers:
+  - name: {{.ContainerName}}
+    image: {{.RunImage}}
+    command: ['tail', '-f', '/dev/null']
+    env:
+     - name: KUBECONFIG
+       value: /.kube/config
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: kube-config
+      mountPath: /.kube
+  nodeName: {{.NodeName}}	
+  tolerations:
+  - operator: Exists	  
+  volumes:
+  - name: kube-config
+    emptyDir: {}
+`
+
+	// 准备模板数据
+	data := map[string]interface{}{
+		"PodName":       podName,
+		"Namespace":     namespace,
+		"RunImage":      runImage,
+		"Kubeconfig":    kubeconfigEscaped,
+		"ContainerName": containerName,
+		"NodeName":      d.kubectl.Statement.Name, // 使用 node 上的 kubectl name
+	}
+
+	// 创建模板并执行填充
+	tmpl, err := template.New("podConfig").Parse(podTemplate)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	// 生成最终的 YAML 配置
+	var yaml string
+	var buf strings.Builder
+	err = tmpl.Execute(&buf, data)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to execute template: %w", err)
+	}
+	yaml = buf.String()
+
+	klog.V(6).Infof("Generated YAML:\n%s", yaml)
+	// 调用 kubectl 的 Applier 方法来应用生成的 YAML 配置
+	ret := d.kubectl.Applier().Apply(yaml)
+
+	// 检查是否创建成功
+	klog.V(6).Infof("%s kubectl Shell 创建结果 %s", d.kubectl.Statement.Name, ret)
+
+	// 如果返回结果中包含 "created" 字符串，则认为创建成功
+	if len(ret) > 0 && strings.Contains(ret[0], "created") {
+		//等待启动或者超时,超时采用默认的超时时间
+		err = d.waitPodReady(namespace, podName, d.kubectl.Statement.CacheTTL)
+
+		return
+	}
+
+	// 创建失败
+	err = fmt.Errorf("kubectl shell 创建失败 %s", ret)
 	return
 }
 

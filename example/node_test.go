@@ -79,11 +79,40 @@ func TestNodeLabels(t *testing.T) {
 func TestNodeShell(t *testing.T) {
 	name := "kind-control-plane"
 	ns, pod, container, err := kom.DefaultCluster().Resource(&v1.Node{}).Name(name).Ctl().Node().CreateNodeShell()
-
 	if err != nil {
 		t.Logf("Node Shell error:%v", err.Error())
 		return
 	}
 	t.Logf("Node Shell ns=%s podName=%s containerName=%s", ns, pod, container)
+
+}
+func TestNodeKubectlShell(t *testing.T) {
+	name := "kind-control-plane"
+	// 假设传入 kubeconfig 内容
+	kubeconfig := `
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://k8s-api-server
+    certificate-authority-data: <ca-cert-data>
+  name: my-cluster
+contexts:
+- context:
+    cluster: my-cluster
+    user: my-user
+  name: my-context
+current-context: my-context
+users:
+- name: my-user
+  user:
+    client-certificate-data: <clien1t-cert-data>
+    client-key-data: <client-key-data>
+`
+	ns, pod, container, err := kom.DefaultCluster().Resource(&v1.Node{}).Name(name).Ctl().Node().CreateKubectlShell(kubeconfig)
+	if err != nil {
+		t.Logf("Kubectl Shell error:%v", err.Error())
+		return
+	}
+	t.Logf("Kubectl Shell ns=%s podName=%s containerName=%s", ns, pod, container)
 
 }

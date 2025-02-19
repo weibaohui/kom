@@ -810,6 +810,12 @@ err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().An
 ns, pod, container, err  := kom.DefaultCluster().Resource(&v1.Node{}).Name("kind-control-plane").Ctl().Node().CreateNodeShell()
 fmt.Printf("Node Shell ns=%s podName=%s containerName=%s", ns, pod, container)
 ```
+#### 创建kubectl Shell
+```go
+ns, pod, container, err := kom.DefaultCluster().Resource(&v1.Node{}).Name(name).Ctl().Node().CreateKubectlShell(kubeconfig)
+fmt.Printf("Kubectl Shell ns=%s podName=%s containerName=%s", ns, pod, container)
+
+```
 #### 统计StorageClass下的PVC数量
 ```go
 count, err := kom.DefaultCluster().Resource(&v1.StorageClass{}).Name("hostpath").Ctl().StorageClass().PVCCount()
