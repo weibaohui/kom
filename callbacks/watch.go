@@ -16,6 +16,7 @@ func Watch(k *kom.Kubectl) error {
 	namespaced := stmt.Namespaced
 	ns := stmt.Namespace
 	ctx := stmt.Context
+	namespaceList := stmt.NamespaceList
 
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
@@ -39,9 +40,17 @@ func Watch(k *kom.Kubectl) error {
 	var err error
 
 	if namespaced {
-		if ns == "" {
-			ns = metav1.NamespaceDefault
+		if stmt.AllNamespace || len(namespaceList) > 1 {
+			// 全部命名空间 或者  传入多个命名空间
+			// client-go 不支持跨命名空间查询，就全部查出来，后面再过滤
+			ns = metav1.NamespaceAll
+		} else {
+			// 不是全部，也没有传多个命名空间
+			if ns == "" {
+				ns = metav1.NamespaceDefault
+			}
 		}
+
 		watcher, err = stmt.Kubectl.DynamicClient().Resource(gvr).Namespace(ns).Watch(ctx, listOptions)
 	} else {
 		watcher, err = stmt.Kubectl.DynamicClient().Resource(gvr).Watch(ctx, listOptions)
