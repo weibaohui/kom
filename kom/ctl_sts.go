@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,7 +27,7 @@ func (s *statefulSet) Restore() error {
 }
 
 func (s *statefulSet) ManagedPods() ([]*corev1.Pod, error) {
-	//先找到sts
+	// 先找到sts
 	var sts v1.StatefulSet
 	err := s.kubectl.WithCache(s.kubectl.Statement.CacheTTL).Resource(&sts).Get(&sts).Error
 
@@ -50,4 +51,13 @@ func (s *statefulSet) ManagedPod() (*corev1.Pod, error) {
 		return podList[0], nil
 	}
 	return nil, fmt.Errorf("未发现StatefulSet[%s]下的Pod", s.kubectl.Statement.Name)
+}
+func (s *statefulSet) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
+	// 通过rs 获取pod
+	var list []*autoscalingv2.HorizontalPodAutoscaler
+	err := s.kubectl.newInstance().WithCache(s.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Namespace(s.kubectl.Statement.Namespace).
+		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", s.kubectl.Statement.Name, "StatefulSet")).
+		List(&list).Error
+	return list, err
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -25,7 +26,7 @@ func (r *replicaSet) Restore() error {
 }
 
 func (r *replicaSet) ManagedPods() ([]*corev1.Pod, error) {
-	//先找到rs
+	// 先找到rs
 	var rs v1.ReplicaSet
 	err := r.kubectl.WithCache(r.kubectl.Statement.CacheTTL).Resource(&rs).Get(&rs).Error
 
@@ -49,4 +50,13 @@ func (r *replicaSet) ManagedPod() (*corev1.Pod, error) {
 		return podList[0], nil
 	}
 	return nil, fmt.Errorf("未发现ReplicaSet[%s]下的Pod", r.kubectl.Statement.Name)
+}
+func (r *replicaSet) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
+	// 通过rs 获取pod
+	var list []*autoscalingv2.HorizontalPodAutoscaler
+	err := r.kubectl.newInstance().WithCache(r.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Namespace(r.kubectl.Statement.Namespace).
+		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", r.kubectl.Statement.Name, "ReplicaSet")).
+		List(&list).Error
+	return list, err
 }
