@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -24,8 +25,17 @@ func (d *deploy) Restart() error {
 func (d *deploy) Scale(replicas int32) error {
 	return d.kubectl.Ctl().Scale(replicas)
 }
+func (d *deploy) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
+	// 通过rs 获取pod
+	var list []*autoscalingv2.HorizontalPodAutoscaler
+	err := d.kubectl.newInstance().WithCache(d.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Namespace(d.kubectl.Statement.Namespace).
+		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", d.kubectl.Statement.Name, "Deployment")).
+		List(&list).Error
+	return list, err
+}
 func (d *deploy) ManagedPods() ([]*corev1.Pod, error) {
-	//先找到rs
+	// 先找到rs
 	rs, err := d.ManagedLatestReplicaSet()
 	if err != nil {
 		return nil, err
@@ -69,14 +79,14 @@ func (d *deploy) ManagedLatestReplicaSet() (*v1.ReplicaSet, error) {
 		return nil, err
 	}
 
-	//先看有几个rs，如果有一个，那么就这一个了
+	// 先看有几个rs，如果有一个，那么就这一个了
 	if len(rsList) == 1 {
 		return rsList[0], nil
 	}
 
-	//如果有多个rs，那么需要通过 revision 过滤rs list
-	//寻找Deploy上的注解
-	//metadata:
+	// 如果有多个rs，那么需要通过 revision 过滤rs list
+	// 寻找Deploy上的注解
+	// metadata:
 	//   annotations:
 	//     deployment.kubernetes.io/revision: "50"
 	var revision string

@@ -710,6 +710,14 @@ err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("n
 // 将名称为nginx的deployment的中的容器镜像tag升级为alpine
 result, err := kom.DefaultCluster().Resource(&Deployment{}).Namespace("default").Name("nginx").Ctl().Rollout().Status()
 ```
+#### Deployment HPA
+```go
+// 显示deployment的hpa 
+list, err := kom.DefaultCluster().Resource(&v1.Deployment{}).Namespace("default").Name("nginx-web").Ctl().Deployment().HPAList()
+for _, item := range list {
+    t.Logf("HPA %s\n", item.Name)
+}
+```
 #### 节点打污点
 ```go
 err = kom.DefaultCluster().Resource(&Node{}).Name("kind-control-plane").Ctl().Node().Taint("dedicated=special-user:NoSchedule")

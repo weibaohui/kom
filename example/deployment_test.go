@@ -362,3 +362,15 @@ func TestReplaceTag(t *testing.T) {
 		t.Errorf("Deployment ReplaceImageTag Clean  error :%v", err)
 	}
 }
+
+func TestHPA(t *testing.T) {
+	list, err := kom.DefaultCluster().Resource(&v1.Deployment{}).
+		Namespace("default").
+		Name("nginx-web").Ctl().Deployment().HPAList()
+	if err != nil {
+		t.Logf("Deployment HPAList error :%v", err)
+	}
+	for _, item := range list {
+		t.Logf("HPA %s\n", item.Name)
+	}
+}
