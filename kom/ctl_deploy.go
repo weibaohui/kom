@@ -28,7 +28,9 @@ func (d *deploy) Scale(replicas int32) error {
 func (d *deploy) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
 	// 通过rs 获取pod
 	var list []*autoscalingv2.HorizontalPodAutoscaler
-	err := d.kubectl.newInstance().WithCache(d.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+	err := d.kubectl.newInstance().WithCache(d.kubectl.Statement.CacheTTL).
+		GVK("autoscaling", "v2", "HorizontalPodAutoscaler").
+		Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Namespace(d.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", d.kubectl.Statement.Name, "Deployment")).
 		List(&list).Error

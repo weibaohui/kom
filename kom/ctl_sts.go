@@ -55,7 +55,8 @@ func (s *statefulSet) ManagedPod() (*corev1.Pod, error) {
 func (s *statefulSet) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
 	// 通过rs 获取pod
 	var list []*autoscalingv2.HorizontalPodAutoscaler
-	err := s.kubectl.newInstance().WithCache(s.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+	err := s.kubectl.newInstance().WithCache(s.kubectl.Statement.CacheTTL).
+		GVK("autoscaling", "v2", "HorizontalPodAutoscaler").
 		Namespace(s.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", s.kubectl.Statement.Name, "StatefulSet")).
 		List(&list).Error

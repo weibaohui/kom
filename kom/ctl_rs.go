@@ -54,7 +54,8 @@ func (r *replicaSet) ManagedPod() (*corev1.Pod, error) {
 func (r *replicaSet) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
 	// 通过rs 获取pod
 	var list []*autoscalingv2.HorizontalPodAutoscaler
-	err := r.kubectl.newInstance().WithCache(r.kubectl.Statement.CacheTTL).Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+	err := r.kubectl.newInstance().WithCache(r.kubectl.Statement.CacheTTL).
+		GVK("autoscaling", "v2", "HorizontalPodAutoscaler").
 		Namespace(r.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", r.kubectl.Statement.Name, "ReplicaSet")).
 		List(&list).Error
