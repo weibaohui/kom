@@ -40,6 +40,10 @@ func (s *status) DescriberMap() map[schema.GroupKind]describe.ResourceDescriber 
 	cluster := s.kubectl.parentCluster()
 	return cluster.describerMap
 }
+func (s *status) OpenAPISchema() *openapi_v2.Document {
+	cluster := s.kubectl.parentCluster()
+	return cluster.openAPISchema
+}
 
 // 获取版本信息
 func (k *Kubectl) initializeServerVersion() *version.Info {

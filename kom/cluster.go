@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
+	"github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,7 @@ type ClusterInst struct {
 	serverVersion *version.Info                // 服务器版本
 	describerMap  map[schema.GroupKind]describe.ResourceDescriber
 	Cache         *ristretto.Cache[string, any]
+	openAPISchema *openapi_v2.Document // openapi
 }
 
 // Clusters 集群实例管理器
@@ -153,9 +155,10 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		cluster.crdList = k.initializeCRDList(time.Minute * 10) // CRD列表,10分钟缓存
 		cluster.callbacks = k.initializeCallbacks()             // 回调
 		cluster.serverVersion = k.initializeServerVersion()     // 服务器版本
-		cluster.docs = doc.InitTrees(k.getOpenAPISchema())      // 文档
-		cluster.describerMap = k.initializeDescriberMap()       // 初始化描述器
-		if c.callbackRegisterFunc != nil {                      // 注册回调方法
+		cluster.openAPISchema = k.getOpenAPISchema()
+		cluster.docs = doc.InitTrees(k.getOpenAPISchema()) // 文档
+		cluster.describerMap = k.initializeDescriberMap()  // 初始化描述器
+		if c.callbackRegisterFunc != nil {                 // 注册回调方法
 			c.callbackRegisterFunc(cluster)
 		}
 
