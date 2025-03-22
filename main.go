@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	"github.com/weibaohui/kom/example"
+	"github.com/weibaohui/kom/mcp"
 	"k8s.io/klog/v2"
 )
 
@@ -12,4 +13,6 @@ func main() {
 	flag.Set("v", "8")
 	example.Connect()
 	example.Example()
+	mcp.RunMCPServer(9096)
+
 }
