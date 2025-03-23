@@ -10,3 +10,7 @@ func BoolPtr(b bool) *bool {
 func Int64Ptr(i int64) *int64 {
 	return &i
 }
+
+func Ptr[T any](v T) *T {
+	return &v
+}
