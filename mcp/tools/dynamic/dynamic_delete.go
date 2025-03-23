@@ -31,11 +31,15 @@ func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolReque
 	}
 
 	// 删除资源
-	err = kom.Cluster(meta.Cluster).WithContext(ctx).CRD(meta.Group, meta.Version, meta.Kind).Namespace(meta.Namespace).Name(meta.Name).Delete().Error
+	kubectl := kom.Cluster(meta.Cluster).WithContext(ctx).CRD(meta.Group, meta.Version, meta.Kind).Namespace(meta.Namespace)
+	if meta.Namespace == "" {
+		kubectl = kubectl.AllNamespace()
+	}
+	err = kubectl.Name(meta.Name).Delete().Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete item [%s/%s] type of [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
 	result := fmt.Sprintf("Successfully deleted resource [%s/%s] of type [%s%s%s]", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind)
 	return tools.TextResult(result, meta)
-	 
+
 }
