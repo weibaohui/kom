@@ -25,9 +25,6 @@ func ParseFromRequest(request mcp.CallToolRequest) (*ResourceMetadata, error) {
 	}
 
 	name, ok := request.Params.Arguments["name"].(string)
-	if !ok || name == "" {
-		return nil, fmt.Errorf("missing or invalid name parameter")
-	}
 
 	// 获取命名空间参数（可选，支持集群级资源）
 	namespace := ""
