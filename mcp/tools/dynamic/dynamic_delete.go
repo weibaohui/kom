@@ -6,6 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/metadata"
 )
 
@@ -34,14 +35,7 @@ func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete item [%s/%s] type of [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
-
-	// 构建返回结果
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: fmt.Sprintf("Successfully deleted resource [%s/%s] of type [%s%s%s]", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind),
-			},
-		},
-	}, nil
+	result := fmt.Sprintf("Successfully deleted resource [%s/%s] of type [%s%s%s]", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind)
+	return tools.TextResult(result, meta)
+	 
 }
