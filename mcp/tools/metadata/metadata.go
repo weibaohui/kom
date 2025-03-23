@@ -1,6 +1,8 @@
 package metadata
 
 import (
+	"fmt"
+
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -15,45 +17,50 @@ type ResourceMetadata struct {
 }
 
 // ParseFromRequest 从请求中解析资源元数据
-func ParseFromRequest(request mcp.CallToolRequest) *ResourceMetadata {
-	// 获取基本参数
-	cluster := request.Params.Arguments["cluster"].(string)
-	namespace := request.Params.Arguments["namespace"].(string)
-	name := request.Params.Arguments["name"].(string)
+func ParseFromRequest(request mcp.CallToolRequest) (*ResourceMetadata, error) {
+	// 验证必要参数
+	cluster, ok := request.Params.Arguments["cluster"].(string)
+	if !ok || cluster == "" {
+		return nil, fmt.Errorf("missing or invalid cluster parameter")
+	}
+
+	name, ok := request.Params.Arguments["name"].(string)
+	if !ok || name == "" {
+		return nil, fmt.Errorf("missing or invalid name parameter")
+	}
+
+	// 获取命名空间参数（可选，支持集群级资源）
+	namespace := ""
+	if ns, ok := request.Params.Arguments["namespace"].(string); ok {
+		namespace = ns
+	}
 
 	// 获取资源类型信息
 	var group, version, kind string
 	if resourceType, ok := request.Params.Arguments["kind"].(string); ok && resourceType != "" {
 		// 如果提供了resourceType，从type.go获取资源信息
 		if info, exists := GetResourceInfo(resourceType); exists {
-			// 如果用户没有明确指定GVK，使用从resourceType获取的值
-			if g, ok := request.Params.Arguments["group"].(string); !ok || g == "" {
-				group = info.Group
-			} else {
-				group = g
-			}
-			if v, ok := request.Params.Arguments["version"].(string); !ok || v == "" {
-				version = info.Version
-			} else {
-				version = v
-			}
-			if k, ok := request.Params.Arguments["kind"].(string); !ok || k == "" {
-				kind = info.Kind
-			} else {
-				kind = k
-			}
+			// 优先使用用户指定的GVK，如果未指定则使用默认值
+			group = getStringParam(request, "group", info.Group)
+			version = getStringParam(request, "version", info.Version)
+			kind = getStringParam(request, "kind", info.Kind)
 		}
 	}
 
-	// 如果没有提供kind，使用明确指定的GVK
-	if len(group) == 0 {
-		group = request.Params.Arguments["group"].(string)
+	// 如果没有通过resourceType获取到信息，则使用直接指定的GVK
+	if group == "" {
+		group = getStringParam(request, "group", "")
 	}
-	if len(version) == 0 {
-		version = request.Params.Arguments["version"].(string)
+	if version == "" {
+		version = getStringParam(request, "version", "")
 	}
-	if len(kind) == 0 {
-		kind = request.Params.Arguments["kind"].(string)
+	if kind == "" {
+		kind = getStringParam(request, "kind", "")
+	}
+
+	// 验证GVK参数
+	if group == "" || version == "" || kind == "" {
+		return nil, fmt.Errorf("missing or invalid GVK parameters")
 	}
 
 	return &ResourceMetadata{
@@ -63,5 +70,13 @@ func ParseFromRequest(request mcp.CallToolRequest) *ResourceMetadata {
 		Group:     group,
 		Version:   version,
 		Kind:      kind,
+	}, nil
+}
+
+// getStringParam 从请求参数中获取字符串值，如果不存在或无效则返回默认值
+func getStringParam(request mcp.CallToolRequest, key, defaultValue string) string {
+	if value, ok := request.Params.Arguments[key].(string); ok && value != "" {
+		return value
 	}
+	return defaultValue
 }
