@@ -6,6 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/metadata"
 )
 
@@ -33,14 +34,6 @@ func GetDynamicResourceDescribeHandler(ctx context.Context, request mcp.CallTool
 	if err != nil {
 		return nil, fmt.Errorf("failed to get item [%s/%s] type of  [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
+	return tools.TextResult(describeResult, meta)
 
-	// 构建返回结果
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: string(describeResult),
-			},
-		},
-	}, nil
 }
