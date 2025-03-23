@@ -6,9 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
+	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/metadata"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
 func GetDynamicResource() mcp.Tool {
@@ -30,22 +30,11 @@ func GetDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest)
 	if err != nil {
 		return nil, err
 	}
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err = kom.Cluster(meta.Cluster).WithContext(ctx).CRD(meta.Group, meta.Version, meta.Kind).Namespace(meta.Namespace).Name(meta.Name).RemoveManagedFields().Get(&item).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get item [%s/%s] type of  [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
-	bytes, err := json.Marshal(item)
-	if err != nil {
-		return nil, fmt.Errorf("failed to json marshal item [%s/%s] type of  [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
-	}
-	// 构建返回结果
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: string(bytes),
-			},
-		},
-	}, nil
+	return tools.TextResult(item, meta)
+
 }
