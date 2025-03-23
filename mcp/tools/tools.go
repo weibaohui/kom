@@ -9,12 +9,12 @@ import (
 )
 
 // buildTextResult 构建标准的文本返回结果
-func buildTextResult[T any](text T) *mcp.CallToolResult {
+func buildTextResult(text string) *mcp.CallToolResult {
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			mcp.TextContent{
 				Type: "text",
-				Text: fmt.Sprint(text),
+				Text: text,
 			},
 		},
 	}
@@ -24,14 +24,14 @@ func buildTextResult[T any](text T) *mcp.CallToolResult {
 func TextResult[T any](item T, meta *metadata.ResourceMetadata) (*mcp.CallToolResult, error) {
 	switch v := any(item).(type) {
 	case []byte:
-		return buildTextResult(v), nil
+		return buildTextResult(string(v)), nil
 	default:
 		bytes, err := json.Marshal(item)
 		if err != nil {
 			return nil, fmt.Errorf("failed to json marshal item [%s/%s] type of [%s%s%s]: %v",
 				meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 		}
-		return buildTextResult(bytes), nil
+		return buildTextResult(string(bytes)), nil
 	}
 }
 
