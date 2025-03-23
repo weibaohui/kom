@@ -22,7 +22,7 @@ func RunMCPServer(name, version string, port int) {
 	// 注册通用的资源管理器
 	dynamic.RegisterTools(s)
 	// 注册Pod相关工具
-	pod.RegisterPodTools(s)
+	pod.RegisterTools(s)
 
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s)
