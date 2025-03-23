@@ -26,10 +26,12 @@ func GetDynamicResource() mcp.Tool {
 
 func GetDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
-	meta := metadata.ParseFromRequest(request)
-
+	meta, err := metadata.ParseFromRequest(request)
+	if err != nil {
+		return nil, err
+	}
 	var item unstructured.Unstructured
-	err := kom.Cluster(meta.Cluster).WithContext(ctx).CRD(meta.Group, meta.Version, meta.Kind).Namespace(meta.Namespace).Name(meta.Name).RemoveManagedFields().Get(&item).Error
+	err = kom.Cluster(meta.Cluster).WithContext(ctx).CRD(meta.Group, meta.Version, meta.Kind).Namespace(meta.Namespace).Name(meta.Name).RemoveManagedFields().Get(&item).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get item [%s/%s] type of  [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
