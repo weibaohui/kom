@@ -59,7 +59,10 @@ func ParseFromRequest(request mcp.CallToolRequest) (*ResourceMetadata, error) {
 	}
 
 	// 验证GVK参数
-	if group == "" || version == "" || kind == "" {
+	// 某些情况下，Group和Version可能为空，但Kind不能为空
+	// 例如，对于ClusterRole和ClusterRoleBinding，Group和Version可能为空，但Kind为"ClusterRole"和"ClusterRoleBinding"
+	// 因此，我们需要验证Kind是否为空
+	if kind == "" {
 		return nil, fmt.Errorf("missing or invalid GVK parameters")
 	}
 
