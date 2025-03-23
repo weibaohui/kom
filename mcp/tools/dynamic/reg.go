@@ -15,4 +15,7 @@ func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
 		DeleteDynamicResource(),
 		DeleteDynamicResourceHandler)
+	s.AddTool(
+		ListDynamicResource(),
+		ListDynamicResourceHandler)
 }
