@@ -13,6 +13,6 @@ func main() {
 	flag.Set("v", "8")
 	example.Connect()
 	// example.Example()
-	mcp.RunMCPServer(9096)
+	mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
 }
