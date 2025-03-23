@@ -1,4 +1,4 @@
-package dynamic
+package metadata
 
 import "strings"
 
