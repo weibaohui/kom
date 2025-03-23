@@ -1,7 +1,6 @@
 package kom
 
 import (
-	"fmt"
 	"io"
 
 	v1 "k8s.io/api/core/v1"
@@ -49,10 +48,11 @@ func (p *pod) Stdin(reader io.Reader) *pod {
 }
 func (p *pod) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *pod {
 	tx := p.kubectl.getInstance()
-	if tx.Statement.ContainerName == "" {
-		p.Error = fmt.Errorf("请先设置ContainerName")
-		return p
-	}
+	// 如果只有一个容器，是可以不设置containerName的
+	// if tx.Statement.ContainerName == "" {
+	// 	p.Error = fmt.Errorf("请先设置ContainerName")
+	// 	return p
+	// }
 	tx.Statement.PodLogOptions = opt
 	tx.Statement.PodLogOptions.Container = tx.Statement.ContainerName
 	tx.Statement.Dest = requestPtr
