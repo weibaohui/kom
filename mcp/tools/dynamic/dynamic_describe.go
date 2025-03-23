@@ -14,7 +14,7 @@ func GetDynamicResourceDescribe() mcp.Tool {
 	return mcp.NewTool(
 		"describe_k8s_resource",
 		mcp.WithDescription("Retrieve Kubernetes resource details by cluster, namespace, and name"),
-		mcp.WithString("cluster", mcp.Description("Cluster where the resource is running")),
+		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster)")),
 		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources)")),
 		mcp.WithString("name", mcp.Description("Name of the resource")),
 		mcp.WithString("group", mcp.Description("API group of the resource (optional if resourceType is provided)")),

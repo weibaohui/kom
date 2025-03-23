@@ -19,12 +19,17 @@ type ResourceMetadata struct {
 // ParseFromRequest 从请求中解析资源元数据
 func ParseFromRequest(request mcp.CallToolRequest) (*ResourceMetadata, error) {
 	// 验证必要参数
-	cluster, ok := request.Params.Arguments["cluster"].(string)
-	if !ok || cluster == "" {
-		return nil, fmt.Errorf("missing or invalid cluster parameter")
+	// 获取cluster参数，如果不存在则使用默认值空字符串
+	cluster := ""
+	if clusterVal, ok := request.Params.Arguments["cluster"].(string); ok {
+		cluster = clusterVal
 	}
 
-	name, ok := request.Params.Arguments["name"].(string)
+	// 获取name参数，如果不存在则返回错误
+	name := ""
+	if nameVal, ok := request.Params.Arguments["name"].(string); ok {
+		name = nameVal
+	}
 
 	// 获取命名空间参数（可选，支持集群级资源）
 	namespace := ""
