@@ -9,13 +9,13 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func RunMCPServer(port int) {
+func RunMCPServer(name, version string, port int) {
 	// 创建一个新的 MCP 服务器
 	s := server.NewMCPServer(
-		"kom mcp server",
-		"0.0.1",
-		server.WithResourceCapabilities(true, true),
-		server.WithPromptCapabilities(true),
+		name,
+		version,
+		server.WithResourceCapabilities(false, false),
+		server.WithPromptCapabilities(false),
 		server.WithLogging(),
 	)
 
