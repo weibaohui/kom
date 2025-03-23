@@ -12,7 +12,7 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Set("v", "8")
 	example.Connect()
-	example.Example()
+	// example.Example()
 	mcp.RunMCPServer(9096)
 
 }
