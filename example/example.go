@@ -34,7 +34,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	// podLogs()
+	podLogs()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -575,7 +575,7 @@ spec:
 		Delete().Error
 }
 
-func podLogs() {
+func podLogs2() {
 	yaml := `apiVersion: v1
 kind: Pod
 metadata:
@@ -606,10 +606,11 @@ spec:
 	err := kom.DefaultCluster().
 		Namespace("default").
 		Name("random-char-pod").Ctl().Pod().
-		ContainerName("container").
+		// ContainerName("container").
 		GetLogs(&stream, &corev1.PodLogOptions{}).Error
 	if err != nil {
 		fmt.Printf("Error getting pod logs:%v\n", err)
+		return
 	}
 	// 逐行读取日志并发送到 Channel
 	reader := bufio.NewReader(stream)
@@ -629,6 +630,76 @@ spec:
 	for _, str := range result {
 		fmt.Println(str)
 	}
+
+}
+func podLogs() {
+	yaml := `apiVersion: v1
+kind: Pod
+metadata:
+  name: random-char-pod
+  namespace: default
+spec:
+  containers:
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="A$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_a.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: containera
+  - args:
+    - |
+      mkdir -p /var/log;
+      while true; do
+        random_char="B$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 1)";
+        echo $random_char | tee -a /var/log/random_b.log;
+        sleep 5;
+      done
+    command:
+    - /bin/sh
+    - -c
+    image: alpine
+    name: containerb	
+`
+	result := kom.DefaultCluster().Applier().Apply(yaml)
+	for _, str := range result {
+		fmt.Println(str)
+	}
+	time.Sleep(time.Second * 5)
+	var stream io.ReadCloser
+	err := kom.DefaultCluster().
+		Namespace("default").
+		Name("random-char-pod").Ctl().Pod().
+		// ContainerName("container").
+		GetLogs(&stream, &corev1.PodLogOptions{}).Error
+	if err != nil {
+		fmt.Printf("Error getting pod logs:%v\n", err)
+		return
+	}
+	// 逐行读取日志并发送到 Channel
+	reader := bufio.NewReader(stream)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			// 处理读取错误，向客户端发送错误消息
+			fmt.Printf("Error reading stream: %v\n", err)
+			break
+		}
+		fmt.Println(line)
+	}
+	// result = kom.DefaultCluster().Applier().Delete(yaml)
+	// for _, str := range result {
+	// 	fmt.Println(str)
+	// }
 
 }
 func podCommand() {
