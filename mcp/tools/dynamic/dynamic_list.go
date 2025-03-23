@@ -44,10 +44,14 @@ func ListDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest
 	// 提取name和namespace信息
 	var result []map[string]string
 	for _, item := range list {
-		result = append(result, map[string]string{
-			"name":      item.GetName(),
-			"namespace": item.GetNamespace(),
-		})
+		ret := map[string]string{
+			"name": item.GetName(),
+		}
+		if item.GetNamespace() != "" {
+			ret["namespace"] = item.GetNamespace()
+		}
+
+		result = append(result, ret)
 	}
 
 	return tools.TextResult(result, meta)
