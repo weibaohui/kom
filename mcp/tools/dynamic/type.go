@@ -1,5 +1,7 @@
 package dynamic
 
+import "strings"
+
 type ResourceInfo struct {
 	Group      string
 	Version    string
@@ -39,6 +41,7 @@ var resourceMap = map[string]ResourceInfo{
 
 // GetResourceInfo 根据资源类型字符串返回资源信息
 func GetResourceInfo(resourceType string) (ResourceInfo, bool) {
+	resourceType = strings.ToLower(resourceType)
 	if info, exists := resourceMap[resourceType]; exists {
 		return info, true
 	}
@@ -47,6 +50,7 @@ func GetResourceInfo(resourceType string) (ResourceInfo, bool) {
 
 // IsNamespaced 判断资源是否为命名空间级别
 func IsNamespaced(resourceType string) bool {
+	resourceType = strings.ToLower(resourceType)
 	if info, exists := resourceMap[resourceType]; exists {
 		return info.Namespaced
 	}

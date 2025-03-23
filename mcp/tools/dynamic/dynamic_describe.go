@@ -15,7 +15,6 @@ func GetDynamicResourceDescribe() mcp.Tool {
 		mcp.WithString("cluster", mcp.Description("Cluster where the resource is running")),
 		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources)")),
 		mcp.WithString("name", mcp.Description("Name of the resource")),
-		mcp.WithString("resourceType", mcp.Description("Type of the resource (e.g., pod, deployment)")),
 		mcp.WithString("group", mcp.Description("API group of the resource (optional if resourceType is provided)")),
 		mcp.WithString("version", mcp.Description("API version of the resource (optional if resourceType is provided)")),
 		mcp.WithString("kind", mcp.Description("Kind of the resource (optional if resourceType is provided)")),
@@ -30,7 +29,7 @@ func GetDynamicResourceDescribeHandler(ctx context.Context, request mcp.CallTool
 
 	// 获取资源类型信息
 	var group, version, kind string
-	if resourceType, ok := request.Params.Arguments["resourceType"].(string); ok && resourceType != "" {
+	if resourceType, ok := request.Params.Arguments["kind"].(string); ok && resourceType != "" {
 		// 如果提供了resourceType，从type.go获取资源信息
 		if info, exists := GetResourceInfo(resourceType); exists {
 			// 如果用户没有明确指定GVK，使用从resourceType获取的值
@@ -53,7 +52,7 @@ func GetDynamicResourceDescribeHandler(ctx context.Context, request mcp.CallTool
 			return nil, fmt.Errorf("unknown resource type: %s", resourceType)
 		}
 	} else {
-		// 如果没有提供resourceType，使用明确指定的GVK
+		// 如果没有提供kind，使用明确指定的GVK
 		group = request.Params.Arguments["group"].(string)
 		version = request.Params.Arguments["version"].(string)
 		kind = request.Params.Arguments["kind"].(string)
