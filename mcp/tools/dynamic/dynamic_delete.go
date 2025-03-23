@@ -13,13 +13,13 @@ import (
 func DeleteDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"delete_k8s_resource",
-		mcp.WithDescription("Delete Kubernetes resource by cluster, namespace, and name"),
-		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster)")),
-		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources)")),
-		mcp.WithString("name", mcp.Description("Name of the resource")),
-		mcp.WithString("group", mcp.Description("API group of the resource (optional if resourceType is provided)")),
-		mcp.WithString("version", mcp.Description("API version of the resource (optional if resourceType is provided)")),
-		mcp.WithString("kind", mcp.Description("Kind of the resource (optional if resourceType is provided)")),
+		mcp.WithDescription("Delete Kubernetes resource by cluster, namespace, and name / 通过集群、命名空间和名称删除Kubernetes资源"),
+		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster) / 运行资源的集群（使用空字符串表示默认集群）")),
+		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources) / 资源所在的命名空间（集群范围资源可选）")),
+		mcp.WithString("name", mcp.Description("Name of the resource / 资源的名称")),
+		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
+		mcp.WithString("version", mcp.Description("API version of the resource / 资源的API版本")),
+		mcp.WithString("kind", mcp.Description("Kind of the resource / 资源的类型")),
 	)
 }
 
