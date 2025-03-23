@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/weibaohui/kom/mcp/tools/dynamic"
 	"github.com/weibaohui/kom/mcp/tools/pod"
 	"k8s.io/klog/v2"
 )
@@ -18,6 +19,8 @@ func RunMCPServer(port int) {
 		server.WithLogging(),
 	)
 
+	// 注册通用的资源管理器
+	dynamic.RegisterTools(s)
 	// 注册Pod相关工具
 	pod.RegisterPodTools(s)
 
