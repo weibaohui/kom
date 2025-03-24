@@ -13,14 +13,15 @@
 ## **特点**
 1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等，包括对内置资源以及CRD资源的操作。
 2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
-3. 支持跨命名空间：通过kom.Namespace("default","kube-system").List(&items) 跨命名空间查询资源。
-4. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
-5. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
-6. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
-7. 支持POD内文件操作，轻松上传、下载、删除文件。
-8. 支持高频操作封装，如deployment的restart重启、scale扩缩容、启停等20余项操作功能。
-9. 支持SQL查询k8s资源。select * from pod where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp desc 
-10. 支持查询缓存，在高频、批量查询场景下，可设置缓存过期时间，提升查询性能。列表过滤条件不受缓存影响。
+3. MCP支持：支持多集群的MCP管理，支持SSE模式。可通过大模型实现对任意资源的增删查描述操作。
+4. 支持跨命名空间：通过kom.Namespace("default","kube-system").List(&items) 跨命名空间查询资源。
+5. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
+6. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
+7. 支持回调机制，轻松拓展业务逻辑，而不必跟k8s操作强耦合。
+8. 支持POD内文件操作，轻松上传、下载、删除文件。
+9. 支持高频操作封装，如deployment的restart重启、scale扩缩容、启停等20余项操作功能。
+10. 支持SQL查询k8s资源。select * from pod where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp desc 
+11. 支持查询缓存，在高频、批量查询场景下，可设置缓存过期时间，提升查询性能。列表过滤条件不受缓存影响。
 
 
 
@@ -55,6 +56,23 @@ func main() {
 ```
 
 ## 使用示例
+
+### 0. 多集群 k8s MCP 支持
+支持多个tools 支持。包括对任意资源的查询列表删除描述操作，以及POD日志读取操作。
+
+```go
+// 一行代码启动MCP Server
+mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
+```
+```shell
+list_k8s_resource
+get_k8s_resource
+delete_k8s_resource
+describe_k8s_resource
+get_pod_logs
+
+```
+其他功能逐步完善上线。
 
 ### 1. 多集群管理
 #### 注册多集群
