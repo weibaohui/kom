@@ -3,18 +3,18 @@ module github.com/weibaohui/kom
 go 1.23.0
 
 require (
-	github.com/dgraph-io/ristretto/v2 v2.0.1
-	github.com/duke-git/lancet/v2 v2.3.3
+	github.com/dgraph-io/ristretto/v2 v2.1.0
+	github.com/duke-git/lancet/v2 v2.3.5
 	github.com/fatih/camelcase v1.0.0
-	github.com/google/gnostic-models v0.6.8
-	github.com/mark3labs/mcp-go v0.15.0
+	github.com/google/gnostic-models v0.6.9
+	github.com/mark3labs/mcp-go v0.16.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
-	k8s.io/api v0.32.0
-	k8s.io/apimachinery v0.32.0
-	k8s.io/cli-runtime v0.32.0
-	k8s.io/client-go v0.32.0
+	k8s.io/api v0.32.3
+	k8s.io/apimachinery v0.32.3
+	k8s.io/cli-runtime v0.32.3
+	k8s.io/client-go v0.32.3
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.32.0
+	k8s.io/kubectl v0.32.3
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -63,7 +63,7 @@ require (
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
