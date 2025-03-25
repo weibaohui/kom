@@ -63,6 +63,11 @@ func main() {
 ```go
 // 一行代码启动MCP Server
 mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
+
+```
+```shell
+# MCP Server 访问地址
+http://IP:9096/sse
 ```
 ```shell
 list_k8s_resource
