@@ -6,6 +6,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/mcp/tools/cluster"
 	"github.com/weibaohui/kom/mcp/tools/dynamic"
+	"github.com/weibaohui/kom/mcp/tools/event"
 	"github.com/weibaohui/kom/mcp/tools/pod"
 	"k8s.io/klog/v2"
 )
@@ -26,6 +27,9 @@ func RunMCPServer(name, version string, port int) {
 	pod.RegisterTools(s)
 	// 注册集群相关工具
 	cluster.RegisterTools(s)
+	// 注册事件资源
+	event.RegisterTools(s)
+
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s)
 
