@@ -14,7 +14,7 @@ import (
 func ListDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_resource",
-		mcp.WithDescription("List Kubernetes resources by cluster and resource type / 按集群和资源类型列出Kubernetes资源"),
+		mcp.WithDescription("List Kubernetes resources by cluster and resource type / 按集群和资源类型列出Kubernetes资源，获取列表"),
 		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster) / 运行资源的集群（使用空字符串表示默认集群）")),
 		mcp.WithString("namespace", mcp.Description("Namespace of the resources (optional for cluster-scoped resources) / 资源所在的命名空间（集群范围资源可选）")),
 		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
