@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/google/gnostic-models/openapiv2"
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +98,36 @@ func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
 	}
 	return c.RegisterByConfig(config)
+}
+
+// RegisterByString 通过kubeconfig文件的string 内容进行注册
+func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
+	config, err := clientcmd.Load([]byte(str))
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByString Error,content=:\n%s\n,err:%v", str, err)
+	}
+
+	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
+	restConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	return c.RegisterByConfig(restConfig)
+}
+
+// RegisterByStringWithID 通过kubeconfig文件的string 内容进行注册
+func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubectl, error) {
+	config, err := clientcmd.Load([]byte(str))
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByStringWithID Error content=\n%s\n,id:%s,err:%v", str, id, err)
+	}
+
+	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
+	restConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	return c.RegisterByConfigWithID(restConfig, id)
 }
 
 // RegisterByPathWithID 通过kubeconfig文件路径注册集群
