@@ -92,8 +92,6 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 // RegisterByPath 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
-	config.QPS = 200
-	config.Burst = 2000
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
 	}
@@ -133,8 +131,6 @@ func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubec
 // RegisterByPathWithID 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
-	config.QPS = 200
-	config.Burst = 2000
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
 	}
@@ -156,7 +152,8 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
-
+	config.QPS = 200
+	config.Burst = 2000
 	cluster, exists := clusterInstances.clusters[id]
 	if exists {
 		return cluster.Kubectl, nil
