@@ -70,14 +70,21 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 http://IP:9096/sse
 ```
 ```shell
-list_clusters # 列出当前注册集群
-list_k8s_event # 列出事件，支持集群、相关资源名称
-list_k8s_resource # 列出资源,支持集群、命名空间、名称，支持CRD资源
-get_k8s_resource # 获取资源,支持集群、命名空间、名称，支持CRD资源
-delete_k8s_resource # 删除资源,支持集群、命名空间、名称，支持CRD资源
-describe_k8s_resource # 描述资源,支持集群、命名空间、名称，支持CRD资源
-get_pod_logs # 获取POD日志,支持集群、命名空间、名称，支持设置最后多少条日志
-
+delete_k8s_resource
+describe_k8s_resource
+get_k8s_resource
+get_pod_linked_endpoints
+get_pod_linked_ingresses
+get_pod_linked_pv
+get_pod_linked_pvc
+get_pod_linked_services
+get_pod_logs
+list_clusters
+list_k8s_event
+list_k8s_resource
+pod_file_operations
+restart_deployment
+scale_deployment
 ```
 
 #### 启动命令
