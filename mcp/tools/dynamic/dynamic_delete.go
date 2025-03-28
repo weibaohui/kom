@@ -20,6 +20,7 @@ func DeleteDynamicResource() mcp.Tool {
 		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
 		mcp.WithString("version", mcp.Description("API version of the resource / 资源的API版本")),
 		mcp.WithString("kind", mcp.Description("Kind of the resource / 资源的类型")),
+		mcp.WithBoolean("force", mcp.Description("Force delete the resource / 强制删除资源")),
 	)
 }
 
@@ -35,7 +36,11 @@ func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolReque
 	if meta.Namespace == "" {
 		kubectl = kubectl.AllNamespace()
 	}
-	err = kubectl.Name(meta.Name).Delete().Error
+	if force, ok := request.Params.Arguments["force"].(bool); ok && force {
+		err = kubectl.Name(meta.Name).ForceDelete().Error
+	} else {
+		err = kubectl.Name(meta.Name).Delete().Error
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete item [%s/%s] type of [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
