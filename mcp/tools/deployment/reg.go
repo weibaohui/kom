@@ -1,4 +1,4 @@
-package cluster
+package deployment
 
 import (
 	"github.com/mark3labs/mcp-go/server"
@@ -6,7 +6,10 @@ import (
 
 func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
-		ListClusters(),
-		ListClustersHandler,
+		ScaleDeploymentTool(),
+		ScaleDeploymentHandler,
 	)
+	s.AddTool(
+		RestartDeploymentTool(),
+		RestartDeploymentHandler)
 }
