@@ -10,4 +10,8 @@ func RegisterTools(s *server.MCPServer) {
 		GetPodLogsTool(),
 		GetPodLogsHandler,
 	)
+	s.AddTool(
+		FileOperationTool(),
+		FileOperationHandler,
+	)
 }
