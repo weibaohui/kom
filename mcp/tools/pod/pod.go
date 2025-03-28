@@ -32,6 +32,7 @@ func GetPodLogsTool() mcp.Tool {
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
 		mcp.WithNumber("container", mcp.Description("Pod中容器的名称(如果Pod中有多个容器则必须指定,只有一个容器时可以为空) / Name of the container in the pod (must be specified if there are more than one container in Pod, only one container could use empty string)")),
 		mcp.WithNumber("tail", mcp.Description("显示日志末尾的行数(默认100行) / Number of lines from the end of the logs to show (default 100)")),
+		mcp.WithBoolean("previous", mcp.Description("是否获取上一个容器的日志(默认false) / Whether to get logs from the previous container (default false)")),
 	)
 }
 
@@ -56,6 +57,10 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	var stream io.ReadCloser
 	opt := &v1.PodLogOptions{}
 	opt.TailLines = utils.Ptr(tailLines)
+	// 设置是否获取上一个容器的日志
+	if previous, ok := request.Params.Arguments["previous"].(bool); ok && previous {
+		opt.Previous = true
+	}
 	err = kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().ContainerName(containerName).GetLogs(&stream, opt).Error
 	if err != nil {
 		return nil, err
