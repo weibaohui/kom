@@ -22,4 +22,16 @@ func RegisterTools(s *server.MCPServer) {
 		GetPodLinkedIngressTool(),
 		GetPodLinkedIngressHandler,
 	)
+	s.AddTool(
+		GetPodLinkedEndpointsTool(),
+		GetPodLinkedEndpointsHandler,
+	)
+	s.AddTool(
+		GetPodLinkedPVCTool(),
+		GetPodLinkedPVCHandler,
+	)
+	s.AddTool(
+		GetPodLinkedPVTool(),
+		GetPodLinkedPVHandler,
+	)
 }
