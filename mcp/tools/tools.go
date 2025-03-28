@@ -25,6 +25,15 @@ func TextResult[T any](item T, meta *metadata.ResourceMetadata) (*mcp.CallToolRe
 	switch v := any(item).(type) {
 	case []byte:
 		return buildTextResult(string(v)), nil
+	case []string:
+		var contents []mcp.Content
+		for _, s := range v {
+			contents = append(contents, mcp.TextContent{
+				Type: "text",
+				Text: s,
+			})
+		}
+		return &mcp.CallToolResult{Content: contents}, nil
 	default:
 		bytes, err := json.Marshal(item)
 		if err != nil {
