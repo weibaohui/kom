@@ -14,4 +14,8 @@ func RegisterTools(s *server.MCPServer) {
 		FileOperationTool(),
 		FileOperationHandler,
 	)
+	s.AddTool(
+		GetPodLinkedServiceTool(),
+		GetPodLinkedServiceHandler,
+	)
 }
