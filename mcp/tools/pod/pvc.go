@@ -14,7 +14,7 @@ import (
 // GetPodLinkedPVCTool 定义PVC查询工具
 func GetPodLinkedPVCTool() mcp.Tool {
 	return mcp.NewTool(
-		"get-pod-linked-pvc",
+		"get_pod_linked_pvc",
 		mcp.WithDescription("获取与Pod关联的PersistentVolumeClaim"),
 		mcp.WithString("cluster", mcp.Description("集群名称")),
 		mcp.WithString("namespace", mcp.Description("Pod所在命名空间")),
