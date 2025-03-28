@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/metadata"
@@ -13,14 +12,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
-
-// RegisterTools 注册Pod相关的工具到MCP服务器
-func RegisterTools(s *server.MCPServer) {
-	s.AddTool(
-		GetPodLogsTool(),
-		GetPodLogsHandler,
-	)
-}
 
 // GetPodLogsTool 创建一个获取Pod日志的工具
 func GetPodLogsTool() mcp.Tool {
