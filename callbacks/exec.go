@@ -24,9 +24,10 @@ func ExecuteCommand(k *kom.Kubectl) error {
 	containerName := stmt.ContainerName
 	ctx := stmt.Context
 
-	if stmt.ContainerName == "" {
-		return fmt.Errorf("请调用ContainerName()方法设置Pod容器名称")
-	}
+	// 如果只有一个容器，可以不设置
+	// if stmt.ContainerName == "" {
+	// 	return fmt.Errorf("请调用ContainerName()方法设置Pod容器名称")
+	// }
 	if stmt.Command == "" {
 		return fmt.Errorf("请调用Command()方法设置命令")
 	}
