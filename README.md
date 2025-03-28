@@ -79,7 +79,33 @@ describe_k8s_resource # 描述资源,支持集群、命名空间、名称，支�
 get_pod_logs # 获取POD日志,支持集群、命名空间、名称，支持设置最后多少条日志
 
 ```
-其他功能逐步完善上线。
+
+#### 启动命令
+```go
+mcp.RunMCPServer("kom mcp server", "0.0.1", 3619)
+```
+ 
+#### AI工具集成
+
+##### Claude Desktop
+1. 打开Claude Desktop设置面板
+2. 在API配置区域添加MCP Server地址
+3. 启用SSE事件监听功能
+4. 验证连接状态
+
+##### Cursor
+1. 进入Cursor设置界面
+2. 找到扩展服务配置选项
+3. 添加MCP Server的URL（例如：http://localhost:3619/sse）
+4. 开启实时事件通知
+
+##### Windsurf
+1. 访问配置中心
+2. 设置API服务器地址
+3. 启用实时事件通知
+4. 测试连接
+
+
 
 ### 1. 多集群管理
 #### 注册多集群
