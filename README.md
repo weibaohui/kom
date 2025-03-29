@@ -59,16 +59,36 @@ func main() {
 
 ### 0. 多集群 k8s MCP 支持
 支持多个tools 支持。包括对任意资源的查询列表删除描述操作，以及POD日志读取操作。
-
+#### 1.集成到代码中
 ```go
 // 一行代码启动MCP Server
 mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
 ```
+#### 2. 直接源码启动
 ```shell
+go run main.go 
 # MCP Server 访问地址
 http://IP:9096/sse
 ```
+#### 3. 编译后启动
+```shell
+go build main.go
+./main 
+http://IP:9096/sse
+```
+#### 4. 集成到MCP工具中
+```json
+{
+  "mcpServers": {
+    "kom": {
+      "type": "sse",
+      "url": "http://IP:9096/sse"
+    }
+  }
+}
+```
+
 ####  MCP工具列表（49种）
 
 | 类别                 | 方法                             | 描述                                      |
