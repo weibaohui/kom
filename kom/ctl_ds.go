@@ -29,7 +29,7 @@ func (d *daemonSet) Stop() error {
   }
 }`
 	var item interface{}
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 
 	if err != nil {
 		return fmt.Errorf("stop %s/%s error %v", d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, err)
@@ -50,7 +50,7 @@ func (d *daemonSet) Restore() error {
   }
 }`
 	var item interface{}
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 
 	if err != nil {
 		return fmt.Errorf("restore %s/%s error %v", d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, err)
@@ -59,7 +59,7 @@ func (d *daemonSet) Restore() error {
 }
 
 func (d *daemonSet) ManagedPods() ([]*corev1.Pod, error) {
-	//先找到ds
+	// 先找到ds
 	var ds v1.DaemonSet
 	err := d.kubectl.WithCache(d.kubectl.Statement.CacheTTL).Resource(&ds).Get(&ds).Error
 

@@ -148,7 +148,7 @@ func TestPatch(t *testing.T) {
 		Get(&pod).Error
 	err = kom.DefaultCluster().
 		Resource(&pod).
-		Patch(&pod, types.MergePatchType, patchData).Error
+		Patch(&pod, types.StrategicMergePatchType, patchData).Error
 	if err != nil {
 		t.Errorf(" Patch(&item) error :%v", err)
 	}

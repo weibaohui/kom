@@ -276,7 +276,7 @@ patchData := `{
         }
     }
 }`
-err := kom.DefaultCluster().Resource(&item).Patch(&item, types.MergePatchType, patchData).Error
+err := kom.DefaultCluster().Resource(&item).Patch(&item, types.StrategicMergePatchType, patchData).Error
 ```
 #### 删除资源
 ```go
@@ -589,7 +589,7 @@ patchData := `{
         }
     }
 }`
-err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Patch(&crontab, types.MergePatchType, patchData).Error
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Name(crontab.GetName()).Namespace(crontab.GetNamespace()).Patch(&crontab, types.StrategicMergePatchType, patchData).Error
 ```
 #### 删除CR对象
 ```go

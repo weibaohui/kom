@@ -11,12 +11,12 @@ type cronJob struct {
 func (c *cronJob) Pause() error {
 	var item interface{}
 	patchData := `{"spec":{"suspend":true}}`
-	err := c.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := c.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }
 func (c *cronJob) Resume() error {
 	var item interface{}
 	patchData := `{"spec":{"suspend":false}}`
-	err := c.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := c.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }

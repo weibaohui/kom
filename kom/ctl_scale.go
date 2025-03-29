@@ -33,7 +33,7 @@ func (s *scale) Scale(replicas int32) error {
 
 	var item interface{}
 	patchData := fmt.Sprintf("{\"spec\":{\"replicas\":%d}}", replicas)
-	err := s.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := s.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	if err != nil {
 		s.kubectl.Error = fmt.Errorf("%s %s/%s scale error %v", kind, s.kubectl.Statement.Namespace, s.kubectl.Statement.Name, err)
 		return err
@@ -78,7 +78,7 @@ func (s *scale) Stop() error {
 		}
 	}
 }`, 0, replicas)
-	err = s.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err = s.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 
 	if err != nil {
 		return fmt.Errorf("stop %s/%s error %v", item.GetNamespace(), item.GetName(), err)
@@ -127,7 +127,7 @@ func (s *scale) Restore() error {
 		}
 	}
 }`, targetReplicas)
-	err = s.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err = s.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 
 	if err != nil {
 		return fmt.Errorf("stop %s/%s error %v", item.GetNamespace(), item.GetName(), err)

@@ -30,6 +30,6 @@ func (a *annotate) Annotate(s string) error {
 
 	var item interface{}
 	patchData := fmt.Sprintf(`{"metadata":{"annotations":%s}}`, annotateStr)
-	err := a.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := a.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }

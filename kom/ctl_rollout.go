@@ -58,7 +58,7 @@ func (d *rollout) Restart() error {
 
 	var item interface{}
 	patchData := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kom.kubernetes.io/restartedAt":"%s"}}}}}`, time.Now().Format(time.DateTime))
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "restarting", err)
 }
 func (d *rollout) Pause() error {
@@ -71,7 +71,7 @@ func (d *rollout) Pause() error {
 
 	var item interface{}
 	patchData := `{"spec":{"paused":true}}`
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "pause", err)
 
 }
@@ -85,7 +85,7 @@ func (d *rollout) Resume() error {
 
 	var item interface{}
 	patchData := `{"spec":{"paused":null}}`
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "resume", err)
 
 }

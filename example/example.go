@@ -331,7 +331,7 @@ spec:
 		CRD("stable.example.com", "v1", "CronTab").
 		Name(crontab.GetName()).
 		Namespace(crontab.GetNamespace()).
-		Patch(&crontab, types.MergePatchType, patchData).Error
+		Patch(&crontab, types.StrategicMergePatchType, patchData).Error
 
 	if err != nil {
 		klog.Errorf("CronTab Patch(&item) error :%v", err)
@@ -506,7 +506,7 @@ spec:
 		Get(&createItem).Error
 	err = kom.DefaultCluster().
 		Resource(&createItem).
-		Patch(&createItem, types.MergePatchType, patchData).Error
+		Patch(&createItem, types.StrategicMergePatchType, patchData).Error
 	if err != nil {
 		klog.Errorf("Deployment Patch(&item) error :%v", err)
 	}

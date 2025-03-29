@@ -45,7 +45,7 @@ func (i *ingressClass) SetDefault() error {
 			WithContext(i.kubectl.Statement.Context).
 			Name(sc.Name).
 			Resource(&v1.IngressClass{}).
-			Patch(&item, types.MergePatchType, patchData).Error
+			Patch(&item, types.StrategicMergePatchType, patchData).Error
 		if err != nil {
 			klog.V(6).Infof("set %s/%s/%s annotation error %v", i.kubectl.Statement.Namespace, i.kubectl.Statement.Name, sc.Name, err.Error())
 			return err

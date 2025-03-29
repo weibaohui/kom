@@ -31,7 +31,7 @@ type node struct {
 func (d *node) Cordon() error {
 	var item interface{}
 	patchData := `{"spec":{"unschedulable":true}}`
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }
 
@@ -40,7 +40,7 @@ func (d *node) Cordon() error {
 func (d *node) UnCordon() error {
 	var item interface{}
 	patchData := `{"spec":{"unschedulable":null}}`
-	err := d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }
 
@@ -72,7 +72,7 @@ func (d *node) Taint(str string) error {
 
 	var item interface{}
 	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
-	err = d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err = d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }
 func (d *node) UnTaint(str string) error {
@@ -95,7 +95,7 @@ func (d *node) UnTaint(str string) error {
 	})
 	var item interface{}
 	patchData := fmt.Sprintf(`{"spec":{"taints":%s}}`, utils.ToJSON(taints))
-	err = d.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err = d.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }
 
@@ -245,21 +245,21 @@ spec:
 	// 检查是否包含 created
 	klog.V(6).Infof("%s Node Shell 创建 结果 %s", d.kubectl.Statement.Name, ret)
 
-	//创建成功
+	// 创建成功
 	if len(ret) > 0 && strings.Contains(ret[0], "created") {
-		//等待启动或者超时,超时采用默认的超时时间
+		// 等待启动或者超时,超时采用默认的超时时间
 		err = d.waitPodReady(namespace, podName, d.kubectl.Statement.CacheTTL)
 		return
 	}
 
-	//创建失败
+	// 创建失败
 	err = fmt.Errorf("node shell 创建失败 %s", ret)
 	return
 }
 func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
 	var p *v1.Pod
 	if ttl == 0 {
-		//设置一个默认的等待时间
+		// 设置一个默认的等待时间
 		ttl = 30
 	}
 	timeout := time.After(ttl * time.Second)
@@ -408,7 +408,7 @@ spec:
 
 	// 如果返回结果中包含 "created" 字符串，则认为创建成功
 	if len(ret) > 0 && strings.Contains(ret[0], "created") {
-		//等待启动或者超时,超时采用默认的超时时间
+		// 等待启动或者超时,超时采用默认的超时时间
 		err = d.waitPodReady(namespace, podName, d.kubectl.Statement.CacheTTL)
 
 		return

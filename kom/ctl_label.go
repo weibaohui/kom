@@ -30,6 +30,6 @@ func (l *label) Label(s string) error {
 
 	var item interface{}
 	patchData := fmt.Sprintf(`{"metadata":{"labels":%s}}`, labelStr)
-	err := l.kubectl.Patch(&item, types.MergePatchType, patchData).Error
+	err := l.kubectl.Patch(&item, types.StrategicMergePatchType, patchData).Error
 	return err
 }

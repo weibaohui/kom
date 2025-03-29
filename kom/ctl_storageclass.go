@@ -80,7 +80,7 @@ func (s *storageClass) SetDefault() error {
 			WithContext(s.kubectl.Statement.Context).
 			Name(sc.Name).
 			Resource(&storagev1.StorageClass{}).
-			Patch(&item, types.MergePatchType, patchData).Error
+			Patch(&item, types.StrategicMergePatchType, patchData).Error
 		if err != nil {
 			klog.V(6).Infof("set %s/%s/%s annotation error %v", s.kubectl.Statement.Namespace, s.kubectl.Statement.Name, sc.Name, err.Error())
 			return err
