@@ -7,7 +7,7 @@ require (
 	github.com/duke-git/lancet/v2 v2.3.5
 	github.com/fatih/camelcase v1.0.0
 	github.com/google/gnostic-models v0.6.9
-	github.com/mark3labs/mcp-go v0.16.0
+	github.com/mark3labs/mcp-go v0.17.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	k8s.io/api v0.32.3
 	k8s.io/apimachinery v0.32.3
