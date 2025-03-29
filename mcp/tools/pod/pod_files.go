@@ -14,7 +14,7 @@ import (
 // ListPodFilesTool 创建Pod文件列表工具
 func ListPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
-		"pod_list_files",
+		"list_pod_files",
 		mcp.WithDescription("获取Pod中指定路径下的文件列表/List files in pod path"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),
@@ -57,7 +57,7 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 // ListAllPodFilesTool 创建Pod文件全量列表工具
 func ListAllPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
-		"pod_list_all_files",
+		"list_pod_all_files",
 		mcp.WithDescription("获取Pod中指定路径下的所有文件列表（包含子目录）/List all files in pod path (including subdirectories)"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),
@@ -100,7 +100,7 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 // DeletePodFileTool 创建Pod文件删除工具
 func DeletePodFileTool() mcp.Tool {
 	return mcp.NewTool(
-		"pod_delete_file",
+		"delete_pod_file",
 		mcp.WithDescription("删除Pod中的指定文件/Delete file in pod"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),

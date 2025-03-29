@@ -44,4 +44,8 @@ func RegisterTools(s *server.MCPServer) {
 		GetPodLinkedPVTool(),
 		GetPodLinkedPVHandler,
 	)
+	s.AddTool(
+		GetPodLinkedEnvTool(),
+		GetPodLinkedEnvHandler,
+	)
 }
