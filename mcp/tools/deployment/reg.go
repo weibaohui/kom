@@ -6,6 +6,10 @@ import (
 
 func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
+		ManagedPodsDeploymentTool(),
+		ManagedPodsDeploymentHandler,
+	)
+	s.AddTool(
 		ScaleDeploymentTool(),
 		ScaleDeploymentHandler,
 	)
