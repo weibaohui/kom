@@ -12,19 +12,19 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodeIPUsageTool 创建一个查询节点IP资源使用情况的工具
-func NodeIPUsageTool() mcp.Tool {
+// NodePodCountTool 创建一个查询节点Pod数量的工具
+func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
-		"node_ip_usage",
-		mcp.WithDescription("查询节点IP资源使用情况 / Query node IP resource usage"),
+		"calc_pod_in_node",
+		mcp.WithDescription("查询节点Pod数量统计 / Query node Pod count statistics"),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 / The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),
 		mcp.WithNumber("cache_seconds", mcp.Description("缓存时间（默认20秒） / Cache duration in seconds,default 20 seconds")),
 	)
 }
 
-// NodeIPUsageHandler 处理查询节点IP资源使用情况的请求
-func NodeIPUsageHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// NodePodCountHandler 处理查询节点Pod数量的请求
+func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	meta, err := metadata.ParseFromRequest(request)
 	if err != nil {
@@ -35,10 +35,10 @@ func NodeIPUsageHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		cacheSeconds = int32(cacheSecondsVal)
 	}
 
-	klog.Infof("Querying IP usage for node %s in cluster %s with cache duration %d seconds", meta.Name, meta.Cluster, cacheSeconds)
+	klog.Infof("Querying Pod count for node %s in cluster %s with cache duration %d seconds", meta.Name, meta.Cluster, cacheSeconds)
 
-	// 查询节点IP资源使用情况
-	total, used, available := kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&v1.Node{}).WithCache(time.Duration(cacheSeconds) * time.Second).Name(meta.Name).Ctl().Node().IPUsage()
+	// 查询节点Pod数量
+	total, used, available := kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&v1.Node{}).WithCache(time.Duration(cacheSeconds) * time.Second).Name(meta.Name).Ctl().Node().PodCount()
 
 	// 构建返回结果
 	result := map[string]interface{}{

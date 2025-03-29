@@ -29,4 +29,16 @@ func RegisterTools(s *server.MCPServer) {
 		DrainNodeTool(),
 		DrainNodeHandler,
 	)
+	s.AddTool(
+		NodeResourceUsageTool(),
+		NodeResourceUsageHandler,
+	)
+	s.AddTool(
+		NodeIPUsageTool(),
+		NodeIPUsageHandler,
+	)
+	s.AddTool(
+		NodePodCountTool(),
+		NodePodCountHandler,
+	)
 }
