@@ -14,7 +14,7 @@ import (
 func GetPodLinkedEnvTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_env",
-		mcp.WithDescription("获取Pod运行时的环境变量信息 / Get pod runtime environment variables"),
+		mcp.WithDescription("通过进入pod执行Env命令，获取Pod运行时的环境变量信息 / Get pod runtime environment variables by executing Env command"),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
@@ -40,10 +40,10 @@ func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*
 }
 
 // GetPodLinkedEnvFromPodTool 创建获取Pod定义中环境变量的工具
-func GetPodLinkedEnvFromPodTool() mcp.Tool {
+func GetPodLinkedEnvFromPodYamlTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_env_from_yaml",
-		mcp.WithDescription("获取Pod定义中的环境变量信息 / Get environment variables from pod definition"),
+		mcp.WithDescription("通过Pod yaml 定义 获取Pod定义中的环境变量信息 / Get environment variables from pod definition"),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
@@ -51,7 +51,7 @@ func GetPodLinkedEnvFromPodTool() mcp.Tool {
 }
 
 // GetPodLinkedEnvFromPodHandler 处理获取Pod定义中环境变量的请求
-func GetPodLinkedEnvFromPodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func GetPodLinkedEnvFromPodYamlHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	meta, err := metadata.ParseFromRequest(request)
 	if err != nil {
