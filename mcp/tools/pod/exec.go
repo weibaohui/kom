@@ -11,8 +11,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// PodExecTool 创建执行Pod命令的工具
-func PodExecTool() mcp.Tool {
+// ExecTool 创建执行Pod命令的工具
+func ExecTool() mcp.Tool {
 	return mcp.NewTool(
 		"run_command_in_pod",
 		mcp.WithDescription("在Pod内执行命令，需指定容器名称 / Execute command in pod with container name"),
@@ -25,8 +25,8 @@ func PodExecTool() mcp.Tool {
 	)
 }
 
-// PodExecHandler 处理Pod命令执行
-func PodExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// ExecHandler 处理Pod命令执行
+func ExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	meta, err := metadata.ParseFromRequest(request)
 	if err != nil {
 		return nil, err

@@ -69,7 +69,7 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 # MCP Server 访问地址
 http://IP:9096/sse
 ```
-####  MCP工具列表（48种）
+####  MCP工具列表（49种）
 
 | 类别               | 方法                             | 描述                                      |
 |------------------|--------------------------------|-----------------------------------------|
@@ -105,6 +105,7 @@ http://IP:9096/sse
 | **Pod 管理**       | `list_pod_files`               | 列出Pod文件                                 |
 |                  | `list_all_pod_files`           | 列出Pod所有文件                               |
 |                  | `delete_pod_file`              | 删除Pod文件                                 |
+|                  | `upload_file_to_pod`           | 上传文件到Pod内，支持传递文本内容，存储为Pod内文件            |
 |                  | `get_pod_logs`                 | 获取Pod日志                                 |
 |                  | `run_command_in_pod`           | 在Pod中执行命令                               |
 |                  | `get_pod_linked_service`       | 获取Pod关联的Service                         |

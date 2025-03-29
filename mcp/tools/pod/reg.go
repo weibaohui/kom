@@ -53,8 +53,8 @@ func RegisterTools(s *server.MCPServer) {
 		GetPodLinkedEnvFromPodYamlHandler,
 	)
 	s.AddTool(
-		PodExecTool(),
-		PodExecHandler,
+		ExecTool(),
+		ExecHandler,
 	)
 	s.AddTool(
 		GetPodResourceUsageTool(),
