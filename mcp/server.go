@@ -8,8 +8,10 @@ import (
 	"github.com/weibaohui/kom/mcp/tools/deployment"
 	"github.com/weibaohui/kom/mcp/tools/dynamic"
 	"github.com/weibaohui/kom/mcp/tools/event"
+	"github.com/weibaohui/kom/mcp/tools/ingressclass"
 	"github.com/weibaohui/kom/mcp/tools/node"
 	"github.com/weibaohui/kom/mcp/tools/pod"
+	"github.com/weibaohui/kom/mcp/tools/storageclass"
 	"k8s.io/klog/v2"
 )
 
@@ -30,6 +32,8 @@ func RunMCPServer(name, version string, port int) {
 	event.RegisterTools(s)
 	deployment.RegisterTools(s)
 	node.RegisterTools(s)
+	storageclass.RegisterTools(s)
+	ingressclass.RegisterTools(s)
 
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s)
