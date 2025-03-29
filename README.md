@@ -160,14 +160,11 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 3619)
 ##### Cursor
 1. 进入Cursor设置界面
 2. 找到扩展服务配置选项
-3. 添加MCP Server的URL（例如：http://localhost:3619/sse）
-4. 开启实时事件通知
+3. 添加MCP Server的URL（例如：http://localhost:9096/sse）
 
 ##### Windsurf
 1. 访问配置中心
 2. 设置API服务器地址
-3. 启用实时事件通知
-4. 测试连接
 
 
 
