@@ -69,7 +69,7 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 # MCP Server 访问地址
 http://IP:9096/sse
 ```
-####  MCP工具列表（40种）
+####  MCP工具列表（41种）
 
 | 类别          | 方法                              | 描述                    |
 |-------------|---------------------------------|-----------------------|
@@ -115,6 +115,7 @@ http://IP:9096/sse
 | **存储管理**    | `set_default_storageclass`      | 设置默认StorageClass      |
 |             | `get_storageclass_pvc_count`    | 获取StorageClass下的PVC数量 |
 |             | `get_storageclass_pv_count`     | 获取StorageClass下的PV数量  |
+| **Ingress管理** | `set_default_ingressclass`      | 设置默认IngressClass       |
 
 
 #### 启动命令
