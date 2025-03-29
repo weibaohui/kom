@@ -15,7 +15,7 @@ import (
 // NodePodCountTool 创建一个查询节点Pod数量的工具
 func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
-		"node_pod_count",
+		"get_node_pod_count",
 		mcp.WithDescription("查询节点Pod数量统计 / Query node Pod count statistics"),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 / The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),

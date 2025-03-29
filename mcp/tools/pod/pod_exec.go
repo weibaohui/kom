@@ -14,7 +14,7 @@ import (
 // PodExecTool 创建执行Pod命令的工具
 func PodExecTool() mcp.Tool {
 	return mcp.NewTool(
-		"pod_exec",
+		"run_command_in_pod",
 		mcp.WithDescription("在Pod内执行命令，需指定容器名称 / Execute command in pod with container name"),
 		mcp.WithString("cluster", mcp.Description("集群名称 / Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间 / Namespace")),

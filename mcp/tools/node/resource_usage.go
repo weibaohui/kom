@@ -15,7 +15,7 @@ import (
 // NodeResourceUsageTool 创建一个查询节点资源使用情况的工具
 func NodeResourceUsageTool() mcp.Tool {
 	return mcp.NewTool(
-		"node_resource_usage",
+		"get_node_resource_usage",
 		mcp.WithDescription("查询节点资源使用情况统计 / Query node resource usage statistics"),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 / The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),
