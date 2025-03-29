@@ -18,7 +18,10 @@ func RegisterTools(s *server.MCPServer) {
 		DeletePodFileTool(),
 		DeletePodFileHandler,
 	)
-
+	s.AddTool(
+		UploadPodFileTool(),
+		UploadPodFileHandler,
+	)
 	s.AddTool(
 		GetPodLogsTool(),
 		GetPodLogsHandler,
