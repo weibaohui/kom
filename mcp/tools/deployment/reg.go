@@ -11,5 +11,42 @@ func RegisterTools(s *server.MCPServer) {
 	)
 	s.AddTool(
 		RestartDeploymentTool(),
-		RestartDeploymentHandler)
+		RestartDeploymentHandler,
+	)
+	s.AddTool(
+		StopDeploymentTool(),
+		StopDeploymentHandler,
+	)
+	s.AddTool(
+		RestoreDeploymentTool(),
+		RestoreDeploymentHandler,
+	)
+	s.AddTool(
+		UpdateTagDeploymentTool(),
+		UpdateTagDeploymentHandler,
+	)
+	s.AddTool(
+		RolloutHistoryDeploymentTool(),
+		RolloutHistoryDeploymentHandler,
+	)
+	s.AddTool(
+		RolloutUndoDeploymentTool(),
+		RolloutUndoDeploymentHandler,
+	)
+	s.AddTool(
+		RolloutPauseDeploymentTool(),
+		RolloutPauseDeploymentHandler,
+	)
+	s.AddTool(
+		RolloutResumeDeploymentTool(),
+		RolloutResumeDeploymentHandler,
+	)
+	s.AddTool(
+		RolloutStatusDeploymentTool(),
+		RolloutStatusDeploymentHandler,
+	)
+	s.AddTool(
+		HPAListDeploymentTool(),
+		HPAListDeploymentHandler,
+	)
 }
