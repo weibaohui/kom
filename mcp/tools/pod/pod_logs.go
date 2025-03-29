@@ -10,7 +10,6 @@ import (
 	"github.com/weibaohui/kom/mcp/tools/metadata"
 	"github.com/weibaohui/kom/utils"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
 )
 
 // GetPodLogsTool 创建一个获取Pod日志的工具
@@ -21,7 +20,7 @@ func GetPodLogsTool() mcp.Tool {
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
-		mcp.WithNumber("container", mcp.Description("Pod中容器的名称(如果Pod中有多个容器则必须指定,只有一个容器时可以为空) / Name of the container in the pod (must be specified if there are more than one container in Pod, only one container could use empty string)")),
+		mcp.WithString("container", mcp.Description("Pod中容器的名称(如果Pod中有多个容器则必须指定,只有一个容器时可以为空) / Name of the container in the pod (must be specified if there are more than one container in Pod, only one container could use empty string)")),
 		mcp.WithNumber("tail", mcp.Description("显示日志末尾的行数(默认100行) / Number of lines from the end of the logs to show (default 100)")),
 		mcp.WithBoolean("previous", mcp.Description("是否获取上一个容器的日志(默认false) / Whether to get logs from the previous container (default false)")),
 	)
@@ -39,8 +38,6 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	if tailLinesVal, ok := request.Params.Arguments["tail"].(float64); ok {
 		tailLines = int64(tailLinesVal)
 	}
-	klog.Errorf("request.Params.Arguments[\"tail\"]=%d", request.Params.Arguments["tail"])
-	klog.Errorf("tailLines=%d", tailLines)
 	containerName := ""
 	if containerNameVal, ok := request.Params.Arguments["container"].(string); ok {
 		containerName = containerNameVal
