@@ -14,7 +14,7 @@ import (
 // UpdateTagDeploymentTool 创建一个更新Deployment镜像Tag的工具
 func UpdateTagDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"update_tag_deployment",
+		"update_deployment_image_tag",
 		mcp.WithDescription("更新Deployment中容器的镜像Tag / Update container image tag in deployment"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
