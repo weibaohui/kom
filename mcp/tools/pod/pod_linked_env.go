@@ -2,7 +2,6 @@ package pod
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
@@ -37,12 +36,34 @@ func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*
 		return nil, err
 	}
 
-	// 转换为JSON
-	data, err := json.Marshal(envs)
+	return tools.TextResult(envs, meta)
+}
+
+// GetPodLinkedEnvFromPodTool 创建获取Pod定义中环境变量的工具
+func GetPodLinkedEnvFromPodTool() mcp.Tool {
+	return mcp.NewTool(
+		"get_pod_linked_env_from_yaml",
+		mcp.WithDescription("获取Pod定义中的环境变量信息 / Get environment variables from pod definition"),
+		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
+		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
+		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
+	)
+}
+
+// GetPodLinkedEnvFromPodHandler 处理获取Pod定义中环境变量的请求
+func GetPodLinkedEnvFromPodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// 获取参数
+	meta, err := metadata.ParseFromRequest(request)
 	if err != nil {
-		klog.Errorf("marshal env error: %v", err)
 		return nil, err
 	}
 
-	return tools.TextResult(string(data), meta)
+	// 获取环境变量
+	envs, err := kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().LinkedEnvFromPod()
+	if err != nil {
+		klog.Errorf("get pod %s/%s env from pod error: %v", meta.Namespace, meta.Name, err)
+		return nil, err
+	}
+
+	return tools.TextResult(envs, meta)
 }
