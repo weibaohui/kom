@@ -91,6 +91,7 @@ http://IP:9096/sse
 |                  | `delete_k8s_resource`        | 删除k8s资源                                 |
 |                  | `list_k8s_resource`          | 列表形式获取k8s资源                             |
 |                  | `list_k8s_event`             | 列表形式获取k8s事件                             |
+|                  | `patch_k8s_resource`         | 更新k8s资源，以JSON Patch方式更新                 |                               |
 |                  | `label_k8s_resource`         | 为k8s资源添加或删除标签                           |
 |                  | `annotate_k8s_resource`      | 为k8s资源添加或删除注解                           |
 | **节点管理**         | `taint_node`                 | 为节点添加污点                                 |

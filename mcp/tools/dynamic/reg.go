@@ -24,4 +24,7 @@ func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
 		LabelDynamicResource(),
 		LabelDynamicResourceHandler)
+	s.AddTool(
+		PatchDynamicResource(),
+		PatchDynamicResourceHandler)
 }
