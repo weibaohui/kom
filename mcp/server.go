@@ -12,6 +12,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools/node"
 	"github.com/weibaohui/kom/mcp/tools/pod"
 	"github.com/weibaohui/kom/mcp/tools/storageclass"
+	"github.com/weibaohui/kom/mcp/tools/yaml"
 	"k8s.io/klog/v2"
 )
 
@@ -34,7 +35,7 @@ func RunMCPServer(name, version string, port int) {
 	node.RegisterTools(s)
 	storageclass.RegisterTools(s)
 	ingressclass.RegisterTools(s)
-
+	yaml.RegisterTools(s)
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s)
 

@@ -18,13 +18,10 @@ func RegisterTools(s *server.MCPServer) {
 		CordonNodeHandler,
 	)
 	s.AddTool(
-		NodeIPUsageTool(),
-		NodeIPUsageHandler,
-	)
-	s.AddTool(
 		UnCordonNodeTool(),
 		UnCordonNodeHandler,
 	)
+
 	s.AddTool(
 		DrainNodeTool(),
 		DrainNodeHandler,
@@ -33,6 +30,7 @@ func RegisterTools(s *server.MCPServer) {
 		NodeResourceUsageTool(),
 		NodeResourceUsageHandler,
 	)
+
 	s.AddTool(
 		NodeIPUsageTool(),
 		NodeIPUsageHandler,

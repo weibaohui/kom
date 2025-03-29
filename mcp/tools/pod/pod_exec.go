@@ -11,8 +11,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// GetPodExecTool 创建执行Pod命令的工具
-func GetPodExecTool() mcp.Tool {
+// PodExecTool 创建执行Pod命令的工具
+func PodExecTool() mcp.Tool {
 	return mcp.NewTool(
 		"pod_exec",
 		mcp.WithDescription("在Pod内执行命令，需指定容器名称 / Execute command in pod with container name"),
