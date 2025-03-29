@@ -7,13 +7,23 @@ import (
 // RegisterTools 注册Pod相关的工具到MCP服务器
 func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
+		ListPodFilesTool(),
+		ListPodFilesHandler,
+	)
+	s.AddTool(
+		ListAllPodFilesTool(),
+		ListAllPodFilesHandler,
+	)
+	s.AddTool(
+		DeletePodFileTool(),
+		DeletePodFileHandler,
+	)
+
+	s.AddTool(
 		GetPodLogsTool(),
 		GetPodLogsHandler,
 	)
-	s.AddTool(
-		FileOperationTool(),
-		FileOperationHandler,
-	)
+
 	s.AddTool(
 		GetPodLinkedServiceTool(),
 		GetPodLinkedServiceHandler,
