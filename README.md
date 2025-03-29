@@ -69,7 +69,7 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 # MCP Server 访问地址
 http://IP:9096/sse
 ```
-####  MCP工具列表（35种）
+####  MCP工具列表（37种）
 
 | 类别             | 方法                            | 描述                           |
 | ---------------- | ------------------------------- | ------------------------------ |
@@ -89,6 +89,8 @@ http://IP:9096/sse
 |                  | `get_dynamic_resource_describe` | 描述动态资源                   |
 |                  | `delete_dynamic_resource`       | 删除动态资源                   |
 |                  | `list_dynamic_resource`         | 列出动态资源                   |
+|                  | `label_k8s_resource`            | 为Kubernetes资源添加或删除标签 |
+|                  | `annotate_k8s_resource`         | 为Kubernetes资源添加或删除注解 |
 | **节点管理**     | `taint_node`                    | 为节点添加污点                 |
 |                  | `untaint_node`                  | 为节点移除污点                 |
 |                  | `cordon_node`                   | 为节点设置Cordon               |
