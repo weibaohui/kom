@@ -42,13 +42,13 @@ func RegisterDefaultCallbacks(c *kom.ClusterInst) func() {
 	_ = deleteCallback.Register("kom:delete", Delete)
 
 	execCallback := k.Callback().Exec()
-	_ = execCallback.Register("kom:pod:exec", ExecuteCommand)
+	_ = execCallback.Register("kom:pod-exec", ExecuteCommand)
 
 	streamExecCallback := k.Callback().StreamExec()
-	_ = streamExecCallback.Register("kom:pod:stream:exec", StreamExecuteCommand)
+	_ = streamExecCallback.Register("kom:pod-stream-exec", StreamExecuteCommand)
 
 	logsCallback := k.Callback().Logs()
-	_ = logsCallback.Register("kom:pod:logs", GetLogs)
+	_ = logsCallback.Register("kom:pod-logs", GetLogs)
 
 	describeCallback := k.Callback().Describe()
 	_ = describeCallback.Register("kom:describe", Describe)
