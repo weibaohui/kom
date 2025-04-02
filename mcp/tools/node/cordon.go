@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
@@ -24,7 +25,8 @@ func CordonNodeTool() mcp.Tool {
 // CordonNodeHandler 处理为节点设置Cordon的请求
 func CordonNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -36,5 +38,5 @@ func CordonNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully cordoned node", meta)
+	return utils.TextResult("Successfully cordoned node", meta)
 }

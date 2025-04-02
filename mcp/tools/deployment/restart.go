@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -24,7 +25,8 @@ func RestartDeploymentTool() mcp.Tool {
 // RestartDeploymentHandler 处理重启Deployment的请求
 func RestartDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -34,5 +36,5 @@ func RestartDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) 
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully restarted deployment", meta)
+	return utils.TextResult("Successfully restarted deployment", meta)
 }

@@ -5,8 +5,10 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+
+	"github.com/weibaohui/kom/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/klog/v2"
 )
@@ -25,7 +27,7 @@ func HPAListDeploymentTool() mcp.Tool {
 // HPAListDeploymentHandler 处理查询Deployment的HPA列表的请求
 func HPAListDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
 	if err != nil {
 		return nil, err
 	}
@@ -42,5 +44,5 @@ func HPAListDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) 
 		result += "HPA " + item.Name + "\n"
 	}
 
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }

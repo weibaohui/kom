@@ -6,8 +6,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
 )
 
 func ApplyDynamicResource() mcp.Tool {
@@ -20,7 +20,8 @@ func ApplyDynamicResource() mcp.Tool {
 }
 
 func ApplyDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -31,5 +32,5 @@ func ApplyDynamicResourceHandler(ctx context.Context, request mcp.CallToolReques
 	}
 
 	results := kom.Cluster(meta.Cluster).WithContext(ctx).Applier().Apply(yamlContent)
-	return tools.TextResult(results, meta)
+	return utils.TextResult(results, meta)
 }

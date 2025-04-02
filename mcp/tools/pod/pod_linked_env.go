@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	"k8s.io/klog/v2"
 )
 
@@ -24,7 +25,8 @@ func GetPodLinkedEnvTool() mcp.Tool {
 // GetPodLinkedEnvHandler 处理获取Pod环境变量的请求
 func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*
 		return nil, err
 	}
 
-	return tools.TextResult(envs, meta)
+	return utils.TextResult(envs, meta)
 }
 
 // GetPodLinkedEnvFromPodTool 创建获取Pod定义中环境变量的工具
@@ -53,7 +55,8 @@ func GetPodLinkedEnvFromPodYamlTool() mcp.Tool {
 // GetPodLinkedEnvFromPodHandler 处理获取Pod定义中环境变量的请求
 func GetPodLinkedEnvFromPodYamlHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -65,5 +68,5 @@ func GetPodLinkedEnvFromPodYamlHandler(ctx context.Context, request mcp.CallTool
 		return nil, err
 	}
 
-	return tools.TextResult(envs, meta)
+	return utils.TextResult(envs, meta)
 }

@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	"k8s.io/klog/v2"
 )
 
@@ -27,7 +28,8 @@ func ExecTool() mcp.Tool {
 
 // ExecHandler 处理Pod命令执行
 func ExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -64,5 +66,5 @@ func ExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToo
 		return nil, fmt.Errorf("command execution failed: %v", err)
 	}
 
-	return tools.TextResult(execResult, meta)
+	return utils.TextResult(execResult, meta)
 }

@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
@@ -24,7 +25,8 @@ func GetPodLinkedServiceTool() mcp.Tool {
 
 // GetPodLinkedServiceHandler 处理获取关联Service的请求
 func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +46,7 @@ func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest
 		})
 	}
 
-	return tools.TextResult(results, meta)
+	return utils.TextResult(results, meta)
 }
 
 // GetPodLinkedIngressTool 创建获取Pod关联Ingress的工具
@@ -60,7 +62,8 @@ func GetPodLinkedIngressTool() mcp.Tool {
 
 // GetPodLinkedIngressHandler 处理获取关联Ingress的请求
 func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +83,7 @@ func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest
 		})
 	}
 
-	return tools.TextResult(results, meta)
+	return utils.TextResult(results, meta)
 }
 
 // GetPodLinkedEndpointsTool 创建获取Pod关联Endpoints的工具
@@ -96,7 +99,8 @@ func GetPodLinkedEndpointsTool() mcp.Tool {
 
 // GetPodLinkedEndpointsHandler 处理获取关联Endpoints的请求
 func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolReque
 		})
 	}
 
-	return tools.TextResult(results, meta)
+	return utils.TextResult(results, meta)
 }
 
 func getTLSSecretName(ingress *networkingv1.Ingress) string {

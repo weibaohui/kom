@@ -6,9 +6,11 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
 	"github.com/weibaohui/kom/utils"
+
+	utils2 "github.com/weibaohui/kom/utils"
+
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -29,7 +31,8 @@ func GetPodLogsTool() mcp.Tool {
 // GetPodLogsHandler 处理获取Pod日志的请求
 func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +47,7 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	}
 	var stream io.ReadCloser
 	opt := &v1.PodLogOptions{}
-	opt.TailLines = utils.Ptr(tailLines)
+	opt.TailLines = utils2.Ptr(tailLines)
 	// 设置是否获取上一个容器的日志
 	if previous, ok := request.Params.Arguments["previous"].(bool); ok && previous {
 		opt.Previous = true
@@ -59,5 +62,5 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	if err != nil {
 		return nil, err
 	}
-	return tools.TextResult(string(logs), meta)
+	return utils.TextResult(string(logs), meta)
 }

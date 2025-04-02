@@ -2,9 +2,13 @@ package node
 
 import (
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-func RegisterTools(s *server.MCPServer) {
+var config *metadata.ServerConfig
+
+func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
+	config = cfg
 	s.AddTool(
 		TaintNodeTool(),
 		TaintNodeHandler,

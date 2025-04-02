@@ -1,14 +1,13 @@
-package utils
+package metadata
 
 import (
 	"context"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-var resourceMap = map[string]metadata.ResourceInfo{
+var resourceMap = map[string]ResourceInfo{
 	// 命名空间级别资源
 	"pod":                            {Group: "", Version: "v1", Kind: "Pod", Namespaced: true},
 	"deployment":                     {Group: "apps", Version: "v1", Kind: "Deployment", Namespaced: true},
@@ -39,12 +38,12 @@ var resourceMap = map[string]metadata.ResourceInfo{
 }
 
 // GetResourceInfo 根据资源类型字符串返回资源信息
-func GetResourceInfo(resourceType string) (metadata.ResourceInfo, bool) {
+func GetResourceInfo(resourceType string) (ResourceInfo, bool) {
 	resourceType = strings.ToLower(resourceType)
 	if info, exists := resourceMap[resourceType]; exists {
 		return info, true
 	}
-	return metadata.ResourceInfo{}, false
+	return ResourceInfo{}, false
 }
 
 // IsNamespaced 判断资源是否为命名空间级别
@@ -57,7 +56,7 @@ func IsNamespaced(resourceType string) bool {
 }
 
 // ParseFromRequest 从请求中解析资源元数据
-func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *metadata.ServerConfig) (context.Context, *metadata.ResourceMetadata, error) {
+func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *ServerConfig) (context.Context, *ResourceMetadata, error) {
 	if serverConfig != nil {
 		if authVal, ok := ctx.Value(serverConfig.AuthKey).(string); ok {
 			ctx = context.WithValue(ctx, serverConfig.AuthKey, authVal)
@@ -106,7 +105,7 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverCo
 		kind = getStringParam(request, "kind", "")
 	}
 
-	return ctx, &metadata.ResourceMetadata{
+	return ctx, &ResourceMetadata{
 		Cluster:   cluster,
 		Namespace: namespace,
 		Name:      name,

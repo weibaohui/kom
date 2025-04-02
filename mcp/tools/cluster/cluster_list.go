@@ -5,7 +5,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
+	"github.com/weibaohui/kom/utils"
 )
 
 func ListClusters() mcp.Tool {
@@ -16,6 +16,7 @@ func ListClusters() mcp.Tool {
 }
 
 func ListClustersHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+
 	// 获取所有已注册的集群名称
 	clusters := kom.Clusters().AllClusters()
 
@@ -27,5 +28,5 @@ func ListClustersHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		})
 	}
 
-	return tools.TextResult(result, nil)
+	return utils.TextResult(result, nil)
 }

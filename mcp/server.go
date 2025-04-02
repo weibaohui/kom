@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/weibaohui/kom/mcp/metadata"
 	"github.com/weibaohui/kom/mcp/tools/cluster"
 	"github.com/weibaohui/kom/mcp/tools/deployment"
 	"github.com/weibaohui/kom/mcp/tools/dynamic"
@@ -17,6 +18,9 @@ import (
 )
 
 func RunMCPServer(name, version string, port int) {
+	config.Name = name
+	config.Version = version
+	config.Port = port
 	// 创建一个新的 MCP 服务器
 	s := server.NewMCPServer(
 		name,
@@ -27,20 +31,58 @@ func RunMCPServer(name, version string, port int) {
 	)
 
 	// 注册工具
-	dynamic.RegisterTools(s)
-	pod.RegisterTools(s)
-	cluster.RegisterTools(s)
-	event.RegisterTools(s)
-	deployment.RegisterTools(s)
-	node.RegisterTools(s)
-	storageclass.RegisterTools(s)
-	ingressclass.RegisterTools(s)
-	yaml.RegisterTools(s)
+	dynamic.RegisterTools(s, config)
+	pod.RegisterTools(s, config)
+	cluster.RegisterTools(s, config)
+	event.RegisterTools(s, config)
+	deployment.RegisterTools(s, config)
+	node.RegisterTools(s, config)
+	storageclass.RegisterTools(s, config)
+	ingressclass.RegisterTools(s, config)
+	yaml.RegisterTools(s, config)
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s)
 
 	// 启动服务器
 	err := sseServer.Start(fmt.Sprintf(":%d", port))
+	if err != nil {
+		klog.Errorf("MCP Server error: %v\n", err)
+	}
+}
+
+var config *metadata.ServerConfig
+
+func GetServerConfig() *metadata.ServerConfig {
+	return config
+}
+func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
+	if cfg == nil {
+		klog.Errorf("MCP Server error: config is nil\n")
+		return
+	}
+	config = cfg
+	// 创建一个新的 MCP 服务器
+	s := server.NewMCPServer(
+		config.Name,
+		config.Version,
+		config.ServerOptions...,
+	)
+
+	// 注册工具
+	dynamic.RegisterTools(s, config)
+	pod.RegisterTools(s, config)
+	cluster.RegisterTools(s, config)
+	event.RegisterTools(s, config)
+	deployment.RegisterTools(s, config)
+	node.RegisterTools(s, config)
+	storageclass.RegisterTools(s, config)
+	ingressclass.RegisterTools(s, config)
+	yaml.RegisterTools(s, config)
+	// 创建 SSE 服务器
+	sseServer := server.NewSSEServer(s, config.SSEOption...)
+
+	// 启动服务器
+	err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
 	if err != nil {
 		klog.Errorf("MCP Server error: %v\n", err)
 	}

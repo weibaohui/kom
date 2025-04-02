@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	"k8s.io/klog/v2"
 )
 
@@ -23,8 +24,9 @@ func GetPodLinkedPVCTool() mcp.Tool {
 }
 
 // GetPodLinkedPVCHandler 处理PVC查询请求
-func GetPodLinkedPVCHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(req)
+func GetPodLinkedPVCHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		klog.Errorf("解析元数据失败: %v", err)
 		return nil, fmt.Errorf("解析请求失败: %v", err)
@@ -40,5 +42,5 @@ func GetPodLinkedPVCHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.
 		return nil, fmt.Errorf("查询PVC失败: %v", err)
 	}
 
-	return tools.TextResult(pvcList, meta)
+	return utils.TextResult(pvcList, meta)
 }

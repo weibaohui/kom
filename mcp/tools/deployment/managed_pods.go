@@ -5,8 +5,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
 )
 
 // ManagedPodsDeploymentTool 创建一个获取Deployment管理的Pod列表的工具
@@ -23,7 +23,8 @@ func ManagedPodsDeploymentTool() mcp.Tool {
 // ManagedPodsDeploymentHandler 处理获取Deployment管理的Pod列表的请求
 func ManagedPodsDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -39,5 +40,5 @@ func ManagedPodsDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 		podNames = append(podNames, pod.Name)
 	}
 
-	return tools.TextResult(podNames, meta)
+	return utils.TextResult(podNames, meta)
 }

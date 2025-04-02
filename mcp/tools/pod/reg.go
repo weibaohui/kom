@@ -2,10 +2,13 @@ package pod
 
 import (
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-// RegisterTools 注册Pod相关的工具到MCP服务器
-func RegisterTools(s *server.MCPServer) {
+var config *metadata.ServerConfig
+
+func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
+	config = cfg
 	s.AddTool(
 		ListPodFilesTool(),
 		ListPodFilesHandler,

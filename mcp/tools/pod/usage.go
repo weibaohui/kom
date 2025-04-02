@@ -6,8 +6,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
 )
 
 // GetPodResourceUsageTool 创建获取Pod资源使用情况的工具
@@ -25,7 +25,8 @@ func GetPodResourceUsageTool() mcp.Tool {
 // GetPodResourceUsageHandler 处理获取Pod资源使用情况的请求
 func GetPodResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -36,5 +37,5 @@ func GetPodResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest
 	// 获取资源使用情况
 	usage := kom.Cluster(meta.Cluster).WithContext(ctx).WithCache(time.Duration(cacheSeconds) * time.Second).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().ResourceUsage()
 
-	return tools.TextResult(usage, meta)
+	return utils.TextResult(usage, meta)
 }

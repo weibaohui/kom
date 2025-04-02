@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+
+	"github.com/weibaohui/kom/utils"
 )
 
 func AnnotateDynamicResource() mcp.Tool {
@@ -26,7 +27,8 @@ func AnnotateDynamicResource() mcp.Tool {
 
 func AnnotateDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -50,5 +52,5 @@ func AnnotateDynamicResourceHandler(ctx context.Context, request mcp.CallToolReq
 	}
 
 	result := fmt.Sprintf("Successfully updated annotation for resource [%s/%s] of type [%s%s%s]", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind)
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }

@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/klog/v2"
 )
@@ -25,7 +26,8 @@ func StopDeploymentTool() mcp.Tool {
 // StopDeploymentHandler 处理停止Deployment的请求
 func StopDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -37,5 +39,5 @@ func StopDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*m
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully stopped deployment", meta)
+	return utils.TextResult("Successfully stopped deployment", meta)
 }

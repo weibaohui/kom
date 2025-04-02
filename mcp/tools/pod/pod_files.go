@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	"k8s.io/klog/v2"
 )
 
@@ -26,7 +27,8 @@ func ListPodFilesTool() mcp.Tool {
 
 // ListPodFilesHandler 处理Pod文件列表请求
 func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		return nil, err
 	}
 
-	return tools.TextResult(files, meta)
+	return utils.TextResult(files, meta)
 }
 
 // ListAllPodFilesTool 创建Pod文件全量列表工具
@@ -69,7 +71,8 @@ func ListAllPodFilesTool() mcp.Tool {
 
 // ListAllPodFilesHandler 处理Pod文件全量列表请求
 func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +97,7 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 		return nil, err
 	}
 
-	return tools.TextResult(files, meta)
+	return utils.TextResult(files, meta)
 }
 
 // DeletePodFileTool 创建Pod文件删除工具
@@ -112,7 +115,8 @@ func DeletePodFileTool() mcp.Tool {
 
 // DeletePodFileHandler 处理Pod文件删除请求
 func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -137,5 +141,5 @@ func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 		return nil, err
 	}
 
-	return tools.TextResult(string(ret), meta)
+	return utils.TextResult(string(ret), meta)
 }

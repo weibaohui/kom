@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/klog/v2"
 )
@@ -27,7 +28,8 @@ func UpdateTagDeploymentTool() mcp.Tool {
 // UpdateTagDeploymentHandler 处理更新Deployment镜像Tag的请求
 func UpdateTagDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -42,5 +44,5 @@ func UpdateTagDeploymentHandler(ctx context.Context, request mcp.CallToolRequest
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully updated deployment image tag", meta)
+	return utils.TextResult("Successfully updated deployment image tag", meta)
 }

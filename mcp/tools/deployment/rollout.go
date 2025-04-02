@@ -5,8 +5,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/klog/v2"
 )
@@ -25,7 +26,8 @@ func RolloutHistoryDeploymentTool() mcp.Tool {
 // RolloutHistoryDeploymentHandler 处理查询Deployment升级历史的请求
 func RolloutHistoryDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,7 @@ func RolloutHistoryDeploymentHandler(ctx context.Context, request mcp.CallToolRe
 		return nil, err
 	}
 
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }
 
 // RolloutUndoDeploymentTool 创建一个回滚Deployment的工具
@@ -55,7 +57,8 @@ func RolloutUndoDeploymentTool() mcp.Tool {
 // RolloutUndoDeploymentHandler 处理回滚Deployment的请求
 func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +67,7 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 	if revisionVal, ok := request.Params.Arguments["revision"].(float64); ok {
 		revision = int(revisionVal)
 	}
- 
+
 	klog.Infof("Rolling back deployment %s/%s in cluster %s to revision %s", meta.Namespace, meta.Name, meta.Cluster, revision)
 
 	result, err := kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&appsv1.Deployment{}).Namespace(meta.Namespace).Name(meta.Name).Ctl().Rollout().Undo(revision)
@@ -72,7 +75,7 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 		return nil, err
 	}
 
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }
 
 // RolloutPauseDeploymentTool 创建一个暂停Deployment升级的工具
@@ -89,7 +92,8 @@ func RolloutPauseDeploymentTool() mcp.Tool {
 // RolloutPauseDeploymentHandler 处理暂停Deployment升级的请求
 func RolloutPauseDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func RolloutPauseDeploymentHandler(ctx context.Context, request mcp.CallToolRequ
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully paused deployment rollout", meta)
+	return utils.TextResult("Successfully paused deployment rollout", meta)
 }
 
 // RolloutResumeDeploymentTool 创建一个恢复Deployment升级的工具
@@ -118,7 +122,8 @@ func RolloutResumeDeploymentTool() mcp.Tool {
 // RolloutResumeDeploymentHandler 处理恢复Deployment升级的请求
 func RolloutResumeDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +135,7 @@ func RolloutResumeDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 		return nil, err
 	}
 
-	return tools.TextResult("Successfully resumed deployment rollout", meta)
+	return utils.TextResult("Successfully resumed deployment rollout", meta)
 }
 
 // RolloutStatusDeploymentTool 创建一个查询Deployment升级状态的工具
@@ -147,7 +152,8 @@ func RolloutStatusDeploymentTool() mcp.Tool {
 // RolloutStatusDeploymentHandler 处理查询Deployment升级状态的请求
 func RolloutStatusDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -159,5 +165,5 @@ func RolloutStatusDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 		return nil, err
 	}
 
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }

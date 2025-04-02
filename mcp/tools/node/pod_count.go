@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/tools"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
@@ -26,7 +27,8 @@ func NodePodCountTool() mcp.Tool {
 // NodePodCountHandler 处理查询节点Pod数量的请求
 func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	meta, err := metadata.ParseFromRequest(request)
+	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
+
 	if err != nil {
 		return nil, err
 	}
@@ -47,5 +49,5 @@ func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		"available": available,
 	}
 
-	return tools.TextResult(result, meta)
+	return utils.TextResult(result, meta)
 }
