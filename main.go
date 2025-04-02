@@ -19,11 +19,16 @@ func main() {
 	// example.Example()
 	// mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
-	authKey := "Authorization"
+	authKey := "username"
+	authRoleKey := "role"
 	var ctxFn = func(ctx context.Context, r *http.Request) context.Context {
-		authVal := r.Header.Get(authKey)
-		klog.Infof("%s: %s", authKey, authVal)
-		return context.WithValue(ctx, authKey, authVal)
+		authKeyVal := r.Header.Get(authKey)
+		authRoleVal := r.Header.Get(authRoleKey)
+		klog.Infof("%s: %s", authKey, authKeyVal)
+		klog.Infof("%s: %s", authRoleKey, authRoleKey)
+		ctx = context.WithValue(ctx, authKey, authKeyVal)
+		ctx = context.WithValue(ctx, authRoleKey, authRoleVal)
+		return ctx
 	}
 	cfg := metadata.ServerConfig{
 		Name:    "kom mcp server",
@@ -37,7 +42,8 @@ func main() {
 		SSEOption: []server.SSEOption{
 			server.WithSSEContextFunc(ctxFn),
 		},
-		AuthKey: authKey,
+		AuthKey:     authKey,
+		AuthRoleKey: authRoleKey,
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 }

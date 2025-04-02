@@ -21,6 +21,7 @@ type ServerConfig struct {
 	SSEOption     []server.SSEOption
 	Metadata      map[string]string // 元数据
 	AuthKey       string            // 认证key
+	AuthRoleKey   string            // 认证key
 }
 
 type ResourceInfo struct {
