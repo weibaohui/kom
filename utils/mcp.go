@@ -1,10 +1,10 @@
-package tools
+package utils
 
 import (
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/weibaohui/kom/mcp/tools/metadata"
+	"github.com/weibaohui/kom/mcp/metadata"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
