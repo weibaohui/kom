@@ -32,6 +32,11 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	if err != nil {
 		return nil, err
 	}
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+	}
 
 	path, _ := request.Params.Arguments["path"].(string)
 	container, _ := request.Params.Arguments["container"].(string)
@@ -76,6 +81,11 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 	if err != nil {
 		return nil, err
 	}
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+	}
 
 	path, _ := request.Params.Arguments["path"].(string)
 	container, _ := request.Params.Arguments["container"].(string)
@@ -119,6 +129,11 @@ func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 
 	if err != nil {
 		return nil, err
+	}
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
 	}
 
 	path, _ := request.Params.Arguments["path"].(string)

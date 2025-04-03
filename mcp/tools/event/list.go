@@ -29,6 +29,11 @@ func ListEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) 
 	if err != nil {
 		return nil, err
 	}
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+	}
 
 	// 获取标签选择器和涉及对象名称
 	involvedObjectName, _ := request.Params.Arguments["involvedObjectName"].(string)

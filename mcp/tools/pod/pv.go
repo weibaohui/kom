@@ -25,11 +25,16 @@ func GetPodLinkedPVTool() mcp.Tool {
 
 // GetPodLinkedPVHandler 处理PV查询请求
 func GetPodLinkedPVHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// 获取参数
 	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
 
 	if err != nil {
-		klog.Errorf("解析元数据失败: %v", err)
-		return nil, fmt.Errorf("解析请求失败: %v", err)
+		return nil, err
+	}
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
 	}
 
 	pvList, err := kom.Cluster(meta.Cluster).
