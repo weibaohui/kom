@@ -231,7 +231,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		// 查询与 Deployment 关联的所有 ReplicaSet
 		var rsList []*v1.ReplicaSet
 
-		err = d.kubectl.newInstance().Resource(&v1.ReplicaSet{}).
+		err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ReplicaSet{}).
 			Namespace(ns).
 			WithLabelSelector(labelSelector).List(&rsList).Error
 		if err != nil {
@@ -279,7 +279,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 	case "StatefulSet":
 
 		var versionList []*v1.ControllerRevision
-		err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+		err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ControllerRevision{}).
 			Namespace(ns).
 			List(&versionList).Error
 		if err != nil {
@@ -322,7 +322,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 	case "DaemonSet":
 
 		var versionList []*v1.ControllerRevision
-		err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+		err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ControllerRevision{}).
 			Namespace(ns).
 			List(&versionList).Error
 		if err != nil {
@@ -425,7 +425,7 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 	name := d.kubectl.Statement.Name
 	ns := d.kubectl.Statement.Namespace
 	var deploy v1.Deployment
-	err := d.kubectl.Resource(&deploy).
+	err := d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&deploy).
 		WithLabelSelector("app=" + name).
 		Get(&deploy).Error
 	if err != nil {
@@ -442,7 +442,7 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 	}
 
 	var rsList []v1.ReplicaSet
-	err = d.kubectl.newInstance().Resource(&v1.ReplicaSet{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ReplicaSet{}).
 		Namespace(ns).
 		List(&rsList).Error
 	if err != nil {
@@ -472,7 +472,7 @@ func (d *rollout) rollbackDeployment(toVersion int) error {
 	spec := vrs.Spec.Template.Spec
 
 	deploy.Spec.Template.Spec = spec
-	err = d.kubectl.Resource(&deploy).Update(&deploy).Error
+	err = d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&deploy).Update(&deploy).Error
 	if err != nil {
 		return fmt.Errorf(" rollbackDeployment rollout undo deployment  err %v ", err)
 	}
@@ -515,14 +515,14 @@ func (d *rollout) rollbackDaemonSet(toVersion int) error {
 	ns := d.kubectl.Statement.Namespace
 
 	var ds v1.DaemonSet
-	err := d.kubectl.Resource(&ds).
+	err := d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&ds).
 		WithLabelSelector("app=" + name).
 		Get(&ds).Error
 	if err != nil {
 		return fmt.Errorf("rollbackDaemonSet get daemonset err %v", err)
 	}
 	var versionList []*v1.ControllerRevision
-	err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ControllerRevision{}).
 		Namespace(ns).
 		List(&versionList).Error
 	if err != nil {
@@ -586,7 +586,7 @@ func (d *rollout) rollbackDaemonSet(toVersion int) error {
 	ds.Spec.Template.Spec = dsTemplate.Spec.Template.Spec
 
 	// 更新 DaemonSet
-	err = d.kubectl.Resource(&ds).Update(&ds).Error
+	err = d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&ds).Update(&ds).Error
 	if err != nil {
 		return fmt.Errorf("rollbackDaemonSet update daemonset err %v", err)
 	}
@@ -604,14 +604,14 @@ func (d *rollout) rollbackStatefulSet(toVersion int) error {
 	ns := d.kubectl.Statement.Namespace
 
 	var sts v1.StatefulSet
-	err := d.kubectl.Resource(&sts).
+	err := d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&sts).
 		WithLabelSelector("app=" + name).
 		Get(&sts).Error
 	if err != nil {
 		return fmt.Errorf("rollbackStatefulSet get StatefulSet err %v", err)
 	}
 	var versionList []*v1.ControllerRevision
-	err = d.kubectl.newInstance().Resource(&v1.ControllerRevision{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.ControllerRevision{}).
 		Namespace(ns).
 		List(&versionList).Error
 	if err != nil {
@@ -675,7 +675,7 @@ func (d *rollout) rollbackStatefulSet(toVersion int) error {
 	sts.Spec.Template.Spec = stsTemplate.Spec.Template.Spec
 
 	// 更新 DaemonSet
-	err = d.kubectl.Resource(&sts).Update(&sts).Error
+	err = d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&sts).Update(&sts).Error
 	if err != nil {
 		return fmt.Errorf("rollbackStatefulSet update daemonset err %v", err)
 	}

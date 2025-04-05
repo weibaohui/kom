@@ -28,14 +28,14 @@ func (r *replicaSet) Restore() error {
 func (r *replicaSet) ManagedPods() ([]*corev1.Pod, error) {
 	// 先找到rs
 	var rs v1.ReplicaSet
-	err := r.kubectl.WithCache(r.kubectl.Statement.CacheTTL).Resource(&rs).Get(&rs).Error
+	err := r.kubectl.WithContext(r.kubectl.Statement.Context).WithCache(r.kubectl.Statement.CacheTTL).Resource(&rs).Get(&rs).Error
 
 	if err != nil {
 		return nil, err
 	}
 	// 通过rs 获取pod
 	var podList []*corev1.Pod
-	err = r.kubectl.newInstance().WithCache(r.kubectl.Statement.CacheTTL).Resource(&corev1.Pod{}).
+	err = r.kubectl.newInstance().WithContext(r.kubectl.Statement.Context).WithCache(r.kubectl.Statement.CacheTTL).Resource(&corev1.Pod{}).
 		Namespace(r.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("metadata.ownerReferences.name='%s' and metadata.ownerReferences.kind='%s'", rs.GetName(), "ReplicaSet")).
 		List(&podList).Error
@@ -54,7 +54,7 @@ func (r *replicaSet) ManagedPod() (*corev1.Pod, error) {
 func (r *replicaSet) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
 	// 通过rs 获取pod
 	var list []*autoscalingv2.HorizontalPodAutoscaler
-	err := r.kubectl.newInstance().WithCache(r.kubectl.Statement.CacheTTL).
+	err := r.kubectl.newInstance().WithContext(r.kubectl.Statement.Context).WithCache(r.kubectl.Statement.CacheTTL).
 		GVK("autoscaling", "v2", "HorizontalPodAutoscaler").
 		Namespace(r.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", r.kubectl.Statement.Name, "ReplicaSet")).

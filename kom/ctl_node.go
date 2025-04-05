@@ -1,7 +1,6 @@
 package kom
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"strings"
@@ -103,7 +102,7 @@ func (d *node) UnTaint(str string) error {
 func (d *node) AllNodeLabels() (map[string]string, error) {
 
 	var list []*corev1.Node
-	err := d.kubectl.newInstance().Resource(&corev1.Node{}).WithCache(d.kubectl.Statement.CacheTTL).
+	err := d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Node{}).WithCache(d.kubectl.Statement.CacheTTL).
 		List(&list).Error
 	if err != nil {
 		return nil, err
@@ -134,7 +133,7 @@ func (d *node) Drain() error {
 	// Step 2: 获取节点上的所有 Pod
 	// 列出节点上的pod
 	var podList []*corev1.Pod
-	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Pod{}).
 		WithFieldSelector(fmt.Sprintf("spec.nodeName=%s", name)).
 		List(&podList).Error
 	if err != nil {
@@ -163,7 +162,7 @@ func (d *node) Drain() error {
 	// Step 4: 等待所有 Pod 被驱逐
 	err = wait.PollImmediate(2*time.Second, 5*time.Minute, func() (bool, error) {
 		var podList []*corev1.Pod
-		err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+		err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Pod{}).
 			WithFieldSelector(fmt.Sprintf("spec.nodeName=%s", name)).
 			List(&podList).Error
 		if err != nil {
@@ -271,7 +270,7 @@ func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
 		case <-timeout:
 			return fmt.Errorf("等待Pod启动超时")
 		case <-ticker.C:
-			err := d.kubectl.newInstance().Resource(&v1.Pod{}).Name(podName).Namespace(ns).Get(&p).Error
+			err := d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.Pod{}).Name(podName).Namespace(ns).Get(&p).Error
 			if err != nil {
 				klog.V(6).Infof("等待Pod %s/%s 创建中...", ns, podName)
 				continue
@@ -444,7 +443,7 @@ func (d *node) evictPod(pod *corev1.Pod) error {
 			Namespace: pod.Namespace,
 		},
 	}
-	err := d.kubectl.Client().PolicyV1().Evictions(pod.Namespace).Evict(context.TODO(), eviction)
+	err := d.kubectl.Client().PolicyV1().Evictions(pod.Namespace).Evict(d.kubectl.Statement.Context, eviction)
 
 	// err := d.kubectl.newInstance().Resource(eviction).Create(eviction).Error
 	if err != nil {
@@ -491,7 +490,7 @@ func (d *node) RunningPods() ([]*corev1.Pod, error) {
 
 	var podList []*corev1.Pod
 	// status.phase!=Succeeded,status.phase!=Failed
-	err := d.kubectl.newInstance().Resource(&corev1.Pod{}).
+	err := d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Pod{}).
 		AllNamespace().
 		Where("spec.nodeName=? and 'status.phase'!='Succeeded' and 'status.phase'!='Failed'", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
@@ -617,7 +616,7 @@ func (d *node) IPUsage() (total, used, available int) {
 
 	// 计算PodIP数量，
 	var podList []*corev1.Pod
-	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Pod{}).
 		AllNamespace().
 		Where("spec.nodeName=? and 'status.podIP' != '' ", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
@@ -659,7 +658,7 @@ func (d *node) PodCount() (total, used, available int) {
 
 	// 计算PodIP数量，
 	var podList []*corev1.Pod
-	err = d.kubectl.newInstance().Resource(&corev1.Pod{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Pod{}).
 		AllNamespace().
 		Where("spec.nodeName=? ", d.kubectl.Statement.Name).
 		WithCache(cacheTime).List(&podList).Error
@@ -682,7 +681,7 @@ func (d *node) getNodeWithCache(cacheTime time.Duration) (*corev1.Node, error) {
 		d.getCacheTTL(10*time.Second),
 		func() (*corev1.Node, error) {
 			var n *corev1.Node
-			err := d.kubectl.newInstance().Resource(&corev1.Node{}).
+			err := d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&corev1.Node{}).
 				Name(d.kubectl.Statement.Name).WithCache(cacheTime).Get(&n).Error
 			if err != nil {
 				klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())

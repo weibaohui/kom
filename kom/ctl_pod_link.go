@@ -59,7 +59,7 @@ func (p *pod) LinkedService() ([]*v1.Service, error) {
 	var result []*v1.Service
 	for _, svc := range services {
 		serviceLabels := svc.Spec.Selector
-		//如果为空，标明没有特定的pod selector，则跳过这个svc
+		// 如果为空，标明没有特定的pod selector，则跳过这个svc
 		if len(serviceLabels) == 0 {
 			continue
 		}
@@ -578,7 +578,7 @@ func (p *pod) LinkedNode() ([]*SelectedNode, error) {
 		return nil, fmt.Errorf("")
 	}
 	var nodeList []*v1.Node
-	err = p.kubectl.newInstance().Resource(&v1.Node{}).
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).Resource(&v1.Node{}).
 		List(&nodeList).Error
 	if err != nil {
 		return nil, err

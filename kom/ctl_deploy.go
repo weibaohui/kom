@@ -44,7 +44,7 @@ func (d *deploy) ManagedPods() ([]*corev1.Pod, error) {
 	}
 	// 通过rs 获取pod
 	var podList []*corev1.Pod
-	err = d.kubectl.newInstance().WithCache(d.kubectl.Statement.CacheTTL).Resource(&corev1.Pod{}).
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).WithCache(d.kubectl.Statement.CacheTTL).Resource(&corev1.Pod{}).
 		Namespace(d.kubectl.Statement.Namespace).
 		Where(fmt.Sprintf("metadata.ownerReferences.name='%s' and metadata.ownerReferences.kind='%s'", rs.GetName(), "ReplicaSet")).
 		List(&podList).Error
@@ -64,14 +64,14 @@ func (d *deploy) ManagedPod() (*corev1.Pod, error) {
 // 最新部署版本的RS
 func (d *deploy) ManagedLatestReplicaSet() (*v1.ReplicaSet, error) {
 	var item v1.Deployment
-	err := d.kubectl.WithCache(d.kubectl.Statement.CacheTTL).Resource(&item).Get(&item).Error
+	err := d.kubectl.WithContext(d.kubectl.Statement.Context).WithCache(d.kubectl.Statement.CacheTTL).Resource(&item).Get(&item).Error
 
 	if err != nil {
 		return nil, err
 	}
 
 	var rsList []*v1.ReplicaSet
-	err = d.kubectl.newInstance().
+	err = d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).
 		WithCache(d.kubectl.Statement.CacheTTL).
 		Resource(&v1.ReplicaSet{}).
 		Namespace(d.kubectl.Statement.Namespace).
@@ -112,7 +112,7 @@ func (d *deploy) ManagedLatestReplicaSet() (*v1.ReplicaSet, error) {
 
 func (d *deploy) ReplaceImageTag(targetContainerName string, tag string) (*v1.Deployment, error) {
 	var item v1.Deployment
-	err := d.kubectl.Resource(&item).Get(&item).Error
+	err := d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&item).Get(&item).Error
 
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (d *deploy) ReplaceImageTag(targetContainerName string, tag string) (*v1.De
 			c.Image = replaceImageTag(c.Image, tag)
 		}
 	}
-	err = d.kubectl.Resource(&item).Update(&item).Error
+	err = d.kubectl.WithContext(d.kubectl.Statement.Context).Resource(&item).Update(&item).Error
 	return &item, err
 }
 
