@@ -13,7 +13,7 @@
 ## **特点**
 1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等，包括对内置资源以及CRD资源的操作。
 2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
-3. MCP支持：支持多集群的MCP管理，内置48种工具，支持SSE模式，支持私有化部署，多人共享。支持超过百种组合操作。
+3. MCP支持：支持多集群的MCP管理,同时支持stdio、sse两种模式，内置48种工具，支持SSE模式，支持私有化部署，多人共享。支持超过百种组合操作。
 4. 支持跨命名空间：通过kom.Namespace("default","kube-system").List(&items) 跨命名空间查询资源。
 5. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
 6. 支持自定义资源定义（CRD）：kom 支持自定义资源定义（CRD），你可以轻松地定义和操作自定义资源。
@@ -58,30 +58,41 @@ func main() {
 ## 使用示例
 
 ### 0. 多集群 k8s MCP 支持
+同时支持stdio、sse两种模式
 支持多个tools 支持。包括对任意资源的查询列表删除描述操作，以及POD日志读取操作。
 #### 1.集成到代码中
 ```go
 // 一行代码启动MCP Server
 mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
+
+
 ```
-#### 2. 直接源码启动
+#### 2. 编译
 ```shell
 # 源码启动
-go run main.go 
-# MCP Server 访问地址
-http://IP:9096/sse
+go build main.go 
+//编译为kom
 ```
-#### 3. 编译后启动
+#### 3. 启动
+启动后支持两种模式，一种为stdio，一种sse。
+管理k8s默认使用KUBECONFIG env环境变量。
 ```shell
-# 编译
-go build main.go
+# 设置KUBECONFIG环境变量
+export KUBECONFIG = /Users/xxx/.kube/config
+```
+```shell
 # 运行
-./main 
+./kom 
 # MCP Server 访问地址
 http://IP:9096/sse
 ```
+此时，编译得到的二进制文件，可当做stdio 模式使用。
+http://IP:9096/sse 模式，可以当做sse 模式使用。
+
+
 #### 4. 集成到MCP工具中
+支持stdio\sse 两种方式集成。
 适合MCP工具集成，如Cursor、Claude Desktop、Windsurf等，此外也可以使用这些软件的UI操作界面进行添加。
 ```json
 {
@@ -91,6 +102,16 @@ http://IP:9096/sse
       "url": "http://IP:9096/sse"
     }
   }
+}
+```
+```json
+{
+    "mcpServers": {
+        "k8m": {
+            "command": "path/to/kom",
+            "args": []
+        }
+    }
 }
 ```
 
@@ -161,16 +182,32 @@ mcp.RunMCPServer("kom mcp server", "0.0.1", 3619)
 2. 在API配置区域添加MCP Server地址
 3. 启用SSE事件监听功能
 4. 验证连接状态
+```json
+{
+  "mcpServers": {
+    "k8m": {
+      "command": "path/to/kom",
+      "args": []
+    }
+  }
+}
+```
 
 ##### Cursor
 1. 进入Cursor设置界面
 2. 找到扩展服务配置选项
-3. 添加MCP Server的URL（例如：http://localhost:9096/sse）
+3. 支持sse、stdio两种方式。sse 方式填写http://localhost:9096/sse,stdio方式填写kom的文件位置。
 
 ##### Windsurf
 1. 访问配置中心
 2. 设置API服务器地址
+3. 支持sse、stdio两种方式。sse 方式填写http://localhost:9096/sse,stdio方式填写kom的文件位置。
 
+#### cherry studio
+1. 点击左下角设置
+2. 点击MCP 服务器
+3. 点击添加服务器
+4. 支持sse、stdio两种方式。sse 方式填写http://localhost:9096/sse,stdio方式填写kom的文件位置。
 
 
 ### 1. 多集群管理

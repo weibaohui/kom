@@ -17,8 +17,11 @@ func main() {
 	flag.Set("v", "8")
 	example.Connect()
 	// example.Example()
+
+	// 一行代码启动模式
 	// mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
+	// 复杂参数配置模式
 	// SSE调用时，可以在MCP client 请求中，在header中注入认证信息
 	// kom执行时，如果注册了callback，那么可以在callback中获取到ctx，从ctx上可以拿到注入的认证信息
 	// 有了认证信息，就可以在callback中，进行权限的逻辑控制了
