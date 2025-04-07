@@ -22,25 +22,7 @@ func RunMCPServer(name, version string, port int) {
 	config.Version = version
 	config.Port = port
 	// 创建一个新的 MCP 服务器
-	s := server.NewMCPServer(
-		name,
-		version,
-		server.WithResourceCapabilities(false, false),
-		server.WithPromptCapabilities(false),
-		server.WithLogging(),
-	)
-
-	// 注册工具
-	dynamic.RegisterTools(s, config)
-	pod.RegisterTools(s, config)
-	cluster.RegisterTools(s, config)
-	event.RegisterTools(s, config)
-	deployment.RegisterTools(s, config)
-	node.RegisterTools(s, config)
-	storageclass.RegisterTools(s, config)
-	ingressclass.RegisterTools(s, config)
-	yaml.RegisterTools(s, config)
-
+	s := GetMCPServerWithOption(config)
 	// Start the stdio server
 	if err := server.ServeStdio(s); err != nil {
 		klog.Errorf("stdio server start error: %v\n", err)
