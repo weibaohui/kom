@@ -78,12 +78,20 @@ func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	storageclass.RegisterTools(s, config)
 	ingressclass.RegisterTools(s, config)
 	yaml.RegisterTools(s, config)
+
+	if cfg.Mode == metadata.MCPServerModeStdio || cfg.Mode == metadata.MCPServerModeBoth {
+		// Start the stdio server
+		if err := server.ServeStdio(s); err != nil {
+			fmt.Printf("Server error: %v\n", err)
+		}
+	}
+
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s, config.SSEOption...)
-
 	// 启动服务器
 	err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
 	if err != nil {
 		klog.Errorf("MCP Server error: %v\n", err)
 	}
+
 }

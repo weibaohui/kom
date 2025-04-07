@@ -19,6 +19,9 @@ func main() {
 	// example.Example()
 	// mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
 
+	// SSE调用时，可以在MCP client 请求中，在header中注入认证信息
+	// kom执行时，如果注册了callback，那么可以在callback中获取到ctx，从ctx上可以拿到注入的认证信息
+	// 有了认证信息，就可以在callback中，进行权限的逻辑控制了
 	authKey := "username"
 	authRoleKey := "role"
 	var ctxFn = func(ctx context.Context, r *http.Request) context.Context {
@@ -44,6 +47,7 @@ func main() {
 		},
 		AuthKey:     authKey,
 		AuthRoleKey: authRoleKey,
+		Mode:        metadata.MCPServerModeBoth, // 同时开启STDIO 和 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 }

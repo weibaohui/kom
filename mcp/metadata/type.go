@@ -22,7 +22,15 @@ type ServerConfig struct {
 	Metadata      map[string]string // 元数据
 	AuthKey       string            // 认证key
 	AuthRoleKey   string            // 认证key
+	Mode          MCPServerMode     // 运行模式 sse,stdio
 }
+type MCPServerMode string
+
+const (
+	MCPServerModeSSE   MCPServerMode = "sse"
+	MCPServerModeStdio MCPServerMode = "stdio"
+	MCPServerModeBoth  MCPServerMode = "both"
+)
 
 type ResourceInfo struct {
 	Group      string
