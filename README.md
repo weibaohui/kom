@@ -93,7 +93,7 @@ http://IP:9096/sse 模式，可以当做sse 模式使用。
 
 #### 4. 集成到MCP工具中
 支持stdio\sse 两种方式集成。
-适合MCP工具集成，如Cursor、Claude Desktop、Windsurf等，此外也可以使用这些软件的UI操作界面进行添加。
+适合MCP工具集成，如Cursor、Claude Desktop(仅支持stdio模式)、Windsurf等，此外也可以使用这些软件的UI操作界面进行添加。
 ```json
 {
   "mcpServers": {
