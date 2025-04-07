@@ -62,9 +62,28 @@ func GetServerConfig() *metadata.ServerConfig {
 	return config
 }
 func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
+	s := GetMCPServerWithOption(cfg)
+	if cfg.Mode == metadata.MCPServerModeStdio || cfg.Mode == metadata.MCPServerModeBoth {
+		// Start the stdio server
+		if err := server.ServeStdio(s); err != nil {
+			klog.Errorf("stdio server start error: %v\n", err)
+		}
+	}
+
+	// 创建 SSE 服务器
+	sseServer := server.NewSSEServer(s, config.SSEOption...)
+
+	// 启动服务器
+	err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
+	if err != nil {
+		klog.Errorf("MCP Server error: %v\n", err)
+	}
+
+}
+func GetMCPServerWithOption(cfg *metadata.ServerConfig) *server.MCPServer {
 	if cfg == nil {
 		klog.Errorf("MCP Server error: config is nil\n")
-		return
+		return nil
 	}
 	config = cfg
 	// 创建一个新的 MCP 服务器
@@ -84,20 +103,6 @@ func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	storageclass.RegisterTools(s, config)
 	ingressclass.RegisterTools(s, config)
 	yaml.RegisterTools(s, config)
-
-	if cfg.Mode == metadata.MCPServerModeStdio || cfg.Mode == metadata.MCPServerModeBoth {
-		// Start the stdio server
-		if err := server.ServeStdio(s); err != nil {
-			klog.Errorf("stdio server start error: %v\n", err)
-		}
-	}
-
-	// 创建 SSE 服务器
-	sseServer := server.NewSSEServer(s, config.SSEOption...)
-	// 启动服务器
-	err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
-	if err != nil {
-		klog.Errorf("MCP Server error: %v\n", err)
-	}
+	return s
 
 }
