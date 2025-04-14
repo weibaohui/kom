@@ -34,7 +34,10 @@ func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	// 获取环境变量
@@ -69,7 +72,10 @@ func GetPodLinkedEnvFromPodYamlHandler(ctx context.Context, request mcp.CallTool
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	// 获取环境变量

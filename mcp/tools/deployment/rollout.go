@@ -35,7 +35,10 @@ func RolloutHistoryDeploymentHandler(ctx context.Context, request mcp.CallToolRe
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	klog.Infof("Getting rollout history for deployment %s/%s in cluster %s", meta.Namespace, meta.Name, meta.Cluster)
@@ -71,7 +74,10 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	var revision int
@@ -111,7 +117,10 @@ func RolloutPauseDeploymentHandler(ctx context.Context, request mcp.CallToolRequ
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	klog.Infof("Pausing rollout for deployment %s/%s in cluster %s", meta.Namespace, meta.Name, meta.Cluster)
@@ -146,7 +155,10 @@ func RolloutResumeDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	klog.Infof("Resuming rollout for deployment %s/%s in cluster %s", meta.Namespace, meta.Name, meta.Cluster)
@@ -181,7 +193,10 @@ func RolloutStatusDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 	// 如果只有一个集群的时候，使用空，默认集群
 	// 如果大于一个集群，没有传值，那么要返回错误
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required 集群名称必须设置")
+		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	klog.Infof("Getting rollout status for deployment %s/%s in cluster %s", meta.Namespace, meta.Name, meta.Cluster)
