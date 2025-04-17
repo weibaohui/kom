@@ -38,6 +38,9 @@ func PatchDynamicResourceHandler(ctx context.Context, request mcp.CallToolReques
 	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
 		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
 	}
+	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
+		meta.Cluster = kom.Clusters().DefaultCluster().ID
+	}
 	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
 		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
