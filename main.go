@@ -54,7 +54,7 @@ func main() {
 		},
 		AuthKey:     authKey,
 		AuthRoleKey: authRoleKey,
-		Mode:        metadata.MCPServerModeBoth, // 同时开启STDIO 和 SSE
+		Mode:        metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 }

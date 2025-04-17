@@ -45,20 +45,21 @@ func GetServerConfig() *metadata.ServerConfig {
 }
 func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	s := GetMCPServerWithOption(cfg)
-	if cfg.Mode == metadata.MCPServerModeStdio || cfg.Mode == metadata.MCPServerModeBoth {
+	if cfg.Mode == metadata.MCPServerModeStdio {
 		// Start the stdio server
 		if err := server.ServeStdio(s); err != nil {
 			klog.Errorf("stdio server start error: %v\n", err)
 		}
-	}
+	} else {
 
-	// 创建 SSE 服务器
-	sseServer := server.NewSSEServer(s, config.SSEOption...)
+		// 创建 SSE 服务器
+		sseServer := server.NewSSEServer(s, config.SSEOption...)
 
-	// 启动服务器
-	err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
-	if err != nil {
-		klog.Errorf("MCP Server error: %v\n", err)
+		// 启动服务器
+		err := sseServer.Start(fmt.Sprintf(":%d", config.Port))
+		if err != nil {
+			klog.Errorf("MCP Server error: %v\n", err)
+		}
 	}
 
 }

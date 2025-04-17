@@ -29,7 +29,6 @@ type MCPServerMode string
 const (
 	MCPServerModeSSE   MCPServerMode = "sse"
 	MCPServerModeStdio MCPServerMode = "stdio"
-	MCPServerModeBoth  MCPServerMode = "both"
 )
 
 type ResourceInfo struct {
