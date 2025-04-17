@@ -16,7 +16,7 @@ import (
 func GetPodLinkedPVTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_pv",
-		mcp.WithDescription("获取与Pod关联的PersistentVolume"),
+		mcp.WithDescription("获取与Pod关联的PersistentVolume (类似命令: kubectl get pv | grep <pod-name>)"),
 		mcp.WithString("cluster", mcp.Description("集群名称")),
 		mcp.WithString("namespace", mcp.Description("Pod所在命名空间")),
 		mcp.WithString("name", mcp.Description("Pod名称")),

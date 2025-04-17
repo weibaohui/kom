@@ -17,7 +17,7 @@ import (
 func RestoreDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"restore_deployment",
-		mcp.WithDescription("恢复Deployment副本数，（从注解中恢复原始副本数，如果没有注解则默认为1） / Restore deployment replicas from annotation, default to 1 if not found"),
+		mcp.WithDescription("恢复Deployment副本数，（从注解中恢复原始副本数，如果没有注解则默认为1）。对应kubectl命令: kubectl scale deployment/<name> --replicas=<original_replicas> -n <namespace> / Restore deployment replicas from annotation, default to 1 if not found. Equivalent kubectl command: kubectl scale deployment/<name> --replicas=<original_replicas> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

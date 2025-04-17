@@ -17,7 +17,7 @@ import (
 func DrainNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"drain_node",
-		mcp.WithDescription("清空节点上的Pod并防止新的Pod调度 / Drain all pods from node and prevent new scheduling"),
+		mcp.WithDescription("清空节点上的Pod并防止新的Pod调度，等同于kubectl drain <node> / Drain all pods from node and prevent new scheduling, equivalent to kubectl drain <node>"),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 / The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),
 	)

@@ -14,7 +14,7 @@ import (
 func ManagedPodsDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"list_deployment_child_pods",
-		mcp.WithDescription("按集群、命名空间和名称，获取Deployment管理的Pod列表 / Get managed pods of deployment by cluster, namespace and name"),
+		mcp.WithDescription("按集群、命名空间和名称，获取Deployment管理的Pod列表。对应kubectl命令: kubectl get pods -l app=<deployment-name> -n <namespace> / Get managed pods of deployment by cluster, namespace and name. Equivalent kubectl command: kubectl get pods -l app=<deployment-name> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

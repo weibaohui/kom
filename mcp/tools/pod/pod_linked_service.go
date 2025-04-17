@@ -16,7 +16,7 @@ import (
 func GetPodLinkedServiceTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_services",
-		mcp.WithDescription("获取与Pod关联的Service，通过集群、命名空间和Pod名称 / Get services linked to pod by cluster, namespace and name"),
+		mcp.WithDescription("获取与Pod关联的Service，通过集群、命名空间和Pod名称 (类似命令: kubectl get svc -n <namespace> -l app=<pod-label>) / Get services linked to pod by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
@@ -64,7 +64,7 @@ func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest
 func GetPodLinkedIngressTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_ingresses",
-		mcp.WithDescription("获取与Pod关联的Ingress，通过集群、命名空间和Pod名称 / Get ingresses linked to pod by cluster, namespace and name"),
+		mcp.WithDescription("获取与Pod关联的Ingress，通过集群、命名空间和Pod名称 (类似命令: kubectl get ingress -n <namespace> -o wide | grep <service-name>) / Get ingresses linked to pod by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),
@@ -112,7 +112,7 @@ func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest
 func GetPodLinkedEndpointsTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_endpoints",
-		mcp.WithDescription("获取与Pod关联的Endpoints，通过集群、命名空间和Pod名称 / Get endpoints linked to pod by cluster, namespace and name"),
+		mcp.WithDescription("获取与Pod关联的Endpoints，通过集群、命名空间和Pod名称 (类似命令: kubectl get endpoints -n <namespace> | grep <pod-ip>) / Get endpoints linked to pod by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Description("Pod的名称 / The name of the pod")),

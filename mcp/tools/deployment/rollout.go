@@ -17,7 +17,7 @@ import (
 func RolloutHistoryDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_deployment_rollout_history",
-		mcp.WithDescription("查询Deployment的升级历史 / Query deployment rollout history"),
+		mcp.WithDescription("查询Deployment的升级历史。对应kubectl命令: kubectl rollout history deployment/<name> -n <namespace> / Query deployment rollout history. Equivalent kubectl command: kubectl rollout history deployment/<name> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
