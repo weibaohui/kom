@@ -9,10 +9,7 @@ var config *metadata.ServerConfig
 
 func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
 	config = cfg
-	s.AddTool(
-		ManagedPodsDeploymentTool(),
-		ManagedPodsDeploymentHandler,
-	)
+
 	s.AddTool(
 		ScaleDeploymentTool(),
 		ScaleDeploymentHandler,
