@@ -13,8 +13,8 @@ import (
 // ManagedPodsDeploymentTool 创建一个获取Deployment管理的Pod列表的工具
 func ManagedPodsDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"list_deployment_pods",
-		mcp.WithDescription("获取Deployment管理的Pod列表，通过集群、命名空间和名称 / Get managed pods of deployment by cluster, namespace and name"),
+		"list_deployment_child_pods",
+		mcp.WithDescription("按集群、命名空间和名称，获取Deployment管理的Pod列表 / Get managed pods of deployment by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

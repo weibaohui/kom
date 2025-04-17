@@ -13,9 +13,9 @@ import (
 func DeleteDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"delete_yaml",
-		mcp.WithDescription("Delete Kubernetes resources from YAML / 通过YAML删除Kubernetes资源"),
-		mcp.WithString("yaml", mcp.Description("YAML content containing resources to delete / 需要删除的YAML内容")),
-		mcp.WithString("cluster", mcp.Description("Target cluster (empty for default) / 目标集群（空值表示默认集群）")),
+		mcp.WithDescription("通过YAML删除Kubernetes资源 / Delete Kubernetes resources from YAML"),
+		mcp.WithString("yaml", mcp.Description("需要删除的YAML内容 / YAML content containing resources to delete")),
+		mcp.WithString("cluster", mcp.Description("目标集群（空值表示默认集群）/ Target cluster (empty for default)")),
 	)
 }
 

@@ -15,14 +15,14 @@ import (
 func ListDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_resource",
-		mcp.WithDescription("List Kubernetes resources by cluster and resource type / 按集群和资源类型列出Kubernetes资源，获取列表"),
-		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster) / 运行资源的集群（使用空字符串表示默认集群）")),
-		mcp.WithString("namespace", mcp.Description("Namespace of the resources (optional for cluster-scoped resources) / 资源所在的命名空间（集群范围资源可选）")),
-		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
-		mcp.WithString("version", mcp.Description("API version of the resource / 资源的API版本")),
-		mcp.WithString("kind", mcp.Description("Kind of the resource / 资源的类型")),
-		mcp.WithString("label", mcp.Description("Label selector to filter resources (e.g. app=k8m) / 用于过滤资源的标签选择器（例如：app=k8m）")),
-		mcp.WithString("field", mcp.Description("Field selector to filter resources (e.g. metadata.name=test-deploy) / 用于过滤资源的字段选择器（例如：metadata.name=test-deploy）")),
+		mcp.WithDescription("按集群和资源类型列出Kubernetes资源，获取列表 / List Kubernetes resources by cluster and resource type"),
+		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
+		mcp.WithString("namespace", mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resources (optional for cluster-scoped resources)")),
+		mcp.WithString("group", mcp.Description("资源的API组 / API group of the resource")),
+		mcp.WithString("version", mcp.Description("资源的API版本 / API version of the resource")),
+		mcp.WithString("kind", mcp.Description("资源的类型 / Kind of the resource")),
+		mcp.WithString("label", mcp.Description("用于过滤资源的标签选择器（例如：app=k8m）/ Label selector to filter resources (e.g. app=k8m)")),
+		mcp.WithString("field", mcp.Description("用于过滤资源的字段选择器（例如：metadata.name=test-deploy）/ Field selector to filter resources (e.g. metadata.name=test-deploy)")),
 	)
 }
 

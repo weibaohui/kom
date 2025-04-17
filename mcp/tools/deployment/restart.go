@@ -16,7 +16,7 @@ import (
 func RestartDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"restart_deployment",
-		mcp.WithDescription("重启Deployment，通过集群、命名空间和名称 / Restart deployment by cluster, namespace and name"),
+		mcp.WithDescription("通过集群、命名空间和名称,重启Deployment / Restart deployment by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

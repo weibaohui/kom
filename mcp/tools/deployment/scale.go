@@ -17,7 +17,7 @@ import (
 func ScaleDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"scale_deployment",
-		mcp.WithDescription("扩缩容Deployment，通过集群、命名空间、名称和副本数 / Scale deployment by cluster, namespace, name and replicas"),
+		mcp.WithDescription("通过集群、命名空间、名称 扩缩容Deployment，设置副本数 / Scale deployment by cluster, namespace, name and replicas"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

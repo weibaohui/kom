@@ -17,7 +17,7 @@ import (
 func StopDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"stop_deployment",
-		mcp.WithDescription("停止Deployment，将副本数设置为0并记录原始副本数到注解中 / Stop deployment by setting replicas to 0 and save original replicas to annotation"),
+		mcp.WithDescription("停止Deployment。（将副本数设置为0并记录原始副本数到注解中，恢复是可使用restore_deployment方法） / Stop deployment by setting replicas to 0 and save original replicas to annotation"),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

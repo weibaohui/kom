@@ -14,14 +14,14 @@ import (
 func AnnotateDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"annotate_k8s_resource",
-		mcp.WithDescription("Add or remove annotations for Kubernetes resource / 为Kubernetes资源添加或删除注解"),
-		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster) / 运行资源的集群（使用空字符串表示默认集群）")),
-		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources) / 资源所在的命名空间（集群范围资源可选）")),
-		mcp.WithString("name", mcp.Description("Name of the resource / 资源的名称")),
-		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
-		mcp.WithString("version", mcp.Description("API version of the resource / 资源的API版本")),
-		mcp.WithString("kind", mcp.Description("Kind of the resource / 资源的类型")),
-		mcp.WithString("annotation", mcp.Description("Annotation to add or remove (use key=value to add, key- to remove) / 要添加或删除的注解（使用key=value添加，key-删除）")),
+		mcp.WithDescription("为Kubernetes资源添加或删除注解 / Add or remove annotations for Kubernetes resource"),
+		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
+		mcp.WithString("namespace", mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resource (optional for cluster-scoped resources)")),
+		mcp.WithString("name", mcp.Description("资源的名称 / Name of the resource")),
+		mcp.WithString("group", mcp.Description("资源的API组 / API group of the resource")),
+		mcp.WithString("version", mcp.Description("资源的API版本 / API version of the resource")),
+		mcp.WithString("kind", mcp.Description("资源的类型 / Kind of the resource")),
+		mcp.WithString("annotation", mcp.Description("要添加或删除的注解（使用key=value添加，key-删除）/ Annotation to add or remove (use key=value to add, key- to remove)")),
 	)
 }
 

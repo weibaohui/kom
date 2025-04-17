@@ -13,9 +13,9 @@ import (
 func ApplyDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"apply_yaml",
-		mcp.WithDescription("Apply Kubernetes resources from YAML / 通过YAML创建或更新Kubernetes资源"),
-		mcp.WithString("yaml", mcp.Description("YAML content containing resources to apply / 需要应用的YAML内容")),
-		mcp.WithString("cluster", mcp.Description("Target cluster (empty for default) / 目标集群（空值表示默认集群）")),
+		mcp.WithDescription("通过YAML创建或更新Kubernetes资源 / Apply Kubernetes resources from YAML"),
+		mcp.WithString("yaml", mcp.Description("需要应用的YAML内容 / YAML content containing resources to apply")),
+		mcp.WithString("cluster", mcp.Description("目标集群（空值表示默认集群） / Target cluster (empty for default)")),
 	)
 }
 

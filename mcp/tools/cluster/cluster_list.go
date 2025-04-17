@@ -11,7 +11,7 @@ import (
 func ListClusters() mcp.Tool {
 	return mcp.NewTool(
 		"list_clusters",
-		mcp.WithDescription("List all registered Kubernetes clusters / 列出所有已注册的Kubernetes集群"),
+		mcp.WithDescription("列出所有已注册的Kubernetes集群 / List all registered Kubernetes clusters"),
 	)
 }
 
