@@ -34,8 +34,6 @@ func main() {
 		klog.Infof("%s: %s", authRoleKey, authRoleKey)
 		ctx = context.WithValue(ctx, authKey, authKeyVal)
 		ctx = context.WithValue(ctx, authRoleKey, authRoleVal)
-		channel := server.GetRouteParam(ctx, "channel")
-		klog.Infof("channel=%s", channel)
 
 		return ctx
 	}
@@ -49,7 +47,6 @@ func main() {
 			server.WithLogging(),
 		},
 		SSEOption: []server.SSEOption{
-			server.WithSSEPattern("/:channel/sse"),
 			server.WithSSEContextFunc(ctxFn),
 		},
 		AuthKey:     authKey,
