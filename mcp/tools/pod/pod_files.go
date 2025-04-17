@@ -16,7 +16,7 @@ import (
 func ListPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
 		"list_pod_files",
-		mcp.WithDescription("获取Pod中指定路径下的文件列表/List files in pod path"),
+		mcp.WithDescription("获取Pod中指定路径下的文件列表 (类似命令: kubectl exec <pod-name> -n <namespace> -c <container> -- ls <path>) / List files in pod path"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),
 		mcp.WithString("name", mcp.Description("Pod名称/Pod name")),
@@ -71,7 +71,7 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 func ListAllPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
 		"list_pod_all_files",
-		mcp.WithDescription("获取Pod中指定路径下的所有文件列表（包含子目录）/List all files in pod path (including subdirectories)"),
+		mcp.WithDescription("获取Pod中指定路径下的所有文件列表（包含子目录）(类似命令: kubectl exec <pod-name> -n <namespace> -c <container> -- find <path>) / List all files in pod path (including subdirectories)"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),
 		mcp.WithString("name", mcp.Description("Pod名称/Pod name")),
@@ -126,7 +126,7 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 func DeletePodFileTool() mcp.Tool {
 	return mcp.NewTool(
 		"delete_pod_file",
-		mcp.WithDescription("删除Pod中的指定文件/Delete file in pod"),
+		mcp.WithDescription("删除Pod中的指定文件 (类似命令: kubectl exec <pod-name> -n <namespace> -c <container> -- rm <path>) / Delete file in pod"),
 		mcp.WithString("cluster", mcp.Description("集群名称/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),
 		mcp.WithString("name", mcp.Description("Pod名称/Pod name")),
