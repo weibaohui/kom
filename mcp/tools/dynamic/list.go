@@ -21,8 +21,8 @@ func ListDynamicResource() mcp.Tool {
 		mcp.WithString("group", mcp.Description("资源的API组 / API group of the resource")),
 		mcp.WithString("version", mcp.Description("资源的API版本 / API version of the resource")),
 		mcp.WithString("kind", mcp.Description("资源的类型 / Kind of the resource")),
-		mcp.WithString("label", mcp.Description("用于过滤资源的标签选择器（例如：app=k8m）/ Label selector to filter resources (e.g. app=k8m)")),
-		mcp.WithString("field", mcp.Description("用于过滤资源的字段选择器（例如：metadata.name=test-deploy）/ Field selector to filter resources (e.g. metadata.name=test-deploy)")),
+		mcp.WithString("labelSelector", mcp.Description("用于过滤资源的标签选择器（例如：app=k8m）/ Label selector to filter resources (e.g. app=k8m)")),
+		mcp.WithString("fieldSelector", mcp.Description("用于过滤资源的字段选择器（例如：metadata.name=test-deploy）/ Field selector to filter resources (e.g. metadata.name=test-deploy)")),
 	)
 }
 
@@ -47,8 +47,8 @@ func ListDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest
 	}
 
 	// 获取标签选择器和字段选择器
-	label, _ := request.Params.Arguments["label"].(string)
-	field, _ := request.Params.Arguments["field"].(string)
+	labelSelector, _ := request.Params.Arguments["labelSelector"].(string)
+	fieldSelector, _ := request.Params.Arguments["fieldSelector"].(string)
 
 	// 获取资源列表
 	var list []*unstructured.Unstructured
@@ -56,11 +56,11 @@ func ListDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest
 	if meta.Namespace == "" {
 		kubectl = kubectl.AllNamespace()
 	}
-	if label != "" {
-		kubectl = kubectl.WithLabelSelector(label)
+	if labelSelector != "" {
+		kubectl = kubectl.WithLabelSelector(labelSelector)
 	}
-	if field != "" {
-		kubectl = kubectl.WithFieldSelector(field)
+	if fieldSelector != "" {
+		kubectl = kubectl.WithFieldSelector(fieldSelector)
 	}
 	err = kubectl.List(&list).Error
 	if err != nil {
