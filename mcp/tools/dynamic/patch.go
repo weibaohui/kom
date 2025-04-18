@@ -15,14 +15,14 @@ import (
 func PatchDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"patch_k8s_resource",
-		mcp.WithDescription("Patch Kubernetes resource by cluster, namespace, and name / 通过集群、命名空间和名称更新Kubernetes资源"),
-		mcp.WithString("cluster", mcp.Description("Cluster where the resources are running (use empty string for default cluster) / 运行资源的集群（使用空字符串表示默认集群）")),
-		mcp.WithString("namespace", mcp.Description("Namespace of the resource (optional for cluster-scoped resources) / 资源所在的命名空间（集群范围资源可选）")),
-		mcp.WithString("name", mcp.Description("Name of the resource / 资源的名称")),
-		mcp.WithString("group", mcp.Description("API group of the resource / 资源的API组")),
-		mcp.WithString("version", mcp.Description("API version of the resource / 资源的API版本")),
-		mcp.WithString("kind", mcp.Description("Kind of the resource / 资源的类型")),
-		mcp.WithString("patch_data", mcp.Description("JSON patch data / JSON补丁数据")),
+		mcp.WithDescription("通过集群、命名空间和名称更新Kubernetes资源 / Patch Kubernetes resource by cluster, namespace, and name"),
+		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
+		mcp.WithString("namespace", mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resource (optional for cluster-scoped resources)")),
+		mcp.WithString("name", mcp.Description("资源的名称 / Name of the resource")),
+		mcp.WithString("group", mcp.Description("资源的API组 / API group of the resource")),
+		mcp.WithString("version", mcp.Description("资源的API版本 / API version of the resource")),
+		mcp.WithString("kind", mcp.Description("资源的类型 / Kind of the resource")),
+		mcp.WithString("patch_data", mcp.Description("JSON补丁数据，使用application/strategic-merge-patch+json格式，用于更新资源的配置，例如：{\"spec\":{\"replicas\":5},\"metadata\":{\"labels\":{\"new-label\":\"new-value\"}}} / JSON patch data in application/strategic-merge-patch+json format for updating resource configuration")),
 	)
 }
 
