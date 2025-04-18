@@ -15,7 +15,7 @@ import (
 func main() {
 	klog.InitFlags(nil)
 	flag.Set("v", "8")
-	example.Connect()
+	go example.Connect()
 	// example.Example()
 
 	// 一行代码启动模式
@@ -51,7 +51,8 @@ func main() {
 		},
 		AuthKey:     authKey,
 		AuthRoleKey: authRoleKey,
-		Mode:        metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
+		Mode:        metadata.MCPServerModeStdio, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
+
 }
