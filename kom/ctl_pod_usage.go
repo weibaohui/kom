@@ -110,19 +110,19 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]Po
 		}
 	}
 
-	// 计算成 float64 形式（CPU: m核；内存: Mi）
-	cpuMilli := new(big.Float).Quo(new(big.Float).SetInt(cpuTotal), big.NewFloat(1_000_000))
-	memMi := new(big.Float).Quo(new(big.Float).SetInt(memTotal), big.NewFloat(1024*1024))
-
-	// 格式化字符串形式
-	cpuFormatted, _ := cpuMilli.Float64()
-	memFormatted, _ := memMi.Float64()
+	// // 计算成 float64 形式（CPU: m核；内存: Mi）
+	// cpuMilli := new(big.Float).Quo(new(big.Float).SetInt(cpuTotal), big.NewFloat(1_000_000))
+	// memMi := new(big.Float).Quo(new(big.Float).SetInt(memTotal), big.NewFloat(1024*1024))
+	//
+	// // 格式化字符串形式
+	// cpuFormatted, _ := cpuMilli.Float64()
+	// memFormatted, _ := memMi.Float64()
 
 	result = append(result, PodMetrics{
 		Name: "total",
 		Usage: ContainerUsage{
-			CPU:    fmt.Sprintf("%.0fm", cpuFormatted),  // 毫核
-			Memory: fmt.Sprintf("%.0fMi", memFormatted), // MiB
+			CPU:    fmt.Sprintf("%.0fn", cpuTotal),  // 毫核
+			Memory: fmt.Sprintf("%.0fKi", memTotal), // MiB
 		},
 	})
 
