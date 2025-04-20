@@ -72,9 +72,13 @@ func StreamExample() {
 func PodUsageExample() {
 	podName := "coredns-ccb96694c-jprpf"
 	ns := "kube-system"
-	usage := kom.DefaultCluster().Resource(&corev1.Pod{}).
+	usage, err := kom.DefaultCluster().Resource(&corev1.Pod{}).
 		Name(podName).Namespace(ns).
 		Ctl().Pod().ResourceUsageTable()
+	if err != nil {
+		fmt.Printf("Get pod usage error %v\n", err.Error())
+		return
+	}
 	fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
 
 }
@@ -91,8 +95,12 @@ func ALLNodeUsageExample() {
 	}
 	for i := range nodeList {
 		nodeName := nodeList[i].Name
-		usage := kom.DefaultCluster().Resource(&corev1.Node{}).
+		usage, err := kom.DefaultCluster().Resource(&corev1.Node{}).
 			Name(nodeName).WithCache(5 * time.Second).Ctl().Node().ResourceUsageTable()
+		if err != nil {
+			fmt.Printf(err.Error())
+			return
+		}
 		fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
 	}
 

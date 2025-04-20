@@ -13,12 +13,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 )
 
 type node struct {
@@ -500,102 +498,6 @@ func (d *node) RunningPods() ([]*corev1.Pod, error) {
 	}
 	return podList, nil
 }
-func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quantity, map[corev1.ResourceName]resource.Quantity) {
-	pods, err := d.RunningPods()
-	if err != nil {
-		klog.V(6).Infof("Get TotalRequestsAndLimits in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
-		return nil, nil
-	}
-	return getPodsTotalRequestsAndLimits(pods)
-}
-
-// ResourceUsage 获取节点的资源使用情况，包括资源的请求和限制，还有当前使用占比
-func (d *node) ResourceUsage() *ResourceUsageResult {
-
-	reqs, limits := d.TotalRequestsAndLimits()
-	if reqs == nil || limits == nil {
-		return nil
-	}
-	cacheTime := d.getCacheTTL()
-	n, err := d.getNodeWithCache(cacheTime)
-	if err != nil {
-		klog.V(6).Infof("Get ResourceUsage in node/%s  error %v\n", d.kubectl.Statement.Name, err.Error())
-		return nil
-	}
-
-	allocatable := n.Status.Capacity
-	if len(n.Status.Allocatable) > 0 {
-		allocatable = n.Status.Allocatable
-	}
-
-	klog.V(8).Infof("allocatable=:\n%s", utils.ToJSON(allocatable))
-	cpuReqs, cpuLimits, memoryReqs, memoryLimits, ephemeralstorageReqs, ephemeralstorageLimits :=
-		reqs[corev1.ResourceCPU], limits[corev1.ResourceCPU], reqs[corev1.ResourceMemory], limits[corev1.ResourceMemory], reqs[corev1.ResourceEphemeralStorage], limits[corev1.ResourceEphemeralStorage]
-
-	// 计算CPU 使用率
-	fractionCpuReqs := float64(0)
-	fractionCpuLimits := float64(0)
-	if allocatable.Cpu().MilliValue() != 0 {
-		fractionCpuReqs = float64(cpuReqs.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-		klog.V(6).Infof("cpuReqs=%f，allocatable.Cpu=%f, f=%f \n", float64(cpuReqs.MilliValue()), float64(allocatable.Cpu().MilliValue()), fractionCpuReqs)
-		fractionCpuLimits = float64(cpuLimits.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-	}
-
-	// 计算内存 使用率
-	fractionMemoryReqs := float64(0)
-	fractionMemoryLimits := float64(0)
-	if allocatable.Memory().Value() != 0 {
-		fractionMemoryReqs = float64(memoryReqs.Value()) / float64(allocatable.Memory().Value()) * 100
-		fractionMemoryLimits = float64(memoryLimits.Value()) / float64(allocatable.Memory().Value()) * 100
-	}
-
-	// 计算存储 使用率
-	fractionEphemeralStorageReqs := float64(0)
-	fractionEphemeralStorageLimits := float64(0)
-	if allocatable.StorageEphemeral().Value() != 0 {
-		fractionEphemeralStorageReqs = float64(ephemeralstorageReqs.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100
-		fractionEphemeralStorageLimits = float64(ephemeralstorageLimits.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100
-	}
-
-	usageFractions := map[corev1.ResourceName]ResourceUsageFraction{
-		corev1.ResourceCPU: {
-			RequestFraction: fractionCpuReqs,
-			LimitFraction:   fractionCpuLimits,
-		},
-		corev1.ResourceMemory: {
-			RequestFraction: fractionMemoryReqs,
-			LimitFraction:   fractionMemoryLimits,
-		},
-		corev1.ResourceEphemeralStorage: {
-			RequestFraction: fractionEphemeralStorageReqs,
-			LimitFraction:   fractionEphemeralStorageLimits,
-		},
-	}
-	klog.V(6).Infof("node/%s resource usage\n", d.kubectl.Statement.Name)
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceCPU, cpuReqs.String(), int64(fractionCpuReqs), cpuLimits.String(), int64(fractionCpuLimits))
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceMemory, memoryReqs.String(), int64(fractionMemoryReqs), memoryLimits.String(), int64(fractionMemoryLimits))
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceEphemeralStorage, ephemeralstorageReqs.String(), int64(fractionEphemeralStorageReqs), ephemeralstorageLimits.String(), int64(fractionEphemeralStorageLimits))
-
-	return &ResourceUsageResult{
-		Requests:       reqs,
-		Limits:         limits,
-		Allocatable:    allocatable,
-		UsageFractions: usageFractions,
-	}
-}
-func (d *node) ResourceUsageTable() []*ResourceUsageRow {
-
-	usage := d.ResourceUsage()
-	data, err := convertToTableData(usage)
-	if err != nil {
-		klog.V(6).Infof("convertToTableData error %v\n", err.Error())
-		return make([]*ResourceUsageRow, 0)
-	}
-	return data
-}
 
 // IPUsage 计算节点上IP数量状态，返回节点IP总数，已用数量，可用数量
 func (d *node) IPUsage() (total, used, available int) {
@@ -692,27 +594,4 @@ func (d *node) getNodeWithCache(cacheTime time.Duration) (*corev1.Node, error) {
 	)
 	return node, err
 
-}
-func getPodsTotalRequestsAndLimits(podList []*corev1.Pod) (reqs map[corev1.ResourceName]resource.Quantity, limits map[corev1.ResourceName]resource.Quantity) {
-	reqs, limits = map[corev1.ResourceName]resource.Quantity{}, map[corev1.ResourceName]resource.Quantity{}
-	for _, pod := range podList {
-		podReqs, podLimits := resourcehelper.PodRequestsAndLimits(pod)
-		for podReqName, podReqValue := range podReqs {
-			if value, ok := reqs[podReqName]; !ok {
-				reqs[podReqName] = podReqValue.DeepCopy()
-			} else {
-				value.Add(podReqValue)
-				reqs[podReqName] = value
-			}
-		}
-		for podLimitName, podLimitValue := range podLimits {
-			if value, ok := limits[podLimitName]; !ok {
-				limits[podLimitName] = podLimitValue.DeepCopy()
-			} else {
-				value.Add(podLimitValue)
-				limits[podLimitName] = value
-			}
-		}
-	}
-	return
 }
