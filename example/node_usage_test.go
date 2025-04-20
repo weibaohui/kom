@@ -1,6 +1,7 @@
 package example
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,8 +27,12 @@ func TestNodeResourceUsageTable(t *testing.T) {
 	// 打印开始时间
 	startTime := time.Now()
 	nodeName := "kind-control-plane"
-	usage := kom.DefaultCluster().Resource(&corev1.Node{}).
+	usage, err := kom.DefaultCluster().Resource(&corev1.Node{}).
 		Name(nodeName).WithCache(5 * time.Second).Ctl().Node().ResourceUsageTable()
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
 	t.Logf("Node Usage %s\n", utils.ToJSON(usage))
 	// 打印结束时间
 	endTime := time.Now()
