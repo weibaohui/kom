@@ -47,7 +47,9 @@ func GetPodResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest
 		cacheSeconds = int32(cacheSecondsVal)
 	}
 	// 获取资源使用情况
-	usage := kom.Cluster(meta.Cluster).WithContext(ctx).WithCache(time.Duration(cacheSeconds) * time.Second).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().ResourceUsage()
-
+	usage, err := kom.Cluster(meta.Cluster).WithContext(ctx).WithCache(time.Duration(cacheSeconds) * time.Second).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().ResourceUsage()
+	if err != nil {
+		return nil, err
+	}
 	return utils.TextResult(usage, meta)
 }
