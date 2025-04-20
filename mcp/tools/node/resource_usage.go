@@ -52,7 +52,9 @@ func NodeResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest) 
 	klog.Infof("Querying resource usage for node %s in cluster %s with cache duration %d seconds", meta.Name, meta.Cluster, cacheSeconds)
 
 	// 查询节点资源使用情况
-	usage := kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&v1.Node{}).WithCache(time.Duration(cacheSeconds) * time.Second).Name(meta.Name).Ctl().Node().ResourceUsage()
-
+	usage, err := kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&v1.Node{}).WithCache(time.Duration(cacheSeconds) * time.Second).Name(meta.Name).Ctl().Node().ResourceUsage()
+	if err != nil {
+		return nil, err
+	}
 	return utils.TextResult(usage, meta)
 }
