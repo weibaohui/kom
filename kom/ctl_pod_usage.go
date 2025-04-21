@@ -2,7 +2,6 @@ package kom
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/weibaohui/kom/utils"
@@ -66,8 +65,8 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]Po
 	}
 
 	var result []PodMetrics
-	cpuTotal := big.NewInt(0)
-	memTotal := big.NewInt(0)
+	memTotal := resource.NewQuantity(0, resource.BinarySI)
+	cpuTotal := resource.NewQuantity(0, resource.BinarySI)
 
 	for _, c := range containersRaw {
 		containerMap, ok := c.(map[string]interface{})
@@ -101,28 +100,20 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]Po
 
 		if cpuStr, ok := usage["cpu"].(string); ok {
 			cpuQty := resource.MustParse(cpuStr)
-			cpuTotal.Add(cpuTotal, cpuQty.AsDec().UnscaledBig())
+			cpuTotal.Add(cpuQty)
 		}
 
 		if memStr, ok := usage["memory"].(string); ok {
 			memQty := resource.MustParse(memStr)
-			memTotal.Add(memTotal, memQty.AsDec().UnscaledBig())
+			memTotal.Add(memQty)
 		}
 	}
-
-	// // 计算成 float64 形式（CPU: m核；内存: Mi）
-	// cpuMilli := new(big.Float).Quo(new(big.Float).SetInt(cpuTotal), big.NewFloat(1_000_000))
-	// memMi := new(big.Float).Quo(new(big.Float).SetInt(memTotal), big.NewFloat(1024*1024))
-	//
-	// // 格式化字符串形式
-	// cpuFormatted, _ := cpuMilli.Float64()
-	// memFormatted, _ := memMi.Float64()
 
 	result = append(result, PodMetrics{
 		Name: "total",
 		Usage: ContainerUsage{
-			CPU:    fmt.Sprintf("%.0fn", cpuTotal),  // 毫核
-			Memory: fmt.Sprintf("%.0fKi", memTotal), // MiB
+			CPU:    cpuTotal.String(),
+			Memory: memTotal.String(),
 		},
 	})
 
@@ -194,13 +185,14 @@ func (p *pod) ResourceUsage() (*ResourceUsageResult, error) {
 
 	cpuReq, cpuLimit, memoryReq, memoryLimit := req[v1.ResourceCPU], limit[v1.ResourceCPU], req[v1.ResourceMemory], limit[v1.ResourceMemory]
 	cpuRealtime, memoryRealtime := realtimeMetrics[v1.ResourceCPU], realtimeMetrics[v1.ResourceMemory]
-	fractionCpuReq := float64(cpuReq.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-	fractionCpuLimit := float64(cpuLimit.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-	fractionCpuRealtime := float64(cpuRealtime.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
 
-	fractionMemoryReq := float64(memoryReq.Value()) / float64(allocatable.Memory().Value()) * 100
-	fractionMemoryLimit := float64(memoryLimit.Value()) / float64(allocatable.Memory().Value()) * 100
-	fractionMemoryRealtime := float64(memoryRealtime.Value()) / float64(allocatable.Memory().Value()) * 100
+	fractionCpuReq := utils.FormatPercent(float64(cpuReq.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+	fractionCpuLimit := utils.FormatPercent(float64(cpuLimit.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+	fractionCpuRealtime := utils.FormatPercent(float64(cpuRealtime.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+
+	fractionMemoryReq := utils.FormatPercent(float64(memoryReq.Value()) / float64(allocatable.Memory().Value()) * 100)
+	fractionMemoryLimit := utils.FormatPercent(float64(memoryLimit.Value()) / float64(allocatable.Memory().Value()) * 100)
+	fractionMemoryRealtime := utils.FormatPercent(float64(memoryRealtime.Value()) / float64(allocatable.Memory().Value()) * 100)
 
 	usageFractions := map[v1.ResourceName]ResourceUsageFraction{
 		v1.ResourceCPU: {
@@ -214,10 +206,6 @@ func (p *pod) ResourceUsage() (*ResourceUsageResult, error) {
 			RealtimeFraction: fractionMemoryRealtime,
 		},
 	}
-
-	klog.V(6).Infof("%s\t%s\t\t%s (%d%%)\t%s (%d%%)\t%s (%d%%)\t%s (%d%%)\n", inst.Namespace, inst.Name,
-		cpuReq.String(), int64(fractionCpuReq), cpuLimit.String(), int64(fractionCpuLimit),
-		memoryReq.String(), int64(fractionMemoryReq), memoryLimit.String(), int64(fractionMemoryLimit))
 
 	return &ResourceUsageResult{
 		Requests:       req,

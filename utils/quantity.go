@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -19,22 +20,51 @@ import (
 // // 示例：CPU 格式化
 // q3 := resource.MustParse("500m") // CPU 百分之一核
 // fmt.Println("Formatted CPU:", q3.String()) // CPU 不需要转换，直接原格式即可
-func FormatResource(q resource.Quantity) string {
+func FormatResource(q resource.Quantity, resourceType v1.ResourceName) string {
 	value := q.Value()
 	format := q.Format
+	if resourceType == v1.ResourceCPU {
+		return formatCPUNormalized(q)
+	} else {
+		switch format {
+		case resource.BinarySI: // Ki, Mi, Gi, etc.
+			return formatStorageBinarySI(value)
+		case resource.DecimalSI: // K, M, G, etc.
+			return formatStorageDecimalSI(value)
+		default:
+			return q.String() // 返回原始格式
+		}
+	}
 
-	switch format {
-	case resource.BinarySI: // Ki, Mi, Gi, etc.
-		return formatBinarySI(value)
-	case resource.DecimalSI: // K, M, G, etc.
-		return formatDecimalSI(value)
+}
+
+// formatCPUNormalized 返回智能单位格式（n / µ / m / core）
+func formatCPUNormalized(q resource.Quantity) string {
+	const (
+		milli = int64(1)
+		core  = 1000 * milli
+	)
+
+	m := q.MilliValue() // 获取 millicore 值
+
+	switch {
+	case m >= core:
+		return fmt.Sprintf("%.2f core", float64(m)/float64(core))
+	case m >= 1:
+		return fmt.Sprintf("%dm", m)
 	default:
-		return q.String() // 返回原始格式
+		// <1m，手动估算微核、纳核（仅估算显示）
+		u := float64(m) * 1000    // micro core
+		n := float64(m) * 1000000 // nano core
+		if u >= 1 {
+			return fmt.Sprintf("%.2fµ", u)
+		}
+		return fmt.Sprintf("%.0fn", n)
 	}
 }
 
-// formatBinarySI 将二进制格式转换为易读格式 (Ki, Mi, Gi)
-func formatBinarySI(value int64) string {
+// formatStorageBinarySI 将二进制格式转换为易读格式 (Ki, Mi, Gi)
+func formatStorageBinarySI(value int64) string {
 	const (
 		Ki = 1024
 		Mi = Ki * 1024
@@ -55,8 +85,8 @@ func formatBinarySI(value int64) string {
 	}
 }
 
-// formatDecimalSI 将十进制格式转换为易读格式 (K, M, G)
-func formatDecimalSI(value int64) string {
+// formatStorageDecimalSI 将十进制格式转换为易读格式 (K, M, G)
+func formatStorageDecimalSI(value int64) string {
 	const (
 		K = 1000
 		M = K * 1000
