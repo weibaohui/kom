@@ -57,13 +57,22 @@ func IsNamespaced(resourceType string) bool {
 
 // ParseFromRequest 从请求中解析资源元数据
 func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *ServerConfig) (context.Context, *ResourceMetadata, error) {
+	newCtx := context.Background()
 	if serverConfig != nil {
-		if authVal, ok := ctx.Value(serverConfig.AuthKey).(string); ok {
-			ctx = context.WithValue(ctx, serverConfig.AuthKey, authVal)
+		authVal, ok := ctx.Value(serverConfig.AuthKey).(string)
+		if !ok {
+			authVal = ""
 		}
-		if authRoleVal, ok := ctx.Value(serverConfig.AuthRoleKey).(string); ok {
-			ctx = context.WithValue(ctx, serverConfig.AuthRoleKey, authRoleVal)
+
+		authRoleVal, ok := ctx.Value(serverConfig.AuthRoleKey).(string)
+		if !ok {
+			authRoleVal = ""
 		}
+
+		newCtx = context.WithValue(ctx, serverConfig.AuthKey, authVal)
+		newCtx = context.WithValue(newCtx, serverConfig.AuthRoleKey, authRoleVal)
+
+		// 用 newCtx 传递下去
 	}
 
 	// 验证必要参数
