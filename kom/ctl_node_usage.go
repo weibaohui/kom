@@ -72,31 +72,31 @@ func (d *node) ResourceUsage() (*ResourceUsageResult, error) {
 	cpuRealtime, memoryRealtime := realtimeMetrics[corev1.ResourceCPU], realtimeMetrics[corev1.ResourceMemory]
 
 	// 计算CPU 使用率
-	fractionCpuReqs := float64(0)
-	fractionCpuLimits := float64(0)
-	fractionCpuRealtime := float64(0)
+	fractionCpuReqs := ""
+	fractionCpuLimits := ""
+	fractionCpuRealtime := ""
 	if allocatable.Cpu().MilliValue() != 0 {
-		fractionCpuReqs = float64(cpuReqs.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-		fractionCpuLimits = float64(cpuLimits.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
-		fractionCpuRealtime = float64(cpuRealtime.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100
+		fractionCpuReqs = utils.FormatPercent(float64(cpuReqs.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+		fractionCpuLimits = utils.FormatPercent(float64(cpuLimits.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+		fractionCpuRealtime = utils.FormatPercent(float64(cpuRealtime.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
 	}
 
 	// 计算内存 使用率
-	fractionMemoryReqs := float64(0)
-	fractionMemoryLimits := float64(0)
-	fractionMemoryRealtime := float64(0)
+	fractionMemoryReqs := ""
+	fractionMemoryLimits := ""
+	fractionMemoryRealtime := ""
 	if allocatable.Memory().Value() != 0 {
-		fractionMemoryReqs = float64(memoryReqs.Value()) / float64(allocatable.Memory().Value()) * 100
-		fractionMemoryLimits = float64(memoryLimits.Value()) / float64(allocatable.Memory().Value()) * 100
-		fractionMemoryRealtime = float64(memoryRealtime.Value()) / float64(allocatable.Memory().Value()) * 100
+		fractionMemoryReqs = utils.FormatPercent(float64(memoryReqs.Value()) / float64(allocatable.Memory().Value()) * 100)
+		fractionMemoryLimits = utils.FormatPercent(float64(memoryLimits.Value()) / float64(allocatable.Memory().Value()) * 100)
+		fractionMemoryRealtime = utils.FormatPercent(float64(memoryRealtime.Value()) / float64(allocatable.Memory().Value()) * 100)
 	}
 
 	// 计算存储 使用率
-	fractionEphemeralStorageReqs := float64(0)
-	fractionEphemeralStorageLimits := float64(0)
+	fractionEphemeralStorageReqs := ""
+	fractionEphemeralStorageLimits := ""
 	if allocatable.StorageEphemeral().Value() != 0 {
-		fractionEphemeralStorageReqs = float64(ephemeralstorageReqs.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100
-		fractionEphemeralStorageLimits = float64(ephemeralstorageLimits.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100
+		fractionEphemeralStorageReqs = utils.FormatPercent(float64(ephemeralstorageReqs.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100)
+		fractionEphemeralStorageLimits = utils.FormatPercent(float64(ephemeralstorageLimits.Value()) / float64(allocatable.StorageEphemeral().Value()) * 100)
 	}
 
 	usageFractions := map[corev1.ResourceName]ResourceUsageFraction{
@@ -115,13 +115,6 @@ func (d *node) ResourceUsage() (*ResourceUsageResult, error) {
 			LimitFraction:   fractionEphemeralStorageLimits,
 		},
 	}
-	klog.V(6).Infof("node/%s resource usage\n", d.kubectl.Statement.Name)
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceCPU, cpuReqs.String(), int64(fractionCpuReqs), cpuLimits.String(), int64(fractionCpuLimits))
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceMemory, memoryReqs.String(), int64(fractionMemoryReqs), memoryLimits.String(), int64(fractionMemoryLimits))
-	klog.V(6).Infof("%s\t%s (%d%%)\t%s (%d%%)\n",
-		corev1.ResourceEphemeralStorage, ephemeralstorageReqs.String(), int64(fractionEphemeralStorageReqs), ephemeralstorageLimits.String(), int64(fractionEphemeralStorageLimits))
 
 	return &ResourceUsageResult{
 		Requests:       reqs,
