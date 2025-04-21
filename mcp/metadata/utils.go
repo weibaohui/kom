@@ -58,6 +58,7 @@ func IsNamespaced(resourceType string) bool {
 // ParseFromRequest 从请求中解析资源元数据
 func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *ServerConfig) (context.Context, *ResourceMetadata, error) {
 	newCtx := context.Background()
+	newCtx := context.Background()
 	if serverConfig != nil {
 		authVal, ok := ctx.Value(serverConfig.AuthKey).(string)
 		if !ok {
@@ -117,7 +118,7 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverCo
 		kind = getStringParam(request, "kind", "")
 	}
 
-	return ctx, &ResourceMetadata{
+	return newCtx, &ResourceMetadata{
 		Cluster:   cluster,
 		Namespace: namespace,
 		Name:      name,
