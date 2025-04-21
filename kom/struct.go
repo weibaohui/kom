@@ -10,9 +10,9 @@ import (
 
 // ResourceUsageFraction 定义单种资源的使用占比
 type ResourceUsageFraction struct {
-	RequestFraction  float64 `json:"requestFraction"`  // 请求使用占比（百分比）占总可分配值的比例
-	LimitFraction    float64 `json:"limitFraction"`    // 限制使用占比（百分比）占总可分配值的比例
-	RealtimeFraction float64 `json:"realtimeFraction"` // 实时指标显示的占比（百分比）占总可分配值的比例
+	RequestFraction  string `json:"requestFraction"`  // 请求使用占比（百分比）占总可分配值的比例
+	LimitFraction    string `json:"limitFraction"`    // 限制使用占比（百分比）占总可分配值的比例
+	RealtimeFraction string `json:"realtimeFraction"` // 实时指标显示的占比（百分比）占总可分配值的比例
 }
 
 // ResourceUsageResult 定义资源使用情况的结构体
@@ -51,14 +51,16 @@ func convertToTableData(result *ResourceUsageResult) ([]*ResourceUsageRow, error
 		lit := result.Limits[resourceType]
 		realtime := result.Realtime[resourceType]
 		row := &ResourceUsageRow{
-			ResourceType:     string(resourceType),
-			Total:            utils.FormatResource(alc),
-			Realtime:         utils.FormatResource(realtime),
-			RealtimeFraction: fmt.Sprintf("%.2f", result.UsageFractions[resourceType].RealtimeFraction),
-			Request:          utils.FormatResource(req),
-			RequestFraction:  fmt.Sprintf("%.2f", result.UsageFractions[resourceType].RequestFraction),
-			Limit:            utils.FormatResource(lit),
-			LimitFraction:    fmt.Sprintf("%.2f", result.UsageFractions[resourceType].LimitFraction),
+			ResourceType: string(resourceType),
+			Total:        utils.FormatResource(alc, resourceType),
+
+			Request:  utils.FormatResource(req, resourceType),
+			Limit:    utils.FormatResource(lit, resourceType),
+			Realtime: utils.FormatResource(realtime, resourceType),
+
+			RequestFraction:  result.UsageFractions[resourceType].RequestFraction,
+			LimitFraction:    result.UsageFractions[resourceType].LimitFraction,
+			RealtimeFraction: result.UsageFractions[resourceType].RealtimeFraction,
 		}
 		// 将行加入表格数据
 		tableData = append(tableData, row)
