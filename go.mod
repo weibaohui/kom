@@ -18,7 +18,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-replace github.com/mark3labs/mcp-go => github.com/weibaohui/mcp-go v0.0.7
+replace github.com/mark3labs/mcp-go => github.com/weibaohui/mcp-go v0.0.5
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
