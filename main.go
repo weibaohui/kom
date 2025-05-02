@@ -30,6 +30,8 @@ func main() {
 	var ctxFn = func(ctx context.Context, r *http.Request) context.Context {
 		authKeyVal := r.Header.Get(authKey)
 		authRoleVal := r.Header.Get(authRoleKey)
+		authKeyVal = "admin"
+		authRoleVal = "admin-role"
 		klog.Infof("%s: %s", authKey, authKeyVal)
 		klog.Infof("%s: %s", authRoleKey, authRoleKey)
 		ctx = context.WithValue(ctx, authKey, authKeyVal)
@@ -51,7 +53,7 @@ func main() {
 		},
 		AuthKey:     authKey,
 		AuthRoleKey: authRoleKey,
-		Mode:        metadata.MCPServerModeStdio, // 开启STDIO 或者 SSE
+		Mode:        metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 
