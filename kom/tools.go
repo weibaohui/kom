@@ -222,7 +222,7 @@ func (u *tools) FindGVKByTableNameInApiResources(tableName string) *schema.Group
 // FindGVKByTableNameInCRDList 从CRD列表中找到对应的表名的GVK
 func (u *tools) FindGVKByTableNameInCRDList(tableName string) *schema.GroupVersionKind {
 
-	for _, crd := range u.kubectl.parentCluster().crdList {
+	for _, crd := range u.kubectl.Status().CRDList() {
 		// 从 CRD 对象中获取 "spec" 下的 names 字段
 		specNames, found, err := unstructured.NestedMap(crd.Object, "spec", "names")
 		if err != nil || !found {
