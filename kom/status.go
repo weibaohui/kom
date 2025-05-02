@@ -25,8 +25,7 @@ func (s *status) APIResources() []*metav1.APIResource {
 	return cluster.apiResources
 }
 func (s *status) CRDList() []*unstructured.Unstructured {
-	cluster := s.kubectl.parentCluster()
-	return cluster.crdList
+	return s.kubectl.initializeCRDList(time.Minute * 10)
 }
 func (s *status) Docs() *doc.Docs {
 	cluster := s.kubectl.parentCluster()
@@ -43,6 +42,17 @@ func (s *status) DescriberMap() map[schema.GroupKind]describe.ResourceDescriber 
 func (s *status) OpenAPISchema() *openapi_v2.Document {
 	cluster := s.kubectl.parentCluster()
 	return cluster.openAPISchema
+}
+
+func (s *status) IsGatewayAPISupported() bool {
+	list := s.CRDList()
+	name := "gateways.gateway.networking.k8s.io"
+	for _, crd := range list {
+		if crd.GetName() == name {
+			return true
+		}
+	}
+	return false
 }
 
 // 获取版本信息
