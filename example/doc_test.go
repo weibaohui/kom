@@ -10,5 +10,5 @@ import (
 func TestDoc(t *testing.T) {
 	docs := kom.DefaultCluster().Status().Docs()
 	pc := docs.FetchByGVK("v1", "Pod")
-	t.Logf(utils.ToJSON(pc))
+	t.Log(utils.ToJSON(pc))
 }

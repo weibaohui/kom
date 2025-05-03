@@ -30,7 +30,7 @@ func TestNodeResourceUsageTable(t *testing.T) {
 	usage, err := kom.DefaultCluster().Resource(&corev1.Node{}).
 		Name(nodeName).WithCache(5 * time.Second).Ctl().Node().ResourceUsageTable()
 	if err != nil {
-		fmt.Printf(err.Error())
+		fmt.Print(err.Error())
 		return
 	}
 	t.Logf("Node Usage %s\n", utils.ToJSON(usage))

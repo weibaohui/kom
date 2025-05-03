@@ -54,7 +54,7 @@ spec:
 	if err != nil {
 		t.Errorf("List Error %v\n", err)
 	}
-	t.Logf(fmt.Sprintf("pod count %d", len(items)))
+	t.Log(fmt.Sprintf("pod count %d", len(items)))
 	for _, node := range items {
 		t.Logf("pde name %s/%s\n", node.Namespace, node.Name)
 	}
