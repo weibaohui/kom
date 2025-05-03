@@ -11,7 +11,7 @@ import (
 func TestPrintTopPodList(t *testing.T) {
 
 	result, err := kom.DefaultCluster().
-		Resource(&v1.Pod{}).Namespace("default", "kube-system").
+		Resource(&v1.Pod{}).Namespace("*").
 		// Name("cpu-memory-fluctuation-advanced").
 		Ctl().Pod().Top()
 

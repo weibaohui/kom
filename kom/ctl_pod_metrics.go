@@ -23,8 +23,9 @@ type ContainerUsage struct {
 
 // PodMetrics 表示容器指标数据
 type PodMetrics struct {
-	Name  string         `json:"name"`
-	Usage ContainerUsage `json:"usage"`
+	Name      string         `json:"name"`
+	Namespace string         `json:"namespace"`
+	Usage     ContainerUsage `json:"usage"`
 }
 
 // Top 获取容器资源使用情况 等同于  kubectl top pods ,获取列表
@@ -168,8 +169,9 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]*P
 		}
 
 		containerMetric := &PodMetrics{
-			Name:  containerMap["name"].(string),
-			Usage: ContainerUsage{},
+			Name:      containerMap["name"].(string),
+			Namespace: u.GetNamespace(),
+			Usage:     ContainerUsage{},
 		}
 
 		if usage, ok := containerMap["usage"].(map[string]interface{}); ok {
@@ -200,7 +202,8 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]*P
 	}
 
 	result = append(result, &PodMetrics{
-		Name: "total",
+		Name:      "total",
+		Namespace: u.GetNamespace(),
 		Usage: ContainerUsage{
 			CPU:        utils.FormatResource(*cpuTotal, corev1.ResourceCPU),
 			CPUNano:    cpuTotal.MilliValue(),
@@ -249,7 +252,8 @@ func SummarizePodMetrics(u *unstructured.Unstructured) (*PodMetrics, error) {
 	}
 
 	result = &PodMetrics{
-		Name: u.GetName(),
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
 		Usage: ContainerUsage{
 			CPU:        utils.FormatResource(*cpuTotal, corev1.ResourceCPU),
 			CPUNano:    cpuTotal.MilliValue(),
