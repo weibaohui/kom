@@ -43,7 +43,7 @@ func (p *pod) Top() ([]*PodMetrics, error) {
 	if stmt.AllNamespace {
 		kubectl = kubectl.AllNamespace()
 	} else {
-		kubectl = kubectl.Namespace(stmt.Namespace)
+		kubectl = kubectl.Namespace(stmt.NamespaceList...)
 	}
 	if stmt.Name != "" {
 		err = kubectl.Name(stmt.Name).Get(&singlePod).Error
