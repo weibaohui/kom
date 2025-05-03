@@ -15,10 +15,12 @@ import (
 
 // NodeUsage 表示容器资源使用情况
 type NodeUsage struct {
-	CPU        string `json:"cpu"`
-	Memory     string `json:"memory"`
-	CPUNano    int64  `json:"cpu_nano"`
-	MemoryByte int64  `json:"memory_byte"`
+	CPU            string `json:"cpu"`
+	Memory         string `json:"memory"`
+	CPUNano        int64  `json:"cpu_nano"`
+	MemoryByte     int64  `json:"memory_byte"`
+	CPUFraction    string `json:"cpuFraction"`
+	MemoryFraction string `json:"memoryFraction"`
 }
 
 func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quantity, map[corev1.ResourceName]resource.Quantity) {
@@ -261,7 +263,7 @@ func (d *node) Top() ([]*NodeMetrics, error) {
 				memTotal.Add(memQty)
 			}
 		}
-		result = append(result, &NodeMetrics{
+		elems := &NodeMetrics{
 			Name: item.GetName(),
 			Usage: NodeUsage{
 				CPU:        utils.FormatResource(*cpuTotal, corev1.ResourceCPU),
@@ -269,7 +271,28 @@ func (d *node) Top() ([]*NodeMetrics, error) {
 				Memory:     utils.FormatResource(*memTotal, corev1.ResourceMemory),
 				MemoryByte: memTotal.Value(),
 			},
-		})
+		}
+		d.kubectl.Statement.Name = item.GetName()
+		if n, err := d.getNodeWithCache(cacheTime); err == nil {
+			allocatable := n.Status.Capacity
+			if len(n.Status.Allocatable) > 0 {
+				allocatable = n.Status.Allocatable
+			}
+			fractionCpuRealtime := ""
+			if allocatable.Cpu().MilliValue() != 0 {
+				fractionCpuRealtime = utils.FormatPercent(float64(cpuTotal.MilliValue()) / float64(allocatable.Cpu().MilliValue()) * 100)
+			}
+
+			// 计算内存 使用率
+			fractionMemoryRealtime := ""
+			if allocatable.Memory().Value() != 0 {
+				fractionMemoryRealtime = utils.FormatPercent(float64(memTotal.Value()) / float64(allocatable.Memory().Value()) * 100)
+			}
+			elems.Usage.CPUFraction = fractionCpuRealtime
+			elems.Usage.MemoryFraction = fractionMemoryRealtime
+		}
+
+		result = append(result, elems)
 
 	}
 
