@@ -13,10 +13,12 @@ import (
 
 // ContainerUsage 表示容器资源使用情况
 type ContainerUsage struct {
-	CPU        string `json:"cpu"`
-	Memory     string `json:"memory"`
-	CPUNano    int64  `json:"cpu_nano"`
-	MemoryByte int64  `json:"memory_byte"`
+	CPU            string `json:"cpu"`
+	Memory         string `json:"memory"`
+	CPUNano        int64  `json:"cpu_nano"`
+	MemoryByte     int64  `json:"memory_byte"`
+	CPUFraction    string `json:"cpu_fraction"`
+	MemoryFraction string `json:"memory_fraction"`
 }
 
 // PodMetrics 表示容器指标数据
@@ -62,11 +64,55 @@ func (p *pod) Top() ([]*PodMetrics, error) {
 
 	for _, item := range inst {
 		if pm, err := SummarizePodMetrics(item); err == nil {
+
+			if res, err := p.getNodeCapacityByPodName(item.GetNamespace(), item.GetName()); err == nil {
+				cpuFraction, memoryFraction := p.calcPodFraction(pm, res)
+				pm.Usage.CPUFraction = cpuFraction
+				pm.Usage.MemoryFraction = memoryFraction
+			}
+
 			result = append(result, pm)
 		}
 	}
 
 	return result, nil
+}
+
+// getNodeCapacityByPodName 获取 Pod 所在节点的资源使用情况
+func (p *pod) getNodeCapacityByPodName(namespace string, name string) (corev1.ResourceList, error) {
+	cacheTime := p.kubectl.Statement.CacheTTL
+	if cacheTime == 0 {
+		cacheTime = 5 * time.Second
+	}
+	var podItem *corev1.Pod
+	err := p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).Resource(&corev1.Pod{}).
+		WithCache(cacheTime).
+		Name(name).Namespace(namespace).Get(&podItem).Error
+	if err != nil {
+		return nil, err
+	}
+	var n *corev1.Node
+	err = p.kubectl.newInstance().WithContext(p.kubectl.Statement.Context).Resource(&corev1.Node{}).
+		WithCache(cacheTime).
+		Name(podItem.Spec.NodeName).Get(&n).Error
+	if err != nil {
+		klog.V(6).Infof("Get Pod running Node  error %v\n", err.Error())
+		return nil, err
+	}
+
+	allocatable := n.Status.Capacity
+	if len(n.Status.Allocatable) > 0 {
+		allocatable = n.Status.Allocatable
+	}
+	return allocatable, nil
+
+}
+
+// 计算容器使用百分比
+func (p *pod) calcPodFraction(pm *PodMetrics, allocatable corev1.ResourceList) (string, string) {
+	fractionCpuRealtime := utils.FormatPercent(float64(pm.Usage.CPUNano) / float64(allocatable.Cpu().MilliValue()) * 100)
+	fractionMemoryRealtime := utils.FormatPercent(float64(pm.Usage.MemoryByte) / float64(allocatable.Memory().Value()) * 100)
+	return fractionCpuRealtime, fractionMemoryRealtime
 }
 func (p *pod) Metrics() ([]*PodMetrics, error) {
 
