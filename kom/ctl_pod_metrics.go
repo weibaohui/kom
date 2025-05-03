@@ -98,7 +98,9 @@ func (p *pod) Metrics() ([]*PodMetrics, error) {
 	return containers, nil
 }
 
-// ExtractPodMetrics 提取 containers 字段，返回标准结构
+// ExtractPodMetrics 从未结构化的 PodMetrics 对象中提取所有容器的资源使用信息，并返回每个容器及其总和的标准化指标切片。
+// 如果指定 containerName，则仅返回对应容器的指标。
+// 返回值包括每个容器的 CPU 和内存用量，以及名为 "total" 的聚合项。
 func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]*PodMetrics, error) {
 	containersRaw, found, err := unstructured.NestedSlice(u.Object, "containers")
 	if err != nil {
@@ -166,7 +168,9 @@ func ExtractPodMetrics(u *unstructured.Unstructured, containerName string) ([]*P
 	return result, nil
 }
 
-// SummarizePodMetrics 汇总Pod下的container的资源用量，返回标准结构
+// SummarizePodMetrics 汇总并返回指定 Pod 的所有容器资源用量总和。
+// 提取并累加 PodMetrics 对象中各容器的 CPU 和内存使用量，返回聚合后的 PodMetrics 结构体。
+// 若未找到容器信息或数据格式异常，返回错误。
 func SummarizePodMetrics(u *unstructured.Unstructured) (*PodMetrics, error) {
 	containersRaw, found, err := unstructured.NestedSlice(u.Object, "containers")
 	if err != nil {

@@ -191,7 +191,8 @@ func (d *node) Metrics() (*NodeUsage, error) {
 	return usage, nil
 }
 
-// ExtractNodeMetrics 提取 containers 字段，返回标准结构
+// ExtractNodeMetrics 从非结构化的 Kubernetes 节点指标对象中提取 CPU 和内存使用量，返回 NodeUsage 结构体。  
+// 如果未找到 usage 字段或类型不匹配，则返回错误。
 func ExtractNodeMetrics(u *unstructured.Unstructured) (*NodeUsage, error) {
 	usageRaw, found, err := unstructured.NestedMap(u.Object, "usage")
 	if err != nil {
