@@ -15,8 +15,10 @@ import (
 
 // NodeUsage 表示容器资源使用情况
 type NodeUsage struct {
-	CPU    string `json:"cpu"`
-	Memory string `json:"memory"`
+	CPU        string `json:"cpu"`
+	Memory     string `json:"memory"`
+	CPUNano    int64  `json:"cpu_nano"`
+	MemoryByte int64  `json:"memory_byte"`
 }
 
 func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quantity, map[corev1.ResourceName]resource.Quantity) {
@@ -189,7 +191,8 @@ func (d *node) Metrics() (*NodeUsage, error) {
 	return usage, nil
 }
 
-// ExtractNodeMetrics 提取 containers 字段，返回标准结构
+// ExtractNodeMetrics 从非结构化的 Kubernetes 节点指标对象中提取 CPU 和内存使用量，返回 NodeUsage 结构体。  
+// 如果未找到 usage 字段或类型不匹配，则返回错误。
 func ExtractNodeMetrics(u *unstructured.Unstructured) (*NodeUsage, error) {
 	usageRaw, found, err := unstructured.NestedMap(u.Object, "usage")
 	if err != nil {
@@ -205,4 +208,70 @@ func ExtractNodeMetrics(u *unstructured.Unstructured) (*NodeUsage, error) {
 	}
 	klog.V(6).Infof("node/%s resource usage\n", utils.ToJSON(nodeUsage))
 	return nodeUsage, nil
+}
+
+// NodeMetrics 表示节点指标数据
+type NodeMetrics struct {
+	Name  string    `json:"name"`
+	Usage NodeUsage `json:"usage"`
+}
+
+// Top 获取节点资源使用情况，等同于 kubectl top nodes，返回节点列表
+func (d *node) Top() ([]*NodeMetrics, error) {
+	var inst []*unstructured.Unstructured
+	var singleNode *unstructured.Unstructured
+	stmt := d.kubectl.Statement
+	cacheTime := stmt.CacheTTL
+	if cacheTime == 0 {
+		cacheTime = 5 * time.Second
+	}
+	var err error
+	kubectl := d.kubectl.newInstance().WithCache(cacheTime).
+		WithContext(stmt.Context).
+		CRD("metrics.k8s.io", "v1beta1", "NodeMetrics")
+
+	if stmt.Name != "" {
+		err = kubectl.Name(stmt.Name).Get(&singleNode).Error
+		if singleNode != nil {
+			inst = append(inst, singleNode)
+		}
+	} else {
+		err = kubectl.List(&inst).Error
+	}
+
+	if err != nil {
+		klog.V(6).Infof("Get Top Nodes  error %v\n", err.Error())
+		// 可能Metrics-Server 没有安装
+		return nil, err
+	}
+
+	var result []*NodeMetrics
+
+	for _, item := range inst {
+
+		memTotal := resource.NewQuantity(0, resource.BinarySI)
+		cpuTotal := resource.NewQuantity(0, resource.BinarySI)
+		if usage, ok := item.Object["usage"].(map[string]interface{}); ok {
+			if cpuStr, ok := usage[corev1.ResourceCPU.String()].(string); ok {
+				cpuQty := resource.MustParse(cpuStr)
+				cpuTotal.Add(cpuQty)
+			}
+			if memStr, ok := usage[corev1.ResourceMemory.String()].(string); ok {
+				memQty := resource.MustParse(memStr)
+				memTotal.Add(memQty)
+			}
+		}
+		result = append(result, &NodeMetrics{
+			Name: item.GetName(),
+			Usage: NodeUsage{
+				CPU:        utils.FormatResource(*cpuTotal, corev1.ResourceCPU),
+				CPUNano:    cpuTotal.MilliValue(),
+				Memory:     utils.FormatResource(*memTotal, corev1.ResourceMemory),
+				MemoryByte: memTotal.Value(),
+			},
+		})
+
+	}
+
+	return result, nil
 }
