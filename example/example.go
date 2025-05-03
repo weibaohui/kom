@@ -98,7 +98,7 @@ func ALLNodeUsageExample() {
 		usage, err := kom.DefaultCluster().Resource(&corev1.Node{}).
 			Name(nodeName).WithCache(5 * time.Second).Ctl().Node().ResourceUsageTable()
 		if err != nil {
-			fmt.Printf(err.Error())
+			fmt.Printf("%s", err.Error())
 			return
 		}
 		fmt.Printf("Node Usage %s\n", utils.ToJSON(usage))
