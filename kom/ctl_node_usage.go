@@ -19,8 +19,8 @@ type NodeUsage struct {
 	Memory         string `json:"memory"`
 	CPUNano        int64  `json:"cpu_nano"`
 	MemoryByte     int64  `json:"memory_byte"`
-	CPUFraction    string `json:"cpuFraction"`
-	MemoryFraction string `json:"memoryFraction"`
+	CPUFraction    string `json:"cpu_fraction"`
+	MemoryFraction string `json:"memory_fraction"`
 }
 
 func (d *node) TotalRequestsAndLimits() (map[corev1.ResourceName]resource.Quantity, map[corev1.ResourceName]resource.Quantity) {
