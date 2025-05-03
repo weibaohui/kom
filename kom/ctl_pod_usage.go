@@ -49,6 +49,11 @@ func (p *pod) ResourceUsage() (*ResourceUsageResult, error) {
 		return nil, err
 	}
 
+	req, limit := resourcehelper.PodRequestsAndLimits(inst)
+	if req == nil || limit == nil {
+		return nil, fmt.Errorf("failed to get pod requests and limits")
+	}
+
 	nodeName := inst.Spec.NodeName
 	if nodeName == "" {
 		klog.V(6).Infof("Get Pod ResourceUsage in pod/%s  error %v\n", p.kubectl.Statement.Name, "nodeName is empty")
@@ -63,10 +68,6 @@ func (p *pod) ResourceUsage() (*ResourceUsageResult, error) {
 		return nil, err
 	}
 
-	req, limit := resourcehelper.PodRequestsAndLimits(inst)
-	if req == nil || limit == nil {
-		return nil, fmt.Errorf("failed to get pod requests and limits")
-	}
 	allocatable := n.Status.Capacity
 	if len(n.Status.Allocatable) > 0 {
 		allocatable = n.Status.Allocatable
