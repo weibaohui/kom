@@ -4,6 +4,7 @@ import (
 	"io"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 type pod struct {
@@ -37,6 +38,13 @@ func (p *pod) StreamExecute(stdout, stderr func(data []byte) error) *Kubectl {
 	tx := p.kubectl.getInstance()
 	tx.Statement.StdoutCallback = stdout
 	tx.Statement.StderrCallback = stderr
+	tx.Error = tx.Callback().StreamExec().Execute(tx)
+	p.Error = tx.Error
+	return tx
+}
+func (p *pod) StreamExecuteWithOptions(opt *remotecommand.StreamOptions) *Kubectl {
+	tx := p.kubectl.getInstance()
+	tx.Statement.StreamOptions = opt
 	tx.Error = tx.Callback().StreamExec().Execute(tx)
 	p.Error = tx.Error
 	return tx
