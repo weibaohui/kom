@@ -10,6 +10,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// StreamExecuteCommand 在指定的 Kubernetes Pod 容器内以流式方式执行命令，并支持实时处理标准输入、输出和错误输出。
+// 如果未提供 StreamOptions，则自动创建管道并通过回调函数逐行处理输出和错误信息。
+// 若命令未设置或执行过程中发生错误，将返回相应的错误信息。
 func StreamExecuteCommand(k *kom.Kubectl) error {
 
 	stmt := k.Statement
