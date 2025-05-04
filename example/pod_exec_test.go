@@ -123,11 +123,14 @@ func TestPodStreamExecWithOptions(t *testing.T) {
 		TerminalSizeQueue: sizeQueue, // 传递 TTY 尺寸管理队列
 	}
 
-	kom.DefaultCluster().Namespace("default").
-		Name("bash-runner-5bd4b4bdbb-qzgmx").
+	err := kom.DefaultCluster().Namespace("default").
+		Name("bash-runner-5bd4b4bdbb-wmjnb").
 		Ctl().Pod().
 		Command("/bin/sh", "-c", "TERM=xterm-256color; export TERM; [ -x /bin/bash ] && ([ -x /usr/bin/script ] && /usr/bin/script -q -c '/bin/bash' /dev/null || exec /bin/bash) || exec /bin/sh").
-		StreamExecuteWithOptions(opt)
+		StreamExecuteWithOptions(opt).Error
+	if err != nil {
+		klog.Errorf("Error executing command: %v", err)
+	}
 
 	waiter.Wait()
 }
