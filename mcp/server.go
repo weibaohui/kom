@@ -43,6 +43,7 @@ var config *metadata.ServerConfig
 func GetServerConfig() *metadata.ServerConfig {
 	return config
 }
+// RunMCPServerWithOption 根据提供的服务器配置启动 MCP 服务器，支持 stdio 或 SSE 模式。
 func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	s := GetMCPServerWithOption(cfg)
 	if cfg.Mode == metadata.MCPServerModeStdio {
@@ -63,6 +64,16 @@ func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	}
 
 }
+
+// GetMCPSSEServerWithOption 根据提供的服务器配置创建并返回一个带有指定选项的 SSE 服务器实例。
+func GetMCPSSEServerWithOption(cfg *metadata.ServerConfig) *server.SSEServer {
+	s := GetMCPServerWithOption(cfg)
+	// 创建 SSE 服务器
+	sseServer := server.NewSSEServer(s, config.SSEOption...)
+	return sseServer
+}
+// GetMCPServerWithOption 根据提供的配置创建并初始化一个 MCP 服务器，并注册所有工具模块。
+// 如果配置为 nil，则返回 nil。
 func GetMCPServerWithOption(cfg *metadata.ServerConfig) *server.MCPServer {
 	if cfg == nil {
 		klog.Errorf("MCP Server error: config is nil\n")
