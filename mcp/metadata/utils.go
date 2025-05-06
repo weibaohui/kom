@@ -55,7 +55,11 @@ func IsNamespaced(resourceType string) bool {
 	return false
 }
 
-// ParseFromRequest 从请求中解析资源元数据
+// ParseFromRequest 从请求参数中提取资源元数据信息，并返回包含认证信息的新上下文和资源元数据结构体。
+// 若 serverConfig 不为 nil，则会将认证信息从原上下文复制到新上下文。
+// 支持从请求参数中解析 cluster、namespace、name 以及资源的 group、version、kind 信息。
+// 若未提供部分参数，则使用默认值或空字符串。
+// 返回新上下文、资源元数据指针及错误（始终为 nil）。
 func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *ServerConfig) (context.Context, *ResourceMetadata, error) {
 	newCtx := context.Background()
 	if serverConfig != nil {

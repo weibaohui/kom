@@ -12,6 +12,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// main 初始化并启动带有认证信息注入的 MCP 服务端，支持通过 HTTP Header 注入用户名到请求上下文，实现权限控制。
 func main() {
 	klog.InitFlags(nil)
 	flag.Set("v", "8")
