@@ -63,6 +63,13 @@ func RunMCPServerWithOption(cfg *metadata.ServerConfig) {
 	}
 
 }
+
+func GetMCPSSEServerWithOption(cfg *metadata.ServerConfig) *server.SSEServer {
+	s := GetMCPServerWithOption(cfg)
+	// 创建 SSE 服务器
+	sseServer := server.NewSSEServer(s, config.SSEOption...)
+	return sseServer
+}
 func GetMCPServerWithOption(cfg *metadata.ServerConfig) *server.MCPServer {
 	if cfg == nil {
 		klog.Errorf("MCP Server error: config is nil\n")
