@@ -7,7 +7,7 @@ require (
 	github.com/duke-git/lancet/v2 v2.3.5
 	github.com/fatih/camelcase v1.0.0
 	github.com/google/gnostic-models v0.6.9
-	github.com/mark3labs/mcp-go v0.17.0
+	github.com/mark3labs/mcp-go v0.25.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	k8s.io/api v0.33.0
 	k8s.io/apimachinery v0.33.0
@@ -17,8 +17,6 @@ require (
 	k8s.io/kubectl v0.33.0
 	sigs.k8s.io/yaml v1.4.0
 )
-
-replace github.com/mark3labs/mcp-go => github.com/weibaohui/mcp-go v0.0.5
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect

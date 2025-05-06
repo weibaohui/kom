@@ -63,16 +63,7 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverCo
 		if !ok {
 			authVal = ""
 		}
-
-		authRoleVal, ok := ctx.Value(serverConfig.AuthRoleKey).(string)
-		if !ok {
-			authRoleVal = ""
-		}
-
 		newCtx = context.WithValue(ctx, serverConfig.AuthKey, authVal)
-		newCtx = context.WithValue(newCtx, serverConfig.AuthRoleKey, authRoleVal)
-
-		// 用 newCtx 传递下去
 	}
 
 	// 验证必要参数

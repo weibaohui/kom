@@ -26,16 +26,10 @@ func main() {
 	// kom执行时，如果注册了callback，那么可以在callback中获取到ctx，从ctx上可以拿到注入的认证信息
 	// 有了认证信息，就可以在callback中，进行权限的逻辑控制了
 	authKey := "username"
-	authRoleKey := "role"
 	var ctxFn = func(ctx context.Context, r *http.Request) context.Context {
 		authKeyVal := r.Header.Get(authKey)
-		authRoleVal := r.Header.Get(authRoleKey)
-		authKeyVal = "admin"
-		authRoleVal = "admin-role"
 		klog.Infof("%s: %s", authKey, authKeyVal)
-		klog.Infof("%s: %s", authRoleKey, authRoleKey)
 		ctx = context.WithValue(ctx, authKey, authKeyVal)
-		ctx = context.WithValue(ctx, authRoleKey, authRoleVal)
 
 		return ctx
 	}
@@ -51,9 +45,8 @@ func main() {
 		SSEOption: []server.SSEOption{
 			server.WithSSEContextFunc(ctxFn),
 		},
-		AuthKey:     authKey,
-		AuthRoleKey: authRoleKey,
-		Mode:        metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
+		AuthKey: authKey,
+		Mode:    metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 
