@@ -50,4 +50,9 @@ func RegisterTools(s *server.MCPServer) {
 		HPAListDeploymentTool(),
 		HPAListDeploymentHandler,
 	)
+
+	s.AddTool(
+		ListDeployEventResource(),
+		ListDeployEventResourceHandler,
+	)
 }
