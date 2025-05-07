@@ -14,7 +14,7 @@ func LabelDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"label_k8s_resource",
 		mcp.WithDescription("为Kubernetes资源添加或删除标签 / Add or remove labels for Kubernetes resource"),
-		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
+		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
 		mcp.WithString("namespace", mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resource (optional for cluster-scoped resources)")),
 		mcp.WithString("name", mcp.Description("资源的名称 / Name of the resource")),
 		mcp.WithString("group", mcp.Description("资源的API组 / API group of the resource")),
