@@ -11,6 +11,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools/event"
 	"github.com/weibaohui/kom/mcp/tools/ingressclass"
 	"github.com/weibaohui/kom/mcp/tools/node"
+	"github.com/weibaohui/kom/mcp/tools/ns"
 	"github.com/weibaohui/kom/mcp/tools/pod"
 	"github.com/weibaohui/kom/mcp/tools/storageclass"
 	"github.com/weibaohui/kom/mcp/tools/yaml"
@@ -107,6 +108,7 @@ func GetMCPServerWithOption(cfg *ServerConfig) *server.MCPServer {
 	storageclass.RegisterTools(s)
 	ingressclass.RegisterTools(s)
 	yaml.RegisterTools(s)
+	ns.RegisterTools(s)
 	return s
 
 }
