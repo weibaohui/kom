@@ -18,7 +18,7 @@ func CordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"cordon_node",
 		mcp.WithDescription("设置节点为不可调度状态，等同于kubectl cordon <node> / Mark node as unschedulable, equivalent to kubectl cordon <node>"),
-		mcp.WithString("cluster", mcp.Description("节点所在的集群 / The cluster of the node")),
+		mcp.WithString("cluster", mcp.Required(), mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),
 	)
 }

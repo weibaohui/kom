@@ -16,7 +16,7 @@ func SetDefaultIngressClassTool() mcp.Tool {
 	return mcp.NewTool(
 		"set_default_ingressclass",
 		mcp.WithDescription("设置IngressClass为默认 / Set IngressClass as default (kubectl annotate ingressclass <name> ingressclass.kubernetes.io/is-default-class=true)"),
-		mcp.WithString("cluster", mcp.Description("IngressClass所在的集群 / The cluster of the IngressClass")),
+		mcp.WithString("cluster", mcp.Required(), mcp.Description("IngressClass所在的集群 （使用空字符串表示默认集群）/ The cluster of the IngressClass")),
 		mcp.WithString("name", mcp.Description("IngressClass的名称 / The name of the IngressClass")),
 	)
 }

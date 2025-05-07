@@ -17,7 +17,7 @@ func UploadPodFileTool() mcp.Tool {
 	return mcp.NewTool(
 		"upload_file_to_pod",
 		mcp.WithDescription("上传文件到Pod容器内 (类似命令: kubectl cp <local-file> <namespace>/<pod-name>:<container-path>) / Upload file to pod container"),
-		mcp.WithString("cluster", mcp.Description("集群名称 / Cluster name")),
+		mcp.WithString("cluster", mcp.Required(), mcp.Description("集群名称 （使用空字符串表示默认集群）/ Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间 / Namespace")),
 		mcp.WithString("name", mcp.Description("Pod名称 / Pod name")),
 		mcp.WithString("container", mcp.Description("容器名称（必填） / Container name (required)")),
