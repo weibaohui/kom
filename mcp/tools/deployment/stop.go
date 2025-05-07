@@ -10,7 +10,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// StopDeploymentTool 创建一个停止Deployment的工具
+// StopDeploymentTool 创建一个用于停止 Kubernetes Deployment 的工具。
+// 该工具通过将 Deployment 的副本数设置为 0 来停止其运行，并将原始副本数记录到注解中，便于后续恢复。
+// 工具参数包括目标集群（空字符串表示默认集群）、命名空间和 Deployment 名称。
 func StopDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"stop_k8s_deployment",
@@ -21,7 +23,7 @@ func StopDeploymentTool() mcp.Tool {
 	)
 }
 
-// StopDeploymentHandler 处理停止Deployment的请求
+// StopDeploymentHandler 根据请求参数停止指定的 Kubernetes Deployment，将其副本数缩减为零，并在注解中保存原始副本数。
 func StopDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

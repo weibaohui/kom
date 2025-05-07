@@ -10,7 +10,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// RestoreDeploymentTool 创建一个恢复Deployment的工具
+// RestoreDeploymentTool 返回一个用于恢复 Kubernetes Deployment 副本数的工具。
+// 该工具根据 Deployment 注解中的原始副本数进行恢复，若无注解则副本数默认为 1。工具参数包括目标集群（可为空表示默认集群）、命名空间和 Deployment 名称。
 func RestoreDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"restore_k8s_deployment",
@@ -21,7 +22,9 @@ func RestoreDeploymentTool() mcp.Tool {
 	)
 }
 
-// RestoreDeploymentHandler 处理恢复Deployment的请求
+// RestoreDeploymentHandler 根据存储在注解中的副本数恢复指定 Kubernetes Deployment 的副本数量。
+// 如果注解不存在，则副本数恢复为 1。
+// 成功时返回操作结果文本，失败时返回错误。
 func RestoreDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

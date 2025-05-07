@@ -23,6 +23,9 @@ func GetDynamicResource() mcp.Tool {
 	)
 }
 
+// GetDynamicResourceHandler 根据请求参数动态获取指定 Kubernetes 集群、命名空间和资源类型的资源详情。
+// 若命名空间为空，则在所有命名空间中查找资源。
+// 返回获取到的资源详情文本结果，若获取失败则返回详细错误信息。
 func GetDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

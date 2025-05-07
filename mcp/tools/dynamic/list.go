@@ -24,6 +24,9 @@ func ListDynamicResource() mcp.Tool {
 	)
 }
 
+// ListDynamicResourceHandler 处理“list_k8s_resource”工具的请求，根据指定集群、资源类型、命名空间及可选的标签和字段选择器，动态列出对应的 Kubernetes 资源名称及命名空间信息。
+// 
+// 返回包含资源名称和命名空间的列表结果。如资源查询失败，返回错误。
 func ListDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取资源元数据

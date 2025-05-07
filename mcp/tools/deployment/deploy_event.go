@@ -10,6 +10,8 @@ import (
 	v1 "k8s.io/api/events/v1"
 )
 
+// ListDeployEventResource 返回一个用于列出指定 Deployment 相关事件的 MCP 工具。
+// 工具支持指定集群、命名空间和 Deployment 名称，类似于 kubectl get events -n <namespace> 的功能。
 func ListDeployEventResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_deploy_event",
@@ -20,6 +22,9 @@ func ListDeployEventResource() mcp.Tool {
 	)
 }
 
+// ListDeployEventResourceHandler 处理列出指定 Kubernetes 集群、命名空间和 Deployment 名称相关事件的请求。
+// 它根据请求参数筛选与指定 Deployment 相关的事件，并以文本格式返回事件列表。
+// 若查询或参数解析失败，则返回相应错误。
 func ListDeployEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

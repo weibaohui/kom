@@ -20,6 +20,8 @@ func ListEventResource() mcp.Tool {
 	)
 }
 
+// ListEventResourceHandler 根据请求参数获取指定集群和命名空间下的 Kubernetes 事件列表，可按涉及对象名称进行筛选。
+// 返回事件列表的文本结果，如查询失败则返回错误。
 func ListEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

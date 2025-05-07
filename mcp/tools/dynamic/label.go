@@ -9,6 +9,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools"
 )
 
+// LabelDynamicResource 返回一个用于为 Kubernetes 资源动态添加或删除标签的工具定义。
 func LabelDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"label_k8s_resource",
@@ -23,6 +24,9 @@ func LabelDynamicResource() mcp.Tool {
 	)
 }
 
+// LabelDynamicResourceHandler 根据请求参数为指定的 Kubernetes 资源添加或移除标签。
+// 若标签参数缺失或操作失败，将返回相应的错误信息。
+// 成功时返回包含资源标识的操作结果文本。
 func LabelDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

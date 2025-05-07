@@ -8,6 +8,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools"
 )
 
+// ListClusters 返回一个用于列出所有已注册 Kubernetes 集群的工具实例。
 func ListClusters() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_clusters",
@@ -15,6 +16,7 @@ func ListClusters() mcp.Tool {
 	)
 }
 
+// ListClustersHandler 处理列出所有已注册 Kubernetes 集群的工具调用请求，返回集群名称列表。
 func ListClustersHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取所有已注册的集群名称

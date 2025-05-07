@@ -49,7 +49,7 @@ func GetResourceInfo(resourceType string) (ResourceInfo, bool) {
 	return ResourceInfo{}, false
 }
 
-// IsNamespaced 判断资源是否为命名空间级别
+// IsNamespaced 判断指定资源类型是否属于命名空间作用域。
 func IsNamespaced(resourceType string) bool {
 	resourceType = strings.ToLower(resourceType)
 	if info, exists := resourceMap[resourceType]; exists {
@@ -58,7 +58,9 @@ func IsNamespaced(resourceType string) bool {
 	return false
 }
 
-// ParseFromRequest 从请求中解析资源元数据
+// ParseFromRequest 从请求参数中提取并校验 Kubernetes 资源的元数据信息。
+// 返回包含认证信息的新上下文、资源元数据结构体，以及错误信息（如参数缺失或集群校验失败）。
+// 若存在多个集群且未指定集群，则返回错误；仅有一个集群时自动填充默认集群。
 func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest) (context.Context, *ResourceMetadata, error) {
 	newCtx := context.Background()
 	if authKey != "" {
@@ -135,7 +137,7 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest) (context
 	return newCtx, meta, nil
 }
 
-// getStringParam 从请求参数中获取字符串值，如果不存在或无效则返回默认值
+// getStringParam 返回请求参数中指定键的字符串值，不存在或为空时返回默认值。
 func getStringParam(request mcp.CallToolRequest, key, defaultValue string) string {
 	if value, ok := request.Params.Arguments[key].(string); ok && value != "" {
 		return value
@@ -143,7 +145,7 @@ func getStringParam(request mcp.CallToolRequest, key, defaultValue string) strin
 	return defaultValue
 }
 
-// buildTextResult 构建标准的文本返回结果
+// buildTextResult 返回包含指定文本内容的标准 CallToolResult 结果。
 func buildTextResult(text string) *mcp.CallToolResult {
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
@@ -155,7 +157,9 @@ func buildTextResult(text string) *mcp.CallToolResult {
 	}
 }
 
-// TextResult 将任意类型转换为标准的mcp.CallToolResult
+// TextResult 将任意类型的数据转换为标准的 mcp.CallToolResult。
+// 若输入为字节切片，则作为文本内容返回；若为字符串切片，则每个字符串作为独立文本内容返回；其他类型将被序列化为 JSON 字符串后作为文本内容返回。
+// 若序列化失败，返回包含资源元信息的错误。
 func TextResult[T any](item T, meta *ResourceMetadata) (*mcp.CallToolResult, error) {
 	switch v := any(item).(type) {
 	case []byte:
@@ -179,6 +183,7 @@ func TextResult[T any](item T, meta *ResourceMetadata) (*mcp.CallToolResult, err
 	}
 }
 
+// ErrorResult 根据提供的错误信息构建一个标记为错误的 CallToolResult，内容为错误文本。
 func ErrorResult(err error) *mcp.CallToolResult {
 	return &mcp.CallToolResult{
 		IsError: true,

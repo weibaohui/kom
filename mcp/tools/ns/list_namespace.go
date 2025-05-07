@@ -11,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// ListNamespace 返回一个用于获取 Kubernetes 命名空间列表的工具实例。
+// 工具名称为 "list_k8s_namespace"，可通过 "cluster" 参数指定目标集群，留空则使用默认集群。
 func ListNamespace() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_namespace",
@@ -19,6 +21,8 @@ func ListNamespace() mcp.Tool {
 	)
 }
 
+// ListNamespaceHandler 处理命名空间列表请求，返回指定集群中的所有命名空间名称及其命名空间字段（如有）。
+// 如果请求解析或资源获取失败，则返回相应错误。
 func ListNamespaceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取资源元数据

@@ -11,6 +11,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// TopNode 返回一个用于获取 Kubernetes 集群中节点 CPU 和内存资源用量排名的工具。
+// 工具名称为 "get_k8s_top_node"，支持指定目标集群，空字符串表示默认集群。
 func TopNode() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_top_node",
@@ -19,6 +21,9 @@ func TopNode() mcp.Tool {
 	)
 }
 
+// TopNodeHandler 处理获取 Kubernetes 节点 CPU 和内存资源使用排行的请求。
+// 解析请求中的资源元数据，调用 Kubernetes API 获取节点的资源使用情况，并以 JSON 格式返回结果。
+// 如获取过程中发生错误，则返回相应的错误信息。
 func TopNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取资源元数据

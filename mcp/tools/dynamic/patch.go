@@ -24,6 +24,9 @@ func PatchDynamicResource() mcp.Tool {
 	)
 }
 
+// PatchDynamicResourceHandler 根据请求参数对指定的 Kubernetes 资源执行战略合并补丁操作。
+// 若 patch_data 缺失或补丁失败，将返回详细错误信息。
+// 成功时返回资源补丁结果的文本描述。
 func PatchDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

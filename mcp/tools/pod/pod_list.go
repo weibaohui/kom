@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// ListPod 返回一个用于获取 Kubernetes Pod 列表的工具实例，支持按集群、命名空间和字段选择器筛选。
 func ListPod() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_pod",
@@ -21,6 +22,9 @@ func ListPod() mcp.Tool {
 	)
 }
 
+// ListPodHandler 处理列出 Kubernetes Pod 的请求，根据请求参数返回指定集群和命名空间下的 Pod 名称及命名空间信息。
+// 如果未指定命名空间，则查询所有命名空间；支持通过 fieldSelector 过滤 Pod。
+// 返回包含 Pod 名称和命名空间的文本结果，或在出错时返回错误。
 func ListPodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取资源元数据

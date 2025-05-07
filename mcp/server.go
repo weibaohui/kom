@@ -35,6 +35,7 @@ const (
 	ServerModeStdio ServerMode = "stdio"
 )
 
+// RunMCPServer 启动一个 MCP 服务器实例，支持通过 stdio 和 SSE 两种方式对外提供服务。
 func RunMCPServer(name, version string, port int) {
 	config := &ServerConfig{}
 	config.Name = name
@@ -57,6 +58,12 @@ func RunMCPServer(name, version string, port int) {
 	}
 }
 
+// RunMCPServerWithOption 根据提供的配置启动 MCP 服务器，可选择 SSE 或 stdio 模式。
+//
+// 根据 cfg.Mode 字段决定服务器运行模式：
+// - 若为 ServerModeStdio，则以 stdio 方式启动 MCP 服务器。
+// - 否则，以 SSE 方式启动服务器并监听指定端口。
+// 启动前会设置全局认证密钥。
 func RunMCPServerWithOption(cfg *ServerConfig) {
 	s := GetMCPServerWithOption(cfg)
 	tools.SetAuthKey(cfg.AuthKey)
@@ -79,12 +86,15 @@ func RunMCPServerWithOption(cfg *ServerConfig) {
 
 }
 
+// GetMCPSSEServerWithOption 根据提供的配置创建并返回一个包裹了 MCP 服务器的 SSE 服务器实例。
 func GetMCPSSEServerWithOption(cfg *ServerConfig) *server.SSEServer {
 	s := GetMCPServerWithOption(cfg)
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s, cfg.SSEOption...)
 	return sseServer
 }
+// GetMCPServerWithOption 根据提供的配置创建并返回一个注册了所有工具模块的 MCP 服务器实例。
+// 如果配置为 nil，则返回 nil。
 func GetMCPServerWithOption(cfg *ServerConfig) *server.MCPServer {
 	if cfg == nil {
 		klog.Errorf("MCP Server error: config is nil\n")

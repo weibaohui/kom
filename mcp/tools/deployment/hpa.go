@@ -11,7 +11,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// HPAListDeploymentTool 创建一个查询Deployment的HPA列表的工具
+// HPAListDeploymentTool 返回一个用于查询指定Deployment关联的HPA列表的工具。该工具要求提供集群、命名空间和Deployment名称作为参数。
 func HPAListDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_hpa_list",
@@ -22,7 +22,7 @@ func HPAListDeploymentTool() mcp.Tool {
 	)
 }
 
-// HPAListDeploymentHandler 处理查询Deployment的HPA列表的请求
+// HPAListDeploymentHandler 处理查询指定集群、命名空间和名称下 Deployment 关联的 HPA 列表请求，并返回结果文本。
 func HPAListDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
