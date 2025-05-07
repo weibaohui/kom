@@ -9,7 +9,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools"
 )
 
-// GetPodResourceUsageTool 创建获取Pod资源使用情况的工具
+// GetPodResourceUsageTool 返回一个用于获取指定Pod资源使用情况的工具，包括CPU和内存的请求值、限制值、可分配值及使用比例。
 func GetPodResourceUsageTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_resource_usage",
@@ -21,7 +21,7 @@ func GetPodResourceUsageTool() mcp.Tool {
 	)
 }
 
-// GetPodResourceUsageHandler 处理获取Pod资源使用情况的请求
+// GetPodResourceUsageHandler 根据请求参数获取指定 Kubernetes Pod 的资源使用情况，并以文本形式返回结果。
 func GetPodResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

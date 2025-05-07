@@ -11,6 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// TopPod 返回一个用于获取 Kubernetes Pod CPU 和内存资源用量排名的工具，类似于 "kubectl top pods" 命令。
 func TopPod() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_top_pod",
@@ -20,6 +21,7 @@ func TopPod() mcp.Tool {
 	)
 }
 
+// TopPodHandler 处理获取指定集群和命名空间下 Pod 资源使用排行的请求，返回 Pod 的 CPU 和内存使用情况排名数据。
 func TopPodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
 	// 获取资源元数据

@@ -10,7 +10,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// GetPodLinkedPVCTool 定义PVC查询工具
+// GetPodLinkedPVCTool 返回一个用于查询指定 Pod 关联 PVC 的工具定义。
 func GetPodLinkedPVCTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_pvc",
@@ -21,7 +21,8 @@ func GetPodLinkedPVCTool() mcp.Tool {
 	)
 }
 
-// GetPodLinkedPVCHandler 处理PVC查询请求
+// GetPodLinkedPVCHandler 根据请求参数查询并返回指定 Pod 关联的 PVC 列表。
+// 如果查询过程中发生错误，返回详细的错误信息。
 func GetPodLinkedPVCHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

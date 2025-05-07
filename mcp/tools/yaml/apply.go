@@ -9,6 +9,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools"
 )
 
+// ApplyDynamicResource 返回一个用于通过YAML内容在指定Kubernetes集群中创建或更新资源的MCP工具。
 func ApplyDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"apply_k8s_yaml",
@@ -18,6 +19,9 @@ func ApplyDynamicResource() mcp.Tool {
 	)
 }
 
+// ApplyDynamicResourceHandler 处理“apply_k8s_yaml”工具的请求，将 YAML 内容中的 Kubernetes 资源应用到指定集群。
+// 如果请求参数无效或 YAML 内容缺失，则返回错误。
+// 返回应用结果的文本格式。
 func ApplyDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 

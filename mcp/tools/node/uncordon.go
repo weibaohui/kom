@@ -10,7 +10,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// UnCordonNodeTool 创建一个为节点取消Cordon的工具
+// UnCordonNodeTool 返回一个用于将 Kubernetes 节点设置为可调度状态的工具。
+// 该工具等同于执行 kubectl uncordon <node>，支持指定集群（为空时使用默认集群）和节点名称。
 func UnCordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"uncordon_k8s_node",
@@ -20,7 +21,9 @@ func UnCordonNodeTool() mcp.Tool {
 	)
 }
 
-// UnCordonNodeHandler 处理为节点取消Cordon的请求
+// UnCordonNodeHandler 处理请求，将指定 Kubernetes 集群中的节点标记为可调度（取消 Cordon）。
+// 
+// 参数 request 中需包含节点名称和可选的集群名称。若操作成功，返回操作结果文本；否则返回错误。
 func UnCordonNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

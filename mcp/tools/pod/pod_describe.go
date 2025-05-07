@@ -11,6 +11,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// DescribePod 返回一个用于描述 Kubernetes Pod 资源的工具，功能类似于 kubectl describe pod 命令。
 func DescribePod() mcp.Tool {
 	return mcp.NewTool(
 		"describe_k8s_pod",
@@ -21,6 +22,8 @@ func DescribePod() mcp.Tool {
 	)
 }
 
+// DescribePodHandler 处理对 Kubernetes Pod 资源的描述请求，返回类似 kubectl describe pod 的文本信息。
+// 如果资源获取或描述过程中发生错误，将返回详细的错误信息。
 func DescribePodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

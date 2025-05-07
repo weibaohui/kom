@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/events/v1"
 )
 
+// ListPodEventResource 返回一个用于列出指定 Pod 相关事件的工具实例。该工具支持指定集群、命名空间和 Pod 名称参数。
 func ListPodEventResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_pod_event",
@@ -20,6 +21,9 @@ func ListPodEventResource() mcp.Tool {
 	)
 }
 
+// ListPodEventResourceHandler 处理 Pod 事件查询请求，返回指定集群、命名空间和 Pod 名称相关的事件列表。
+// 如果未指定命名空间，则查询所有命名空间下与该 Pod 相关的事件。
+// 返回格式化后的事件列表结果，如查询或参数解析失败则返回错误。
 func ListPodEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

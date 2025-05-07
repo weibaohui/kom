@@ -12,7 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// GetPodLogsTool 创建一个获取Pod日志的工具
+// GetPodLogsTool 创建一个用于获取 Kubernetes Pod 日志的工具，支持按集群、命名空间、Pod 名称筛选，并可指定容器、日志行数和是否获取上一个容器实例的日志。
 func GetPodLogsTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_logs",
@@ -26,7 +26,9 @@ func GetPodLogsTool() mcp.Tool {
 	)
 }
 
-// GetPodLogsHandler 处理获取Pod日志的请求
+// GetPodLogsHandler 根据请求参数获取指定 Kubernetes Pod 的日志内容。
+// 支持按集群、命名空间、Pod 名称、容器名、日志行数及是否获取上一个容器实例日志进行筛选。
+// 返回获取到的日志文本结果，如获取失败则返回错误。
 func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

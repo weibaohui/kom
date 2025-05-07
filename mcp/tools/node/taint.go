@@ -10,7 +10,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// TaintNodeTool 创建一个为节点添加污点的工具
+// TaintNodeTool 返回一个用于为 Kubernetes 节点添加污点的工具，等同于 kubectl taint nodes 命令。
 func TaintNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"taint_k8s_node",
@@ -21,7 +21,9 @@ func TaintNodeTool() mcp.Tool {
 	)
 }
 
-// TaintNodeHandler 处理为节点添加污点的请求
+// TaintNodeHandler 处理为指定 Kubernetes 节点添加污点的请求。
+// 根据请求参数解析目标集群、节点名称和污点表达式，并将污点应用到对应节点。
+// 成功时返回操作结果文本，失败时返回错误。
 func TaintNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

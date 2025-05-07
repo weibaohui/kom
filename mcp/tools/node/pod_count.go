@@ -11,7 +11,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodePodCountTool 创建一个查询节点Pod数量的工具
+// NodePodCountTool 返回一个用于查询指定 Kubernetes 节点上运行 Pod 数量的工具。
+// 工具支持指定节点所属集群（空字符串表示默认集群）、节点名称（必填），以及可选的缓存时间（默认20秒）。
 func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_count_running_on_node",
@@ -22,7 +23,7 @@ func NodePodCountTool() mcp.Tool {
 	)
 }
 
-// NodePodCountHandler 处理查询节点Pod数量的请求
+// NodePodCountHandler 处理查询指定 Kubernetes 节点上 Pod 数量的请求，并返回总数、已用数和可用数。
 func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

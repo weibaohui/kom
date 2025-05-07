@@ -11,7 +11,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodeIPUsageTool 创建一个查询节点IP资源使用情况的工具
+// NodeIPUsageTool 返回一个用于查询 Kubernetes 节点 IP 资源使用情况的工具。
+// 工具支持指定节点名称、所属集群（可为空表示默认集群）及缓存时间参数。
 func NodeIPUsageTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_node_ip_usage",
@@ -22,7 +23,7 @@ func NodeIPUsageTool() mcp.Tool {
 	)
 }
 
-// NodeIPUsageHandler 处理查询节点IP资源使用情况的请求
+// NodeIPUsageHandler 处理查询指定 Kubernetes 集群节点的 IP 资源使用情况请求，并返回总数、已用和可用 IP 数量。
 func NodeIPUsageHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

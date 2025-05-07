@@ -10,7 +10,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-// GetPodLinkedServiceTool 创建获取Pod关联Service的工具
+// GetPodLinkedServiceTool 返回一个用于获取指定集群、命名空间和Pod名称下关联Service的工具。
 func GetPodLinkedServiceTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_services",
@@ -21,7 +21,7 @@ func GetPodLinkedServiceTool() mcp.Tool {
 	)
 }
 
-// GetPodLinkedServiceHandler 处理获取关联Service的请求
+// GetPodLinkedServiceHandler 处理获取与指定 Pod 关联的 Service 的请求，并返回相关 Service 的基本信息。
 func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
@@ -46,7 +46,8 @@ func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest
 	return tools.TextResult(results, meta)
 }
 
-// GetPodLinkedIngressTool 创建获取Pod关联Ingress的工具
+// GetPodLinkedIngressTool 返回一个用于获取与指定Pod关联的Ingress资源的工具。
+// 该工具通过集群、命名空间和Pod名称定位Pod，并检索与其相关联的Ingress列表。
 func GetPodLinkedIngressTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_ingresses",
@@ -57,7 +58,7 @@ func GetPodLinkedIngressTool() mcp.Tool {
 	)
 }
 
-// GetPodLinkedIngressHandler 处理获取关联Ingress的请求
+// GetPodLinkedIngressHandler 根据请求获取与指定 Pod 关联的 Ingress 资源，并返回其关键信息。
 func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
@@ -82,7 +83,8 @@ func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest
 	return tools.TextResult(results, meta)
 }
 
-// GetPodLinkedEndpointsTool 创建获取Pod关联Endpoints的工具
+// GetPodLinkedEndpointsTool 返回一个用于获取与指定Pod关联的Endpoints的工具。
+// 该工具通过集群、命名空间和Pod名称定位Pod，并检索与其关联的所有Endpoints。
 func GetPodLinkedEndpointsTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_endpoints",
@@ -93,7 +95,7 @@ func GetPodLinkedEndpointsTool() mcp.Tool {
 	)
 }
 
-// GetPodLinkedEndpointsHandler 处理获取关联Endpoints的请求
+// GetPodLinkedEndpointsHandler 处理请求并返回与指定 Pod 关联的 Endpoints 信息。
 func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
@@ -117,6 +119,7 @@ func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolReque
 	return tools.TextResult(results, meta)
 }
 
+// getTLSSecretName 返回 Ingress 资源中第一个 TLS 配置的 Secret 名称，如无则返回空字符串。
 func getTLSSecretName(ingress *networkingv1.Ingress) string {
 	if len(ingress.Spec.TLS) > 0 {
 		return ingress.Spec.TLS[0].SecretName

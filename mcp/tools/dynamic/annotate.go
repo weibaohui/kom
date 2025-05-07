@@ -9,6 +9,7 @@ import (
 	"github.com/weibaohui/kom/mcp/tools"
 )
 
+// AnnotateDynamicResource 返回一个用于为Kubernetes资源添加或删除注解的MCP工具。
 func AnnotateDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"annotate_k8s_resource",
@@ -23,6 +24,9 @@ func AnnotateDynamicResource() mcp.Tool {
 	)
 }
 
+// AnnotateDynamicResourceHandler 处理对 Kubernetes 资源的注解添加或移除请求。
+// 它根据请求参数定位指定的资源，并执行注解的添加、更新或删除操作。
+// 如果注解操作成功，返回操作结果文本；否则返回错误。
 func AnnotateDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)

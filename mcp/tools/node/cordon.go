@@ -10,7 +10,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// CordonNodeTool 创建一个为节点设置Cordon的工具
+// CordonNodeTool 创建一个用于将 Kubernetes 节点设置为不可调度状态（cordon）的工具，相当于执行 kubectl cordon <node>。
 func CordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"cordon_k8s_node",
@@ -20,7 +20,9 @@ func CordonNodeTool() mcp.Tool {
 	)
 }
 
-// CordonNodeHandler 处理为节点设置Cordon的请求
+// CordonNodeHandler 处理将指定 Kubernetes 节点设置为不可调度（Cordon）状态的请求。
+// 根据请求参数确定目标集群和节点，并执行 cordon 操作。
+// 成功时返回操作结果，失败时返回错误。
 func CordonNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
