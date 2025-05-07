@@ -1,4 +1,4 @@
-package event
+package deployment
 
 import (
 	"context"
@@ -10,17 +10,17 @@ import (
 	v1 "k8s.io/api/events/v1"
 )
 
-func ListEventResource() mcp.Tool {
+func ListDeployEventResource() mcp.Tool {
 	return mcp.NewTool(
-		"list_k8s_event",
-		mcp.WithDescription("按集群和命名空间列出Kubernetes事件 (等同于: kubectl get events -n <namespace>) / List Kubernetes events by cluster and namespace (equivalent to: kubectl get events [-n <namespace>])"),
-		mcp.WithString("cluster", mcp.Description("运行事件的集群（使用空字符串表示默认集群）/ Cluster where the events are running (use empty string for default cluster)")),
-		mcp.WithString("namespace", mcp.Description("事件所在的命名空间（可选）/ Namespace of the events (optional)")),
-		mcp.WithString("involvedObjectName", mcp.Description("按涉及对象名称过滤事件 / Filter events by involved object name")),
+		"list_k8s_deploy_event",
+		mcp.WithDescription("列出Deployment相关的事件。 kubectl get events -n <namespace> ) "),
+		mcp.WithString("cluster", mcp.Description("运行事件的集群（使用空字符串表示默认集群）")),
+		mcp.WithString("namespace", mcp.Required(), mcp.Description("Deploy所在的命名空间")),
+		mcp.WithString("name", mcp.Required(), mcp.Description("Deploy名称")),
 	)
 }
 
-func ListEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func ListDeployEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
@@ -28,7 +28,7 @@ func ListEventResourceHandler(ctx context.Context, request mcp.CallToolRequest) 
 	}
 
 	// 获取标签选择器和涉及对象名称
-	involvedObjectName, _ := request.Params.Arguments["involvedObjectName"].(string)
+	involvedObjectName, _ := request.Params.Arguments["name"].(string)
 
 	// 获取事件列表
 	var list []*v1.Event

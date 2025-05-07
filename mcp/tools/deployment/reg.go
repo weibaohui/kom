@@ -2,13 +2,9 @@ package deployment
 
 import (
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-var config *metadata.ServerConfig
-
-func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
-	config = cfg
+func RegisterTools(s *server.MCPServer) {
 
 	s.AddTool(
 		ScaleDeploymentTool(),
@@ -53,5 +49,10 @@ func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
 	s.AddTool(
 		HPAListDeploymentTool(),
 		HPAListDeploymentHandler,
+	)
+
+	s.AddTool(
+		ListDeployEventResource(),
+		ListDeployEventResourceHandler,
 	)
 }

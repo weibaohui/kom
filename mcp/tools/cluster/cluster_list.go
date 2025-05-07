@@ -5,13 +5,13 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/utils"
+	"github.com/weibaohui/kom/mcp/tools"
 )
 
 func ListClusters() mcp.Tool {
 	return mcp.NewTool(
-		"list_clusters",
-		mcp.WithDescription("列出所有已注册的Kubernetes集群 / List all registered Kubernetes clusters"),
+		"list_k8s_clusters",
+		mcp.WithDescription("列出所有已注册的Kubernetes集群（可用集群、可操作集群） / List all registered Kubernetes clusters"),
 	)
 }
 
@@ -28,5 +28,5 @@ func ListClustersHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		})
 	}
 
-	return utils.TextResult(result, nil)
+	return tools.TextResult(result, nil)
 }

@@ -2,13 +2,10 @@ package node
 
 import (
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-var config *metadata.ServerConfig
+func RegisterTools(s *server.MCPServer) {
 
-func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
-	config = cfg
 	s.AddTool(
 		TaintNodeTool(),
 		TaintNodeHandler,
@@ -42,5 +39,13 @@ func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
 	s.AddTool(
 		NodePodCountTool(),
 		NodePodCountHandler,
+	)
+	s.AddTool(
+		ListNode(),
+		ListNodeHandler,
+	)
+	s.AddTool(
+		TopNode(),
+		TopNodeHandler,
 	)
 }

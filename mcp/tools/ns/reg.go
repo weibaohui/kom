@@ -1,4 +1,4 @@
-package cluster
+package ns
 
 import (
 	"github.com/mark3labs/mcp-go/server"
@@ -7,7 +7,7 @@ import (
 func RegisterTools(s *server.MCPServer) {
 
 	s.AddTool(
-		ListClusters(),
-		ListClustersHandler,
-	)
+		ListNamespace(),
+		ListNamespaceHandler)
+
 }

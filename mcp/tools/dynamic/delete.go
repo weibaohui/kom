@@ -6,9 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/metadata"
-
-	"github.com/weibaohui/kom/utils"
+	"github.com/weibaohui/kom/mcp/tools"
 )
 
 func DeleteDynamicResource() mcp.Tool {
@@ -27,21 +25,9 @@ func DeleteDynamicResource() mcp.Tool {
 
 func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取资源元数据
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	// 删除资源
@@ -58,6 +44,6 @@ func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolReque
 		return nil, fmt.Errorf("failed to delete item [%s/%s] type of [%s%s%s]: %v", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
 	}
 	result := fmt.Sprintf("Successfully deleted resource [%s/%s] of type [%s%s%s]", meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind)
-	return utils.TextResult(result, meta)
+	return tools.TextResult(result, meta)
 
 }

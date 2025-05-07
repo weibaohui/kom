@@ -5,17 +5,18 @@ import (
 	"flag"
 	"net/http"
 
+	mcp2 "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/example"
 	"github.com/weibaohui/kom/mcp"
-	"github.com/weibaohui/kom/mcp/metadata"
+	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
 
 // main 初始化并启动带有认证信息注入的 MCP 服务端，支持通过 HTTP Header 注入用户名到请求上下文，实现权限控制。
 func main() {
 	klog.InitFlags(nil)
-	flag.Set("v", "8")
+	flag.Set("v", "6")
 	go example.Connect()
 	// example.Example()
 
@@ -34,7 +35,25 @@ func main() {
 
 		return ctx
 	}
-	cfg := metadata.ServerConfig{
+
+	var actFn = func(ctx context.Context, id any, request *mcp2.CallToolRequest, result *mcp2.CallToolResult) {
+		// 记录工具调用请求
+		klog.V(6).Infof("CallToolRequest: %v", utils.ToJSON(request))
+		klog.V(6).Infof("CallToolResult: %v", utils.ToJSON(result))
+	}
+
+	var errFn = func(ctx context.Context, id any, method mcp2.MCPMethod, message any, err error) {
+		if request, ok := message.(*mcp2.CallToolRequest); ok {
+			klog.V(6).Infof("CallToolRequest: %v", utils.ToJSON(request))
+			klog.V(6).Infof("CallTool message: %v", utils.ToJSON(message))
+		}
+	}
+	hooks := &server.Hooks{
+		OnError:         []server.OnErrorHookFunc{errFn},
+		OnAfterCallTool: []server.OnAfterCallToolFunc{actFn},
+	}
+
+	cfg := mcp.ServerConfig{
 		Name:    "kom mcp server",
 		Version: "0.0.1",
 		Port:    9096,
@@ -42,12 +61,13 @@ func main() {
 			server.WithResourceCapabilities(false, false),
 			server.WithPromptCapabilities(false),
 			server.WithLogging(),
+			server.WithHooks(hooks),
 		},
 		SSEOption: []server.SSEOption{
 			server.WithSSEContextFunc(ctxFn),
 		},
 		AuthKey: authKey,
-		Mode:    metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
+		Mode:    mcp.ServerModeSSE, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 

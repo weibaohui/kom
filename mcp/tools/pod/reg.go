@@ -2,13 +2,10 @@ package pod
 
 import (
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/weibaohui/kom/mcp/metadata"
 )
 
-var config *metadata.ServerConfig
+func RegisterTools(s *server.MCPServer) {
 
-func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
-	config = cfg
 	s.AddTool(
 		ListPodFilesTool(),
 		ListPodFilesHandler,
@@ -66,4 +63,19 @@ func RegisterTools(s *server.MCPServer, cfg *metadata.ServerConfig) {
 		GetPodResourceUsageTool(),
 		GetPodResourceUsageHandler,
 	)
+	s.AddTool(
+		ListPod(),
+		ListPodHandler)
+
+	s.AddTool(
+		DescribePod(),
+		DescribePodHandler)
+
+	s.AddTool(
+		ListPodEventResource(),
+		ListPodEventResourceHandler)
+
+	s.AddTool(
+		TopPod(),
+		TopPodHandler)
 }
