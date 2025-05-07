@@ -29,12 +29,11 @@ func ListNamespaceHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 
 	// 获取资源列表
 	var list []*unstructured.Unstructured
-	kubectl := kom.Cluster(meta.Cluster).
+
+	err = kom.Cluster(meta.Cluster).
 		Resource(&v1.Namespace{}).
 		WithContext(ctx).
-		RemoveManagedFields()
-
-	err = kubectl.List(&list).Error
+		RemoveManagedFields().List(&list).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to list items type of [%s%s%s]: %v", meta.Group, meta.Version, meta.Kind, err)
 	}

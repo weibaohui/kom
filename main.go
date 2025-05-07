@@ -5,9 +5,11 @@ import (
 	"flag"
 	"net/http"
 
+	mcp2 "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/example"
 	"github.com/weibaohui/kom/mcp"
+	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
 
@@ -32,6 +34,24 @@ func main() {
 
 		return ctx
 	}
+
+	var actFn = func(ctx context.Context, id any, request *mcp2.CallToolRequest, result *mcp2.CallToolResult) {
+		// 记录工具调用请求
+		klog.V(6).Infof("CallToolRequest: %v", utils.ToJSON(request))
+		klog.V(6).Infof("CallToolResult: %v", utils.ToJSON(result))
+	}
+
+	var errFn = func(ctx context.Context, id any, method mcp2.MCPMethod, message any, err error) {
+		if request, ok := message.(*mcp2.CallToolRequest); ok {
+			klog.V(6).Infof("CallToolRequest: %v", utils.ToJSON(request))
+			klog.V(6).Infof("CallTool message: %v", utils.ToJSON(message))
+		}
+	}
+	hooks := &server.Hooks{
+		OnError:         []server.OnErrorHookFunc{errFn},
+		OnAfterCallTool: []server.OnAfterCallToolFunc{actFn},
+	}
+
 	cfg := mcp.ServerConfig{
 		Name:    "kom mcp server",
 		Version: "0.0.1",
@@ -40,6 +60,7 @@ func main() {
 			server.WithResourceCapabilities(false, false),
 			server.WithPromptCapabilities(false),
 			server.WithLogging(),
+			server.WithHooks(hooks),
 		},
 		SSEOption: []server.SSEOption{
 			server.WithSSEContextFunc(ctxFn),
