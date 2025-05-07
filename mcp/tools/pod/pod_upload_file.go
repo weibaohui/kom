@@ -15,7 +15,7 @@ import (
 // UploadPodFileTool 创建上传文件到Pod的工具
 func UploadPodFileTool() mcp.Tool {
 	return mcp.NewTool(
-		"upload_file_to_pod",
+		"upload_file_to_k8s_pod",
 		mcp.WithDescription("上传文件到Pod容器内 (类似命令: kubectl cp <local-file> <namespace>/<pod-name>:<container-path>) / Upload file to pod container"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("集群名称 （使用空字符串表示默认集群）/ Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间 / Namespace")),

@@ -16,7 +16,7 @@ import (
 // ScaleDeploymentTool 创建一个扩缩容Deployment的工具
 func ScaleDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"scale_deployment",
+		"scale_k8s_deployment",
 		mcp.WithDescription("通过集群、命名空间、名称 扩缩容Deployment，设置副本数。对应kubectl命令: kubectl scale deployment/<name> --replicas=<number> -n <namespace> / Scale deployment by cluster, namespace, name and replicas. Equivalent kubectl command: kubectl scale deployment/<name> --replicas=<number> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),

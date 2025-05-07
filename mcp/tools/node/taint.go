@@ -16,7 +16,7 @@ import (
 // TaintNodeTool 创建一个为节点添加污点的工具
 func TaintNodeTool() mcp.Tool {
 	return mcp.NewTool(
-		"taint_node",
+		"taint_k8s_node",
 		mcp.WithDescription("为节点添加污点，等同于kubectl taint nodes <node> <key>=<value>:<effect> / Add taint to node, equivalent to kubectl taint nodes <node> <key>=<value>:<effect>"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),

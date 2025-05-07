@@ -15,7 +15,7 @@ import (
 // ListPodFilesTool 创建Pod文件列表工具
 func ListPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
-		"list_pod_files",
+		"list_k8s_pod_files",
 		mcp.WithDescription("获取Pod中指定路径下的文件列表 (类似命令: kubectl exec <pod-name> -n <namespace> -c <container> -- ls <path>) / List files in pod path"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("集群名称（使用空字符串表示默认集群）/Cluster name")),
 		mcp.WithString("namespace", mcp.Description("命名空间/Namespace")),

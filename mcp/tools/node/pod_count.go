@@ -17,7 +17,7 @@ import (
 // NodePodCountTool 创建一个查询节点Pod数量的工具
 func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
-		"get_node_pod_count",
+		"get_k8s_node_pod_count",
 		mcp.WithDescription("查询节点Pod数量统计 (类似命令: kubectl describe node <node-name> | grep Pods) / Query node Pod count statistics"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Description("节点名称 / The name of the node")),

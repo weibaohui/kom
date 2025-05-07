@@ -15,7 +15,7 @@ import (
 // GetPodLinkedServiceTool 创建获取Pod关联Service的工具
 func GetPodLinkedServiceTool() mcp.Tool {
 	return mcp.NewTool(
-		"get_pod_linked_services",
+		"get_k8s_pod_linked_services",
 		mcp.WithDescription("获取与Pod关联的Service，通过集群、命名空间和Pod名称 (类似命令: kubectl get svc -n <namespace> -l app=<pod-label>) / Get services linked to pod by cluster, namespace and name"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Pod的集群 （使用空字符串表示默认集群） / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),

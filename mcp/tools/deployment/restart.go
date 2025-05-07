@@ -15,7 +15,7 @@ import (
 // RestartDeploymentTool 创建一个重启Deployment的工具
 func RestartDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"restart_deployment",
+		"restart_k8s_deployment",
 		mcp.WithDescription("通过集群、命名空间和名称,重启Deployment。对应kubectl命令: kubectl rollout restart deployment/<name> -n <namespace> / Restart deployment by cluster, namespace and name. Equivalent kubectl command: kubectl rollout restart deployment/<name> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),

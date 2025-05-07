@@ -16,7 +16,7 @@ import (
 // RolloutHistoryDeploymentTool 创建一个查询Deployment升级历史的工具
 func RolloutHistoryDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"get_deployment_rollout_history",
+		"get_k8s_deployment_rollout_history",
 		mcp.WithDescription("查询Deployment的升级历史。对应kubectl命令: kubectl rollout history deployment/<name> -n <namespace> / Query deployment rollout history. Equivalent kubectl command: kubectl rollout history deployment/<name> -n <namespace>"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
@@ -57,7 +57,7 @@ func RolloutHistoryDeploymentHandler(ctx context.Context, request mcp.CallToolRe
 // RolloutUndoDeploymentTool 创建一个回滚Deployment的工具
 func RolloutUndoDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"undo_deployment_rollout",
+		"undo_k8s_deployment_rollout",
 		mcp.WithDescription("回滚Deployment到指定版本，如果不指定版本则回滚到上一个版本 / Rollback deployment to specific revision, or previous revision if not specified"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
@@ -104,7 +104,7 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 // RolloutPauseDeploymentTool 创建一个暂停Deployment升级的工具
 func RolloutPauseDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"pause_deployment_rollout",
+		"pause_k8s_deployment_rollout",
 		mcp.WithDescription("暂停Deployment的升级过程 / Pause deployment rollout"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
@@ -145,7 +145,7 @@ func RolloutPauseDeploymentHandler(ctx context.Context, request mcp.CallToolRequ
 // RolloutResumeDeploymentTool 创建一个恢复Deployment升级的工具
 func RolloutResumeDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"resume_deployment_rollout",
+		"resume_k8s_deployment_rollout",
 		mcp.WithDescription("恢复Deployment的升级过程 / Resume deployment rollout"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
@@ -186,7 +186,7 @@ func RolloutResumeDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 // RolloutStatusDeploymentTool 创建一个查询Deployment升级状态的工具
 func RolloutStatusDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
-		"get_deployment_rollout_status",
+		"get_k8s_deployment_rollout_status",
 		mcp.WithDescription("查询Deployment的升级状态 / Query deployment rollout status"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),

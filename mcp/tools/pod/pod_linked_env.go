@@ -15,7 +15,7 @@ import (
 // GetPodLinkedEnvTool 创建获取Pod运行时环境变量的工具
 func GetPodLinkedEnvTool() mcp.Tool {
 	return mcp.NewTool(
-		"get_pod_linked_env",
+		"get_k8s_pod_linked_env",
 		mcp.WithDescription("通过进入pod执行Env命令，获取Pod运行时的环境变量信息 (类似命令: kubectl exec -n <namespace> <pod-name> -- env) / Get pod runtime environment variables by executing Env command"),
 		mcp.WithString("cluster", mcp.Required(), mcp.Description("运行Pod的集群 （使用空字符串表示默认集群） / The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
