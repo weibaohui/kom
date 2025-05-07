@@ -15,7 +15,7 @@ import (
 
 func main() {
 	klog.InitFlags(nil)
-	flag.Set("v", "8")
+	flag.Set("v", "6")
 	go example.Connect()
 	// example.Example()
 
