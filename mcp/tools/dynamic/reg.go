@@ -28,7 +28,5 @@ func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
 		PatchDynamicResource(),
 		PatchDynamicResourceHandler)
-	s.AddTool(
-		ListNamespace(),
-		ListNamespaceHandler)
+	 
 }
