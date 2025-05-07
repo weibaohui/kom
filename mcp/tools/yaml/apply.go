@@ -10,6 +10,7 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// ApplyDynamicResource 返回一个用于通过YAML内容在指定Kubernetes集群中创建或更新资源的MCP工具，相当于执行 'kubectl apply -f <yaml-file>'。
 func ApplyDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"apply_k8s_yaml",

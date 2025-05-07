@@ -11,6 +11,8 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// DeleteDynamicResource 返回一个用于根据集群、命名空间和资源元数据动态删除 Kubernetes 资源的工具。
+// 该工具要求指定集群，并可选指定命名空间、资源名称、API 组、版本、类型及是否强制删除。
 func DeleteDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"delete_k8s_resource",

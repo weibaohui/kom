@@ -12,6 +12,8 @@ import (
 	v1 "k8s.io/api/events/v1"
 )
 
+// ListEventResource 返回一个用于按集群和命名空间列出 Kubernetes 事件的工具定义。
+// 工具支持通过集群、命名空间和涉及对象名称进行事件筛选。
 func ListEventResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_event",

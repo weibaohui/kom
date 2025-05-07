@@ -12,7 +12,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// UploadPodFileTool 创建上传文件到Pod的工具
+// UploadPodFileTool 返回一个用于将文件上传到指定Kubernetes Pod容器内的MCP工具。
+// 工具支持指定目标集群、命名空间、Pod名称、容器名称、容器内目标路径及文件内容，功能类似于 kubectl cp 命令。
 func UploadPodFileTool() mcp.Tool {
 	return mcp.NewTool(
 		"upload_file_to_k8s_pod",

@@ -13,7 +13,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// RolloutHistoryDeploymentTool 创建一个查询Deployment升级历史的工具
+// RolloutHistoryDeploymentTool 创建一个用于查询指定Kubernetes集群中Deployment升级历史的工具。
+// 该工具对应kubectl命令：kubectl rollout history deployment/<name> -n <namespace>，可用于获取Deployment的所有历史版本信息。
 func RolloutHistoryDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_rollout_history",
@@ -54,7 +55,7 @@ func RolloutHistoryDeploymentHandler(ctx context.Context, request mcp.CallToolRe
 	return utils.TextResult(result, meta)
 }
 
-// RolloutUndoDeploymentTool 创建一个回滚Deployment的工具
+// RolloutUndoDeploymentTool 返回一个用于回滚 Kubernetes Deployment 到指定或上一个版本的工具。
 func RolloutUndoDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"undo_k8s_deployment_rollout",
@@ -101,7 +102,7 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 	return utils.TextResult(result, meta)
 }
 
-// RolloutPauseDeploymentTool 创建一个暂停Deployment升级的工具
+// RolloutPauseDeploymentTool 创建一个用于暂停指定Kubernetes Deployment升级过程的工具。
 func RolloutPauseDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"pause_k8s_deployment_rollout",
@@ -142,7 +143,7 @@ func RolloutPauseDeploymentHandler(ctx context.Context, request mcp.CallToolRequ
 	return utils.TextResult("Successfully paused deployment rollout", meta)
 }
 
-// RolloutResumeDeploymentTool 创建一个恢复Deployment升级的工具
+// RolloutResumeDeploymentTool 创建一个用于恢复指定Kubernetes集群中Deployment升级过程的工具。
 func RolloutResumeDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"resume_k8s_deployment_rollout",
@@ -183,7 +184,7 @@ func RolloutResumeDeploymentHandler(ctx context.Context, request mcp.CallToolReq
 	return utils.TextResult("Successfully resumed deployment rollout", meta)
 }
 
-// RolloutStatusDeploymentTool 创建一个查询Deployment升级状态的工具
+// RolloutStatusDeploymentTool 创建一个用于查询指定集群中 Deployment 升级状态的工具。
 func RolloutStatusDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_rollout_status",

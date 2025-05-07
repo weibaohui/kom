@@ -12,7 +12,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-// GetPodLinkedServiceTool 创建获取Pod关联Service的工具
+// GetPodLinkedServiceTool 返回一个用于获取指定集群、命名空间和Pod名称下关联Service的工具。
 func GetPodLinkedServiceTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_services",
@@ -60,7 +60,8 @@ func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest
 	return utils.TextResult(results, meta)
 }
 
-// GetPodLinkedIngressTool 创建获取Pod关联Ingress的工具
+// GetPodLinkedIngressTool 返回一个用于获取指定集群、命名空间和Pod名称下关联Ingress的工具。
+// 工具要求提供集群（必填，空字符串表示默认集群）、命名空间和Pod名称作为参数。
 func GetPodLinkedIngressTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_ingresses",
@@ -108,7 +109,7 @@ func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest
 	return utils.TextResult(results, meta)
 }
 
-// GetPodLinkedEndpointsTool 创建获取Pod关联Endpoints的工具
+// GetPodLinkedEndpointsTool 返回一个工具，用于根据集群、命名空间和Pod名称获取与指定Pod关联的Endpoints。
 func GetPodLinkedEndpointsTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_endpoints",

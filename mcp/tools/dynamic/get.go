@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// GetDynamicResource 返回一个用于根据集群、命名空间和名称动态获取 Kubernetes 资源详情的工具。
 func GetDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_resource",

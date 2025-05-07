@@ -12,6 +12,8 @@ import (
 	v1 "k8s.io/api/storage/v1"
 )
 
+// GetStorageClassPVCountTool 返回一个用于获取指定StorageClass下PV数量的MCP工具。
+// 该工具要求提供StorageClass所在集群（可为空表示默认集群）和StorageClass名称作为参数。
 func GetStorageClassPVCountTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_storageclass_pv_count",

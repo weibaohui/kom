@@ -12,7 +12,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// ExecTool 创建执行Pod命令的工具
+// ExecTool 返回一个用于在指定 Kubernetes 集群的 Pod 容器内执行命令的工具。
+// 工具要求指定集群（可为空表示默认集群）、命名空间、Pod 名称、容器名称、命令及其参数。
+// 类似于 kubectl exec，可用于远程执行容器内命令。
 func ExecTool() mcp.Tool {
 	return mcp.NewTool(
 		"run_command_in_k8s_pod",

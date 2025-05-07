@@ -12,7 +12,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// ListPodFilesTool 创建Pod文件列表工具
+// ListPodFilesTool 返回一个用于获取 Kubernetes Pod 内指定路径下文件列表的 MCP 工具。
+// 工具参数包括集群、命名空间、Pod 名称、容器名称和目标路径，适用于类似 kubectl exec ... ls 的场景。
 func ListPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
 		"list_files_in_k8s_pod",
@@ -67,7 +68,9 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	return utils.TextResult(files, meta)
 }
 
-// ListAllPodFilesTool 创建Pod文件全量列表工具
+// ListAllPodFilesTool 返回一个用于获取指定Pod路径下所有文件（包含子目录）的MCP工具。
+//
+// 工具参数包括集群名称、命名空间、Pod名称、容器名称和目标路径。适用于递归列出Pod内指定路径下的全部文件。
 func ListAllPodFilesTool() mcp.Tool {
 	return mcp.NewTool(
 		"list_pod_all_files",
@@ -122,7 +125,10 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 	return utils.TextResult(files, meta)
 }
 
-// DeletePodFileTool 创建Pod文件删除工具
+// DeletePodFileTool 返回一个用于删除 Kubernetes Pod 内指定文件的 MCP 工具。
+//
+// 工具参数包括集群名称（必填，空字符串表示默认集群）、命名空间、Pod 名称、容器名称和目标文件路径。
+// 该工具功能等同于执行 kubectl exec <pod-name> -n <namespace> -c <container> -- rm <path> 命令。
 func DeletePodFileTool() mcp.Tool {
 	return mcp.NewTool(
 		"delete_pod_file",

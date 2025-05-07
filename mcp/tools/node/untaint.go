@@ -13,7 +13,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// UnTaintNodeTool 创建一个为节点移除污点的工具
+// UnTaintNodeTool 创建一个用于移除 Kubernetes 节点污点的工具。
+// 该工具等同于执行 kubectl taint nodes <node> <key>=<value>:<effect>-，用于指定集群中的节点。
+// 参数包括集群名称（可为空表示默认集群）、节点名称和污点表达式。
 func UnTaintNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"untaint_k8s_node",

@@ -12,7 +12,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-// RestartDeploymentTool 创建一个重启Deployment的工具
+// RestartDeploymentTool 创建一个用于重启 Kubernetes Deployment 的工具。
+// 该工具要求指定集群（可用空字符串表示默认集群）、命名空间和 Deployment 名称，功能等同于 kubectl rollout restart deployment/<name> -n <namespace> 命令。
 func RestartDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"restart_k8s_deployment",

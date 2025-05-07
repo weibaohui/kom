@@ -13,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// UpdateTagDeploymentTool 创建一个更新Deployment镜像Tag的工具
+// UpdateTagDeploymentTool 返回一个用于更新Kubernetes Deployment中容器镜像Tag的MCP工具。该工具等价于 kubectl set image 命令，可指定集群、命名空间、Deployment名称、容器名称及新镜像Tag。
 func UpdateTagDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"update_k8s_deployment_image_tag",

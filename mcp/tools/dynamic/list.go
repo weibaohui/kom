@@ -12,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// ListDynamicResource 返回一个用于按集群和资源类型动态列出 Kubernetes 资源的工具定义。
+// 工具参数包括必填的集群名，以及可选的命名空间、API 组、版本、资源类型、标签选择器和字段选择器，用于灵活筛选目标资源。
 func ListDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_resource",

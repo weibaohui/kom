@@ -14,7 +14,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodePodCountTool 创建一个查询节点Pod数量的工具
+// NodePodCountTool 返回一个用于查询指定 Kubernetes 集群中节点 Pod 数量的工具。
+// 工具支持指定集群、节点名称及缓存时间参数。
 func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_node_pod_count",

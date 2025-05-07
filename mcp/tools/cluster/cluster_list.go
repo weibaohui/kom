@@ -8,6 +8,7 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// ListClusters 返回一个用于列出所有已注册 Kubernetes 集群的工具实例。
 func ListClusters() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_clusters",

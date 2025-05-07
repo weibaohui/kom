@@ -13,7 +13,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// ScaleDeploymentTool 创建一个扩缩容Deployment的工具
+// ScaleDeploymentTool 创建一个用于扩缩容 Kubernetes Deployment 的工具。
+// 该工具允许通过指定集群、命名空间、Deployment 名称和目标副本数来调整 Deployment 的副本数量，相当于执行 kubectl scale deployment 命令。
 func ScaleDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"scale_k8s_deployment",

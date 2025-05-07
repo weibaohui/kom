@@ -10,6 +10,7 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// GetDynamicResourceDescribe 返回一个用于获取 Kubernetes 资源详细信息的工具，支持根据集群、命名空间、名称、API 组、版本和类型动态描述资源。
 func GetDynamicResourceDescribe() mcp.Tool {
 	return mcp.NewTool(
 		"describe_k8s_resource",

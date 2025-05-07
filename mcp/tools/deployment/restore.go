@@ -13,7 +13,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// RestoreDeploymentTool 创建一个恢复Deployment的工具
+// RestoreDeploymentTool 创建一个用于根据注解恢复 Kubernetes Deployment 副本数的工具。
+// 如果未找到原始副本数注解，则副本数恢复为 1。该工具要求指定集群（cluster），可选命名空间（namespace）和 Deployment 名称（name）。
+// 相当于执行 kubectl scale deployment/<name> --replicas=<original_replicas> -n <namespace>。
 func RestoreDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"restore_k8s_deployment",

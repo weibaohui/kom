@@ -14,7 +14,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodeIPUsageTool 创建一个查询节点IP资源使用情况的工具
+// NodeIPUsageTool 返回一个用于查询指定集群中节点IP资源使用情况的工具。
+// 工具支持指定集群名称（必填，空字符串表示默认集群）、节点名称（可选）和缓存时间（可选，默认20秒）。
 func NodeIPUsageTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_node_ip_usage",

@@ -13,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// CordonNodeTool 创建一个为节点设置Cordon的工具
+// CordonNodeTool 返回一个用于将指定 Kubernetes 节点设置为不可调度（cordon）状态的工具定义。
 func CordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"cordon_k8s_node",

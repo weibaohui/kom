@@ -14,7 +14,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// NodeResourceUsageTool 创建一个查询节点资源使用情况的工具
+// NodeResourceUsageTool 创建一个用于查询 Kubernetes 集群中节点资源使用情况的工具。
+// 工具支持指定集群、节点名称和缓存时间，返回类似 kubectl describe node <node-name> | grep -A 5 Allocated 的资源统计信息。
 func NodeResourceUsageTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_node_k8s_resource_usage",

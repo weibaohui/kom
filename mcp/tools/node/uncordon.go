@@ -13,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// UnCordonNodeTool 创建一个为节点取消Cordon的工具
+// UnCordonNodeTool 返回一个用于将 Kubernetes 节点设置为可调度状态的工具，相当于执行 kubectl uncordon <node>。
 func UnCordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"uncordon_k8s_node",

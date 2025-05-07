@@ -12,7 +12,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// GetPodLinkedEnvTool 创建获取Pod运行时环境变量的工具
+// GetPodLinkedEnvTool 返回一个用于获取指定Pod运行时环境变量的工具，通过在Pod内执行Env命令实现。
 func GetPodLinkedEnvTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_env",
@@ -53,7 +53,7 @@ func GetPodLinkedEnvHandler(ctx context.Context, request mcp.CallToolRequest) (*
 	return utils.TextResult(envs, meta)
 }
 
-// GetPodLinkedEnvFromPodTool 创建获取Pod定义中环境变量的工具
+// GetPodLinkedEnvFromPodYamlTool 创建一个工具，用于从Pod的YAML定义中提取环境变量信息。
 func GetPodLinkedEnvFromPodYamlTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_pod_linked_env_from_yaml",

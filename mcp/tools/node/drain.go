@@ -13,7 +13,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// DrainNodeTool 创建一个为节点执行Drain的工具
+// DrainNodeTool 返回一个用于清空 Kubernetes 节点的工具。
+// 该工具会驱逐节点上的所有 Pod，并阻止新的 Pod 调度到该节点，相当于执行 kubectl drain <node>。
+// 需要指定节点所在的集群（可用空字符串表示默认集群）和节点名称。
 func DrainNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"drain_k8s_node",

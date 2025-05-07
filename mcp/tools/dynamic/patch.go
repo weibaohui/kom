@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// PatchDynamicResource 返回一个用于通过集群、命名空间和名称动态更新 Kubernetes 资源的 MCP 工具。该工具要求指定集群，并支持通过 JSON 补丁数据以 strategic-merge-patch 方式修改资源配置。
 func PatchDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"patch_k8s_resource",

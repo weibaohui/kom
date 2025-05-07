@@ -11,6 +11,8 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// AnnotateDynamicResource 返回一个用于为指定 Kubernetes 资源添加或删除注解的工具。
+// 工具要求指定集群、资源名称、API 组、版本、类型、注解等参数，支持通过 key=value 添加注解或通过 key- 删除注解。
 func AnnotateDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"annotate_k8s_resource",

@@ -12,7 +12,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// GetPodLinkedPVCTool 定义PVC查询工具
+// GetPodLinkedPVCTool 返回一个用于查询指定Pod关联的PersistentVolumeClaim的MCP工具。
+// 工具名称为 "get_k8s_pod_linked_pvc"，支持指定集群、命名空间和Pod名称进行PVC检索。
 func GetPodLinkedPVCTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_pvc",

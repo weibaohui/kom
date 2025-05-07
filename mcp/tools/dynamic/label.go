@@ -10,6 +10,8 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// LabelDynamicResource 返回一个用于为Kubernetes资源动态添加或删除标签的工具。
+// 该工具要求指定目标集群、资源名称、API组、版本、类型等信息，并通过label参数决定添加或删除标签。
 func LabelDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"label_k8s_resource",

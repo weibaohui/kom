@@ -12,6 +12,8 @@ import (
 	v1 "k8s.io/api/networking/v1"
 )
 
+// SetDefaultIngressClassTool 返回一个用于将指定 Kubernetes IngressClass 设置为默认的工具。
+// 该工具要求提供 IngressClass 所在集群（可为空表示默认集群）和 IngressClass 名称作为参数。
 func SetDefaultIngressClassTool() mcp.Tool {
 	return mcp.NewTool(
 		"set_default_k8s_ingressclass",

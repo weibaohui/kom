@@ -12,6 +12,8 @@ import (
 	v1 "k8s.io/api/storage/v1"
 )
 
+// SetDefaultStorageClassTool 返回一个用于将指定 Kubernetes StorageClass 设置为默认的 MCP 工具。
+// 工具名称为 "set_k8s_default_storageclass"，需要指定 StorageClass 所在集群（可为空表示默认集群）和 StorageClass 名称。
 func SetDefaultStorageClassTool() mcp.Tool {
 	return mcp.NewTool(
 		"set_k8s_default_storageclass",

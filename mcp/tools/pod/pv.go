@@ -12,7 +12,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// GetPodLinkedPVTool 定义PV查询工具
+// GetPodLinkedPVTool 返回用于查询与指定 Pod 关联的 PersistentVolume 的工具定义。
 func GetPodLinkedPVTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_linked_pv",

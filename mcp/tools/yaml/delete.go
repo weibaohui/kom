@@ -10,6 +10,7 @@ import (
 	"github.com/weibaohui/kom/utils"
 )
 
+// DeleteDynamicResource 返回一个用于通过YAML内容删除Kubernetes资源的MCP工具，相当于执行 'kubectl delete -f <yaml-file>'。
 func DeleteDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"delete_k8s_yaml",
