@@ -66,7 +66,7 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest) (context
 		if !ok {
 			authVal = ""
 		}
-		newCtx = context.WithValue(ctx, authKey, authVal)
+		newCtx = context.WithValue(newCtx, authKey, authVal)
 	}
 
 	// 验证必要参数
