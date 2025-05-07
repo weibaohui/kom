@@ -16,10 +16,10 @@ func ExecTool() mcp.Tool {
 		"run_command_in_k8s_pod",
 		mcp.WithDescription("在Pod内执行命令，需指定容器名称 (类似命令: kubectl exec -n <namespace> <pod-name> -c <container-name> -- <command> [args...]) / Execute command in pod with container name"),
 		mcp.WithString("cluster", mcp.Description("集群名称 （使用空字符串表示默认集群）/ Cluster name")),
-		mcp.WithString("namespace", mcp.Description("命名空间 / Namespace")),
-		mcp.WithString("name", mcp.Description("Pod名称 / Pod name")),
+		mcp.WithString("namespace", mcp.Required(), mcp.Description("命名空间 / Namespace")),
+		mcp.WithString("name", mcp.Required(), mcp.Description("Pod名称 / Pod name")),
 		mcp.WithString("container", mcp.Description("容器名称（必填） / Container name (required)")),
-		mcp.WithString("command", mcp.Description("要执行的命令 / Command to execute")),
+		mcp.WithString("command", mcp.Required(), mcp.Description("要执行的命令 / Command to execute")),
 		mcp.WithArray("args", mcp.Description("命令参数列表 / Command arguments")),
 	)
 }

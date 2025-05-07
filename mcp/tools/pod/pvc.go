@@ -16,8 +16,8 @@ func GetPodLinkedPVCTool() mcp.Tool {
 		"get_k8s_pod_linked_pvc",
 		mcp.WithDescription("获取与Pod关联的PersistentVolumeClaim (类似命令: kubectl get pvc -n <namespace> | grep <pod-name>)"),
 		mcp.WithString("cluster", mcp.Description("集群名称（使用空字符串表示默认集群）")),
-		mcp.WithString("namespace", mcp.Description("Pod所在命名空间")),
-		mcp.WithString("name", mcp.Description("Pod名称")),
+		mcp.WithString("namespace", mcp.Required(), mcp.Description("Pod所在命名空间")),
+		mcp.WithString("name", mcp.Required(), mcp.Description("Pod名称")),
 	)
 }
 

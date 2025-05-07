@@ -44,4 +44,8 @@ func RegisterTools(s *server.MCPServer) {
 		ListNode(),
 		ListNodeHandler,
 	)
+	s.AddTool(
+		TopNode(),
+		TopNodeHandler,
+	)
 }
