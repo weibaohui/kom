@@ -2,14 +2,11 @@ package node
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/metadata"
-	"github.com/weibaohui/kom/utils"
-
+	"github.com/weibaohui/kom/mcp/tools"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
@@ -28,22 +25,11 @@ func NodePodCountTool() mcp.Tool {
 // NodePodCountHandler 处理查询节点Pod数量的请求
 func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
-	}
+
 	cacheSeconds := int32(20)
 	if cacheSecondsVal, ok := request.Params.Arguments["cacheSeconds"].(float64); ok {
 		cacheSeconds = int32(cacheSecondsVal)
@@ -61,5 +47,5 @@ func NodePodCountHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		"available": available,
 	}
 
-	return utils.TextResult(result, meta)
+	return tools.TextResult(result, meta)
 }

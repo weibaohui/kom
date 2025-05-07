@@ -2,14 +2,11 @@ package pod
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/metadata"
-	"github.com/weibaohui/kom/utils"
-
+	"github.com/weibaohui/kom/mcp/tools"
 	utils2 "github.com/weibaohui/kom/utils"
 
 	v1 "k8s.io/api/core/v1"
@@ -32,21 +29,9 @@ func GetPodLogsTool() mcp.Tool {
 // GetPodLogsHandler 处理获取Pod日志的请求
 func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// 获取参数
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	tailLines := int64(100)
@@ -74,5 +59,5 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	if err != nil {
 		return nil, err
 	}
-	return utils.TextResult(string(logs), meta)
+	return tools.TextResult(string(logs), meta)
 }

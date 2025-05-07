@@ -6,9 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/metadata"
-	"github.com/weibaohui/kom/utils"
-
+	"github.com/weibaohui/kom/mcp/tools"
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
@@ -25,21 +23,9 @@ func GetPodLinkedServiceTool() mcp.Tool {
 
 // GetPodLinkedServiceHandler 处理获取关联Service的请求
 func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	services, err := kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().LinkedService()
@@ -57,7 +43,7 @@ func GetPodLinkedServiceHandler(ctx context.Context, request mcp.CallToolRequest
 		})
 	}
 
-	return utils.TextResult(results, meta)
+	return tools.TextResult(results, meta)
 }
 
 // GetPodLinkedIngressTool 创建获取Pod关联Ingress的工具
@@ -73,21 +59,9 @@ func GetPodLinkedIngressTool() mcp.Tool {
 
 // GetPodLinkedIngressHandler 处理获取关联Ingress的请求
 func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	ingresses, err := kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().LinkedIngress()
@@ -105,7 +79,7 @@ func GetPodLinkedIngressHandler(ctx context.Context, request mcp.CallToolRequest
 		})
 	}
 
-	return utils.TextResult(results, meta)
+	return tools.TextResult(results, meta)
 }
 
 // GetPodLinkedEndpointsTool 创建获取Pod关联Endpoints的工具
@@ -121,21 +95,9 @@ func GetPodLinkedEndpointsTool() mcp.Tool {
 
 // GetPodLinkedEndpointsHandler 处理获取关联Endpoints的请求
 func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	endpoints, err := kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().LinkedEndpoints()
@@ -152,7 +114,7 @@ func GetPodLinkedEndpointsHandler(ctx context.Context, request mcp.CallToolReque
 		})
 	}
 
-	return utils.TextResult(results, meta)
+	return tools.TextResult(results, meta)
 }
 
 func getTLSSecretName(ingress *networkingv1.Ingress) string {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/utils"
+	"github.com/weibaohui/kom/mcp/tools"
 )
 
 func ListClusters() mcp.Tool {
@@ -28,5 +28,5 @@ func ListClustersHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		})
 	}
 
-	return utils.TextResult(result, nil)
+	return tools.TextResult(result, nil)
 }

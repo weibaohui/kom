@@ -1,10 +1,13 @@
-package metadata
+package tools
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/weibaohui/kom/kom"
 )
 
 var resourceMap = map[string]ResourceInfo{
@@ -56,14 +59,14 @@ func IsNamespaced(resourceType string) bool {
 }
 
 // ParseFromRequest 从请求中解析资源元数据
-func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverConfig *ServerConfig) (context.Context, *ResourceMetadata, error) {
+func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest) (context.Context, *ResourceMetadata, error) {
 	newCtx := context.Background()
-	if serverConfig != nil {
-		authVal, ok := ctx.Value(serverConfig.AuthKey).(string)
+	if authKey != "" {
+		authVal, ok := ctx.Value(authKey).(string)
 		if !ok {
 			authVal = ""
 		}
-		newCtx = context.WithValue(ctx, serverConfig.AuthKey, authVal)
+		newCtx = context.WithValue(ctx, authKey, authVal)
 	}
 
 	// 验证必要参数
@@ -108,14 +111,28 @@ func ParseFromRequest(ctx context.Context, request mcp.CallToolRequest, serverCo
 		kind = getStringParam(request, "kind", "")
 	}
 
-	return newCtx, &ResourceMetadata{
+	meta := &ResourceMetadata{
 		Cluster:   cluster,
 		Namespace: namespace,
 		Name:      name,
 		Group:     group,
 		Version:   version,
 		Kind:      kind,
-	}, nil
+	}
+
+	// 如果只有一个集群的时候，使用空，默认集群
+	// 如果大于一个集群，没有传值，那么要返回错误
+	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
+		return nil, nil, fmt.Errorf("cluster is required, 集群名称必须设置")
+	}
+	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
+		meta.Cluster = kom.Clusters().DefaultCluster().ID
+		return newCtx, meta, nil
+	}
+	if meta.Cluster != "" && kom.Clusters().GetClusterById(meta.Cluster) == nil {
+		return nil, nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
+	}
+	return newCtx, meta, nil
 }
 
 // getStringParam 从请求参数中获取字符串值，如果不存在或无效则返回默认值
@@ -124,4 +141,52 @@ func getStringParam(request mcp.CallToolRequest, key, defaultValue string) strin
 		return value
 	}
 	return defaultValue
+}
+
+// buildTextResult 构建标准的文本返回结果
+func buildTextResult(text string) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			mcp.TextContent{
+				Type: "text",
+				Text: text,
+			},
+		},
+	}
+}
+
+// TextResult 将任意类型转换为标准的mcp.CallToolResult
+func TextResult[T any](item T, meta *ResourceMetadata) (*mcp.CallToolResult, error) {
+	switch v := any(item).(type) {
+	case []byte:
+		return buildTextResult(string(v)), nil
+	case []string:
+		var contents []mcp.Content
+		for _, s := range v {
+			contents = append(contents, mcp.TextContent{
+				Type: "text",
+				Text: s,
+			})
+		}
+		return &mcp.CallToolResult{Content: contents}, nil
+	default:
+		bytes, err := json.Marshal(item)
+		if err != nil {
+			return nil, fmt.Errorf("failed to json marshal item [%s/%s] type of [%s%s%s]: %v",
+				meta.Namespace, meta.Name, meta.Group, meta.Version, meta.Kind, err)
+		}
+		return buildTextResult(string(bytes)), nil
+	}
+}
+
+func ErrorResult(err error) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		IsError: true,
+		Content: []mcp.Content{
+			mcp.TextContent{
+				Type: "text",
+				Text: err.Error(),
+			},
+		},
+	}
 }

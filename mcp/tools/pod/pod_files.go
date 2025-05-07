@@ -6,9 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/mcp/metadata"
-	"github.com/weibaohui/kom/utils"
-
+	"github.com/weibaohui/kom/mcp/tools"
 	"k8s.io/klog/v2"
 )
 
@@ -27,21 +25,9 @@ func ListPodFilesTool() mcp.Tool {
 
 // ListPodFilesHandler 处理Pod文件列表请求
 func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	path, _ := request.Params.Arguments["path"].(string)
@@ -64,7 +50,7 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		return nil, err
 	}
 
-	return utils.TextResult(files, meta)
+	return tools.TextResult(files, meta)
 }
 
 // ListAllPodFilesTool 创建Pod文件全量列表工具
@@ -82,21 +68,9 @@ func ListAllPodFilesTool() mcp.Tool {
 
 // ListAllPodFilesHandler 处理Pod文件全量列表请求
 func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	path, _ := request.Params.Arguments["path"].(string)
@@ -119,7 +93,7 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 		return nil, err
 	}
 
-	return utils.TextResult(files, meta)
+	return tools.TextResult(files, meta)
 }
 
 // DeletePodFileTool 创建Pod文件删除工具
@@ -137,21 +111,9 @@ func DeletePodFileTool() mcp.Tool {
 
 // DeletePodFileHandler 处理Pod文件删除请求
 func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	ctx, meta, err := metadata.ParseFromRequest(ctx, request, config)
-
+	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-	// 如果只有一个集群的时候，使用空，默认集群
-	// 如果大于一个集群，没有传值，那么要返回错误
-	if len(kom.Clusters().AllClusters()) > 1 && meta.Cluster == "" {
-		return nil, fmt.Errorf("cluster is required, 集群名称必须设置")
-	}
-	if len(kom.Clusters().AllClusters()) == 1 && meta.Cluster == "" {
-		meta.Cluster = kom.Clusters().DefaultCluster().ID
-	}
-	if kom.Clusters().GetClusterById(meta.Cluster) == nil {
-		return nil, fmt.Errorf("cluster %s not found 集群不存在，请检查集群名称", meta.Cluster)
 	}
 
 	path, _ := request.Params.Arguments["path"].(string)
@@ -174,5 +136,5 @@ func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 		return nil, err
 	}
 
-	return utils.TextResult(string(ret), meta)
+	return tools.TextResult(string(ret), meta)
 }

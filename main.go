@@ -8,7 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/example"
 	"github.com/weibaohui/kom/mcp"
-	"github.com/weibaohui/kom/mcp/metadata"
 	"k8s.io/klog/v2"
 )
 
@@ -33,7 +32,7 @@ func main() {
 
 		return ctx
 	}
-	cfg := metadata.ServerConfig{
+	cfg := mcp.ServerConfig{
 		Name:    "kom mcp server",
 		Version: "0.0.1",
 		Port:    9096,
@@ -46,7 +45,7 @@ func main() {
 			server.WithSSEContextFunc(ctxFn),
 		},
 		AuthKey: authKey,
-		Mode:    metadata.MCPServerModeSSE, // 开启STDIO 或者 SSE
+		Mode:    mcp.ServerModeSSE, // 开启STDIO 或者 SSE
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 
