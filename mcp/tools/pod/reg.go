@@ -63,4 +63,15 @@ func RegisterTools(s *server.MCPServer) {
 		GetPodResourceUsageTool(),
 		GetPodResourceUsageHandler,
 	)
+	s.AddTool(
+		ListPod(),
+		ListPodHandler)
+
+	s.AddTool(
+		DescribePod(),
+		DescribePodHandler)
+
+	s.AddTool(
+		ListPodEventResource(),
+		ListPodEventResourceHandler)
 }
