@@ -40,4 +40,8 @@ func RegisterTools(s *server.MCPServer) {
 		NodePodCountTool(),
 		NodePodCountHandler,
 	)
+	s.AddTool(
+		ListNode(),
+		ListNodeHandler,
+	)
 }
