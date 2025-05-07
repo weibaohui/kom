@@ -81,6 +81,8 @@ func RunMCPServerWithOption(cfg *ServerConfig) {
 
 func GetMCPSSEServerWithOption(cfg *ServerConfig) *server.SSEServer {
 	s := GetMCPServerWithOption(cfg)
+	tools.SetAuthKey(cfg.AuthKey)
+
 	// 创建 SSE 服务器
 	sseServer := server.NewSSEServer(s, cfg.SSEOption...)
 	return sseServer
