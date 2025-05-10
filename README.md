@@ -450,6 +450,14 @@ var execResult string
 err := kom.DefaultCluster().Namespace("default").Name("random-char-pod").Ctl().Pod().ContainerName("container").Command("ps", "-ef").ExecuteCommand(&execResult).Error
 fmt.Printf("execResult: %s", execResult)
 ```
+#### 端口转发
+```go
+err := kom.DefaultCluster().Resource(&v1.Pod{}).
+		Namespace("default").
+		Name("nginx-deployment-f576985cc-7czqr").
+		PortForward("20088", "80", stopCh).Error
+// 监听0.0.0.0上的20088端口，转发到Pod的80端口
+```
 #### 流式执行命令
 在Pod内执行命令，并且会触发StreamExec()类型的callbacks。适合执行ping 等命令
 ```go
