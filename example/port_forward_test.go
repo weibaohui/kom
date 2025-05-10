@@ -18,7 +18,10 @@ func TestPortForward(t *testing.T) {
 	err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
 		Name("nginx-deployment-f576985cc-7czqr").
+		Ctl().Pod().
+		ContainerName("nginx").
 		PortForward("20088", "80", stopCh).Error
+
 	if err != nil {
 		fmt.Println(err)
 	}

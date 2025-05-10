@@ -19,6 +19,7 @@ func PortForward(k *kom.Kubectl) error {
 	stopCh := stmt.PortForwardStopCh
 	podPort := stmt.PortForwardPodPort
 	localPort := stmt.PortForwardLocalPort
+	containerName := stmt.ContainerName
 
 	// 检查端口，必须设置
 	if localPort == "" || podPort == "" {
@@ -33,8 +34,9 @@ func PortForward(k *kom.Kubectl) error {
 		Namespace(ns).
 		Name(name).
 		Resource("pods").
-		SubResource("portforward")
-	// 启动 port-forward
+		SubResource("portforward").
+		Param("container", containerName)
+	 
 	readyChan := make(chan struct{})
 
 	// 创建 PortForward 请求
