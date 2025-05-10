@@ -68,3 +68,11 @@ func (p *pod) GetLogs(requestPtr interface{}, opt *v1.PodLogOptions) *pod {
 	p.Error = tx.Error
 	return p
 }
+func (p *pod) PortForward(localPort, podPort string, stopCh chan struct{}) *Kubectl {
+	tx := p.kubectl.getInstance()
+	tx.Statement.PortForwardLocalPort = localPort
+	tx.Statement.PortForwardPodPort = podPort
+	tx.Statement.PortForwardStopCh = stopCh
+	tx.Error = tx.Callback().PortForward().Execute(tx)
+	return tx
+}

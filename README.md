@@ -455,6 +455,8 @@ fmt.Printf("execResult: %s", execResult)
 err := kom.DefaultCluster().Resource(&v1.Pod{}).
 		Namespace("default").
 		Name("nginx-deployment-f576985cc-7czqr").
+    Ctl().Pod().
+		ContainerName("nginx").
 		PortForward("20088", "80", stopCh).Error
 // 监听0.0.0.0上的20088端口，转发到Pod的80端口
 ```
