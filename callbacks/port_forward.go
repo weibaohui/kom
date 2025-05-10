@@ -11,6 +11,11 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// PortForward 建立本地端口到指定 Kubernetes Pod 端口的端口转发会话。
+// 
+// 如果未设置本地端口或 Pod 端口，则返回错误。端口转发会监听多个本地地址，并在连接建立后异步通知就绪状态。
+// 
+// 返回端口转发过程中的任何错误。
 func PortForward(k *kom.Kubectl) error {
 
 	stmt := k.Statement

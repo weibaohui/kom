@@ -13,6 +13,8 @@ func RegisterInit() {
 func init() {
 	RegisterInit()
 }
+// RegisterDefaultCallbacks 为指定的集群实例注册一组默认的 Kubernetes 操作回调，包括资源的查询、列表、监控、创建、更新、补丁、删除、命令执行、流式命令执行、端口转发、日志获取和资源描述等操作。
+// 返回一个空的清理函数。
 func RegisterDefaultCallbacks(c *kom.ClusterInst) func() {
 
 	klog.V(4).Infof("RegisterDefaultCallbacks for cluster %s", c.ID)
