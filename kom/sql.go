@@ -181,8 +181,16 @@ func (k *Kubectl) List(dest interface{}, opt ...metav1.ListOptions) *Kubectl {
 	tx.Error = tx.Callback().List().Execute(tx)
 	return tx
 }
+func (k *Kubectl) PortForward(localPort, podPort string, stopCh chan struct{}) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.PortForwardLocalPort = localPort
+	tx.Statement.PortForwardPodPort = podPort
+	tx.Statement.PortForwardStopCh = stopCh
+	tx.Error = tx.Callback().PortForward().Execute(tx)
+	return tx
+}
 
-// 合并两个选择器，使用逗号分隔
+// mergeSelectors 合并两个选择器字符串，若两者均非空则用逗号连接，否则返回非空的选择器。
 func mergeSelectors(selector1, selector2 string) string {
 	if selector1 != "" && selector2 != "" {
 		return fmt.Sprintf("%s,%s", selector1, selector2)
