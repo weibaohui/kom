@@ -17,34 +17,37 @@ import (
 )
 
 type Statement struct {
-	*Kubectl            `json:"Kubectl,omitempty"`   // 基础配置
-	RowsAffected        int64                        `json:"rowsAffected,omitempty"`        // 返回受影响的行数
-	TotalCount          *int64                       `json:"totalCount,omitempty"`          // 返回查询总数，分页使用。只在List查询列表方法中生效。
-	AllNamespace        bool                         `json:"allNamespace,omitempty"`        // 所有名空间
-	Namespace           string                       `json:"namespace,omitempty"`           // 资源所属命名空间
-	NamespaceList       []string                     `json:"namespace_list,omitempty"`      // 多个命名空间，查询列表专用，只有查询列表时会出现跨命名空间查询的情况。在使用时，如果是所有命名空间，就不用NamespaceList
-	Name                string                       `json:"name,omitempty"`                // 资源名称
-	GVR                 schema.GroupVersionResource  `json:"GVR"`                           // 资源类型
-	GVK                 schema.GroupVersionKind      `json:"GVK"`                           // 资源类型
-	Namespaced          bool                         `json:"namespaced,omitempty"`          // 是否是命名空间资源
-	ListOptions         []metav1.ListOptions         `json:"listOptions,omitempty"`         // 列表查询参数,作为可变参数使用，默认只取第一个，也只使用一个
-	Context             context.Context              `json:"-"`                             // 上下文
-	Dest                interface{}                  `json:"dest,omitempty"`                // 返回结果存放对象，一般为结构体指针
-	PatchType           types.PatchType              `json:"patchType,omitempty"`           // PATCH类型
-	PatchData           string                       `json:"patchData,omitempty"`           // PATCH数据
-	RemoveManagedFields bool                         `json:"removeManagedFields,omitempty"` // 是否移除管理字段
-	useCustomGVK        bool                         `json:"-"`                             // 如果通过CRD方法设置了GVK，那么就强制使用，不再进行GVK的自动解析
-	ContainerName       string                       `json:"containerName,omitempty"`       // 容器名称，执行获取容器内日志等操作使用
-	Command             string                       `json:"command,omitempty"`             // 容器内执行命令,包括ls、cat以及用户输入的命令
-	Args                []string                     `json:"args,omitempty"`                // 容器内执行命令参数
-	PodLogOptions       *v1.PodLogOptions            `json:"-" `                            // 获取容器日志使用
-	Stdin               io.Reader                    `json:"-" `                            // 设置输入
-	StreamOptions       *remotecommand.StreamOptions `json:"-"`                             // 设置Stream 参数
-	Filter              Filter                       `json:"filter,omitempty"`
-	StdoutCallback      func(data []byte) error      `json:"-"`
-	StderrCallback      func(data []byte) error      `json:"-"`
-	CacheTTL            time.Duration                `json:"cacheTTL,omitempty"`    // 设置缓存时间
-	ForceDelete         bool                         `json:"forceDelete,omitempty"` // 强制删除标志
+	*Kubectl             `json:"Kubectl,omitempty"`   // 基础配置
+	RowsAffected         int64                        `json:"rowsAffected,omitempty"`        // 返回受影响的行数
+	TotalCount           *int64                       `json:"totalCount,omitempty"`          // 返回查询总数，分页使用。只在List查询列表方法中生效。
+	AllNamespace         bool                         `json:"allNamespace,omitempty"`        // 所有名空间
+	Namespace            string                       `json:"namespace,omitempty"`           // 资源所属命名空间
+	NamespaceList        []string                     `json:"namespace_list,omitempty"`      // 多个命名空间，查询列表专用，只有查询列表时会出现跨命名空间查询的情况。在使用时，如果是所有命名空间，就不用NamespaceList
+	Name                 string                       `json:"name,omitempty"`                // 资源名称
+	GVR                  schema.GroupVersionResource  `json:"GVR"`                           // 资源类型
+	GVK                  schema.GroupVersionKind      `json:"GVK"`                           // 资源类型
+	Namespaced           bool                         `json:"namespaced,omitempty"`          // 是否是命名空间资源
+	ListOptions          []metav1.ListOptions         `json:"listOptions,omitempty"`         // 列表查询参数,作为可变参数使用，默认只取第一个，也只使用一个
+	Context              context.Context              `json:"-"`                             // 上下文
+	Dest                 interface{}                  `json:"dest,omitempty"`                // 返回结果存放对象，一般为结构体指针
+	PatchType            types.PatchType              `json:"patchType,omitempty"`           // PATCH类型
+	PatchData            string                       `json:"patchData,omitempty"`           // PATCH数据
+	RemoveManagedFields  bool                         `json:"removeManagedFields,omitempty"` // 是否移除管理字段
+	useCustomGVK         bool                         `json:"-"`                             // 如果通过CRD方法设置了GVK，那么就强制使用，不再进行GVK的自动解析
+	ContainerName        string                       `json:"containerName,omitempty"`       // 容器名称，执行获取容器内日志等操作使用
+	Command              string                       `json:"command,omitempty"`             // 容器内执行命令,包括ls、cat以及用户输入的命令
+	Args                 []string                     `json:"args,omitempty"`                // 容器内执行命令参数
+	PodLogOptions        *v1.PodLogOptions            `json:"-" `                            // 获取容器日志使用
+	Stdin                io.Reader                    `json:"-" `                            // 设置输入
+	StreamOptions        *remotecommand.StreamOptions `json:"-"`                             // 设置Stream 参数
+	Filter               Filter                       `json:"filter,omitempty"`
+	StdoutCallback       func(data []byte) error      `json:"-"`
+	StderrCallback       func(data []byte) error      `json:"-"`
+	CacheTTL             time.Duration                `json:"cacheTTL,omitempty"`    // 设置缓存时间
+	ForceDelete          bool                         `json:"forceDelete,omitempty"` // 强制删除标志
+	PortForwardLocalPort string                       `json:"port_forward_local_port"`
+	PortForwardPodPort   string                       `json:"port_forward_pod_port"`
+	PortForwardStopCh    chan struct{}                `json:"-"`
 }
 type Filter struct {
 	Columns    []string    `json:"columns,omitempty"`

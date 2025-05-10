@@ -47,6 +47,9 @@ func RegisterDefaultCallbacks(c *kom.ClusterInst) func() {
 	streamExecCallback := k.Callback().StreamExec()
 	_ = streamExecCallback.Register("kom:pod:stream:exec", StreamExecuteCommand)
 
+	portForwardCallback := k.Callback().PortForward()
+	_ = portForwardCallback.Register("kom:pod:port:forward", PortForward)
+
 	logsCallback := k.Callback().Logs()
 	_ = logsCallback.Register("kom:pod:logs", GetLogs)
 
