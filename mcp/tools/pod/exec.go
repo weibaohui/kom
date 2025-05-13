@@ -20,7 +20,10 @@ func ExecTool() mcp.Tool {
 		mcp.WithString("name", mcp.Required(), mcp.Description("Pod名称 / Pod name")),
 		mcp.WithString("container", mcp.Description("容器名称（必填） / Container name (required)")),
 		mcp.WithString("command", mcp.Required(), mcp.Description("要执行的命令 / Command to execute")),
-		mcp.WithArray("args", mcp.Description("命令参数列表 / Command arguments")),
+		mcp.WithArray("args",
+			mcp.Description("命令参数列表 / Command arguments"),
+			mcp.Items(map[string]interface{}{"type": "string"}), // Specify items schema as string type
+		),
 	)
 }
 
