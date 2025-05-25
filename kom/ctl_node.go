@@ -254,23 +254,31 @@ spec:
 	return
 }
 func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
-	var p *v1.Pod
-	if ttl == 0 {
-		// 设置一个默认的等待时间
-		ttl = 30
+	if ttl <= 0 {
+		ttl = 30 * time.Second
+	} else {
+		ttl = ttl * time.Second
 	}
-	timeout := time.After(ttl * time.Second)
+	timeout := time.After(ttl)
+	start := time.Now()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("等待Pod启动超时")
+			return fmt.Errorf("等待 Pod %s/%s 启动超时，实际等待了 %v", ns, podName, time.Since(start))
 		case <-ticker.C:
-			err := d.kubectl.newInstance().WithContext(d.kubectl.Statement.Context).Resource(&v1.Pod{}).Name(podName).Namespace(ns).Get(&p).Error
+			var p *v1.Pod
+			err := d.kubectl.newInstance().
+				WithContext(d.kubectl.Statement.Context).
+				Resource(&v1.Pod{}).
+				Name(podName).
+				Namespace(ns).
+				Get(&p).Error
+
 			if err != nil {
-				klog.V(6).Infof("等待Pod %s/%s 创建中...", ns, podName)
+				klog.V(6).Infof("等待 Pod %s/%s 创建中...", ns, podName)
 				continue
 			}
 
@@ -279,45 +287,30 @@ func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
 				continue
 			}
 
+			// 确保容器状态可用
 			if len(p.Status.ContainerStatuses) == 0 {
-				klog.V(6).Infof("Pod %s/%s 容器状态未就绪", ns, podName)
+				klog.V(6).Infof("Pod %s/%s 容器状态为空，等待中...", ns, podName)
 				continue
 			}
 
-			// 检查所有容器是否都Ready
-			allContainersReady := true
-			for _, status := range p.Status.ContainerStatuses {
-				if !status.Ready {
-					allContainersReady = false
-					klog.V(6).Infof("容器 %s 在Pod %s/%s 中未就绪", status.Name, ns, podName)
-					break
-				}
-			}
-
-			if allContainersReady {
-				klog.V(6).Infof("Pod %s/%s 所有容器已就绪", ns, podName)
-				break
-			}
-		}
-
-		// 如果所有容器都Ready，退出循环
-		if p != nil && len(p.Status.ContainerStatuses) > 0 {
+			// 检查所有容器是否 ready
 			allReady := true
-			for _, status := range p.Status.ContainerStatuses {
-				if !status.Ready {
+			for _, cs := range p.Status.ContainerStatuses {
+				if !cs.Ready {
+					klog.V(6).Infof("容器 %s 在 Pod %s/%s 中未就绪", cs.Name, ns, podName)
 					allReady = false
 					break
 				}
 			}
+
 			if allReady {
-				break
+				klog.V(6).Infof("Pod %s/%s 所有容器已就绪", ns, podName)
+				return nil
 			}
+
+			klog.V(6).Infof("Pod %s/%s 容器未全部就绪，继续等待...", ns, podName)
 		}
-
-		klog.V(6).Infof("继续等待Pod %s/%s 完全就绪...", ns, podName)
 	}
-
-	return nil
 }
 
 // CreateKubectlShell kubectl 操作shell
