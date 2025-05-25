@@ -254,10 +254,9 @@ spec:
 	return
 }
 func (d *node) waitPodReady(ns, podName string, ttl time.Duration) error {
-	if ttl <= 0 {
+	if ttl < time.Second {
+		klog.Warningf("传入的 ttl=%v 太小，强制设置为默认 30s", ttl)
 		ttl = 30 * time.Second
-	} else {
-		ttl = ttl * time.Second
 	}
 	timeout := time.After(ttl)
 	start := time.Now()
@@ -400,7 +399,6 @@ spec:
 	if len(ret) > 0 && strings.Contains(ret[0], "created") {
 		// 等待启动或者超时,超时采用默认的超时时间
 		err = d.waitPodReady(namespace, podName, d.kubectl.Statement.CacheTTL)
-
 		return
 	}
 
