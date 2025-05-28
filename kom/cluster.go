@@ -229,7 +229,11 @@ func (c *ClusterInstances) RemoveClusterById(id string) {
 func (c *ClusterInstances) AllClusters() map[string]*ClusterInst {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.clusters
+	result := make(map[string]*ClusterInst, len(c.clusters))
+	for k, v := range c.clusters {
+		result[k] = v
+	}
+	return result
 }
 
 // DefaultCluster 返回一个默认的 ClusterInst 实例。
