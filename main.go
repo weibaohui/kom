@@ -17,8 +17,8 @@ import (
 func main() {
 	klog.InitFlags(nil)
 	flag.Set("v", "6")
-	go example.Connect()
-	// example.Example()
+	example.Connect()
+	example.Example()
 
 	// 一行代码启动模式
 	// mcp.RunMCPServer("kom mcp server", "0.0.1", 9096)
