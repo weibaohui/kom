@@ -24,9 +24,8 @@ var clusterInstances *ClusterInstances
 
 // ClusterInstances 集群实例管理器
 type ClusterInstances struct {
-	clusters             map[string]*ClusterInst
+	clusters             sync.Map                          // map[string]*ClusterInst
 	callbackRegisterFunc func(cluster *ClusterInst) func() // 用来注册回调参数的回调方法
-	mu                   sync.RWMutex                      // 读写锁，保证 clusters 并发安全
 }
 
 // ClusterInst 单一集群实例
@@ -53,9 +52,7 @@ func Clusters() *ClusterInstances {
 
 // 初始化
 func init() {
-	clusterInstances = &ClusterInstances{
-		clusters: make(map[string]*ClusterInst),
-	}
+	clusterInstances = &ClusterInstances{}
 }
 
 // DefaultCluster 获取默认集群，简化调用方式
@@ -78,7 +75,6 @@ func Cluster(id string) *Kubectl {
 }
 
 // RegisterInCluster 注册InCluster集群
-// 注意：不加锁，锁由 RegisterByConfigWithID 负责
 func (c *ClusterInstances) RegisterInCluster() (*Kubectl, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -93,7 +89,6 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 }
 
 // RegisterByPath 通过kubeconfig文件路径注册集群
-// 注意：不加锁，锁由 RegisterByConfig 负责
 func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
@@ -103,7 +98,6 @@ func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 }
 
 // RegisterByString 通过kubeconfig文件的string 内容进行注册
-// 注意：不加锁，锁由 RegisterByConfig 负责
 func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
@@ -119,7 +113,6 @@ func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
 }
 
 // RegisterByStringWithID 通过kubeconfig文件的string 内容进行注册
-// 注意：不加锁，锁由 RegisterByConfigWithID 负责
 func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubectl, error) {
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
@@ -135,7 +128,6 @@ func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubec
 }
 
 // RegisterByPathWithID 通过kubeconfig文件路径注册集群
-// 注意：不加锁，锁由 RegisterByConfigWithID 负责
 func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
@@ -145,37 +137,35 @@ func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubect
 }
 
 // RegisterByConfig 注册集群
-// 注意：不加锁，锁由 RegisterByConfigWithID 负责
 func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 	host := config.Host
+
 	return c.RegisterByConfigWithID(config, host)
 }
 
 // RegisterByConfigWithID 注册集群
-// 负责加锁，直接操作 clusters map
 func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string) (*Kubectl, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 	config.QPS = 200
 	config.Burst = 2000
-	cluster, exists := clusterInstances.clusters[id]
-	if exists {
+	if value, exists := clusterInstances.clusters.Load(id); exists {
+		cluster := value.(*ClusterInst)
 		return cluster.Kubectl, nil
 	} else {
 		// key 不存在，进行初始化
 		k := initKubectl(config, id)
-		cluster = &ClusterInst{
+		cluster := &ClusterInst{
 			ID:      id,
 			Kubectl: k,
 			Config:  config,
 		}
-		clusterInstances.clusters[id] = cluster
+		clusterInstances.clusters.Store(id, cluster)
+
 		client, err := kubernetes.NewForConfig(config)
 		if err != nil {
 			return nil, fmt.Errorf("RegisterByConfigWithID Error %s %v", id, err)
@@ -197,6 +187,7 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		if c.callbackRegisterFunc != nil {                 // 注册回调方法
 			c.callbackRegisterFunc(cluster)
 		}
+
 		cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
 			NumCounters: 1e7,     // number of keys to track frequency of (10M).
 			MaxCost:     1 << 30, // maximum cost of cache (1GB).
@@ -209,30 +200,24 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 
 // GetClusterById 根据集群ID获取集群实例
 func (c *ClusterInstances) GetClusterById(id string) *ClusterInst {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	cluster, exists := c.clusters[id]
-	if !exists {
-		return nil
+	if value, exists := c.clusters.Load(id); exists {
+		return value.(*ClusterInst)
 	}
-	return cluster
+	return nil
 }
 
 // RemoveClusterById 删除集群
 func (c *ClusterInstances) RemoveClusterById(id string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	delete(c.clusters, id)
+	c.clusters.Delete(id)
 }
 
 // AllClusters 返回所有集群实例
 func (c *ClusterInstances) AllClusters() map[string]*ClusterInst {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	result := make(map[string]*ClusterInst, len(c.clusters))
-	for k, v := range c.clusters {
-		result[k] = v
-	}
+	result := make(map[string]*ClusterInst)
+	c.clusters.Range(func(key, value interface{}) bool {
+		result[key.(string)] = value.(*ClusterInst)
+		return true
+	})
 	return result
 }
 
@@ -242,46 +227,39 @@ func (c *ClusterInstances) AllClusters() map[string]*ClusterInst {
 // 则尝试返回 ID 为 "default" 的实例。
 // 如果上述两个实例都不存在，则返回 clusters 列表中的任意一个实例。
 func (c *ClusterInstances) DefaultCluster() *ClusterInst {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	// 检查 clusters 列表是否为空
-	if len(c.clusters) == 0 {
-		return nil
-	}
-
 	// 尝试获取 ID 为 "InCluster" 的集群实例
 	id := "InCluster"
-	cluster, exists := c.clusters[id]
-	if exists {
-		return cluster
+	if value, exists := c.clusters.Load(id); exists {
+		return value.(*ClusterInst)
 	}
 
 	// 尝试获取 ID 为 "default" 的集群实例
 	id = "default"
-	cluster, exists = c.clusters[id]
-	if exists {
-		return cluster
+	if value, exists := c.clusters.Load(id); exists {
+		return value.(*ClusterInst)
 	}
 
 	// 如果上述两个实例都不存在，遍历 clusters 列表，返回任意一个实例
-	for _, v := range c.clusters {
-		return v
-	}
+	var result *ClusterInst
+	c.clusters.Range(func(key, value interface{}) bool {
+		result = value.(*ClusterInst)
+		return false // 返回第一个找到的实例
+	})
 
-	// 如果 clusters 列表为空（理论上此时应已返回），则返回 nil
-	return nil
+	return result
 }
 
 // Show 显示所有集群信息
 func (c *ClusterInstances) Show() {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	klog.Infof("Show Clusters\n")
-	for k, v := range c.clusters {
+	c.clusters.Range(func(key, value interface{}) bool {
+		k := key.(string)
+		v := value.(*ClusterInst)
 		if v.serverVersion == nil {
 			klog.Infof("%s=nil\n", k)
-			continue
+		} else {
+			klog.Infof("%s[%s,%s]=%s\n", k, v.serverVersion.Platform, v.serverVersion.GitVersion, v.Config.Host)
 		}
-		klog.Infof("%s[%s,%s]=%s\n", k, v.serverVersion.Platform, v.serverVersion.GitVersion, v.Config.Host)
-	}
+		return true
+	})
 }
