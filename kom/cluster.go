@@ -2,6 +2,7 @@ package kom
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -227,6 +228,7 @@ func (c *ClusterInstances) RemoveClusterById(id string) {
 		cluster.openAPISchema = nil
 	}
 	c.clusters.Delete(id)
+	go runtime.GC()
 }
 
 // AllClusters 返回所有集群实例
