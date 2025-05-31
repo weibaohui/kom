@@ -31,8 +31,10 @@ func UpdateTagDeploymentHandler(ctx context.Context, request mcp.CallToolRequest
 		return nil, err
 	}
 
-	container := request.Params.Arguments["container"].(string)
-	tag := request.Params.Arguments["tag"].(string)
+	// container := request.Params.Arguments["container"].(string)
+	// tag := request.Params.Arguments["tag"].(string)
+	container := request.GetString("container", "")
+	tag := request.GetString("tag", "")
 
 	klog.Infof("Updating deployment %s/%s container %s image tag to %s in cluster %s", meta.Namespace, meta.Name, container, tag, meta.Cluster)
 

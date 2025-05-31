@@ -32,8 +32,9 @@ func PatchDynamicResourceHandler(ctx context.Context, request mcp.CallToolReques
 	}
 
 	// 获取patch数据
-	patchData, ok := request.Params.Arguments["patch_data"].(string)
-	if !ok || patchData == "" {
+	// patchData, ok := request.Params.Arguments["patch_data"].(string)
+	patchData := request.GetString("patch_data", "")
+	if patchData == "" {
 		return nil, fmt.Errorf("patch data is required")
 	}
 

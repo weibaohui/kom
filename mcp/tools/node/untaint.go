@@ -29,7 +29,8 @@ func UnTaintNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		return nil, err
 	}
 
-	taint := request.Params.Arguments["taint"].(string)
+	// taint := request.Params.Arguments["taint"].(string)
+	taint := request.GetString("taint", "")
 
 	klog.Infof("Removing taint %s from node %s in cluster %s", taint, meta.Name, meta.Cluster)
 

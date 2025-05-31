@@ -29,7 +29,8 @@ func TaintNodeHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Ca
 		return nil, err
 	}
 
-	taint := request.Params.Arguments["taint"].(string)
+	// taint := request.Params.Arguments["taint"].(string)
+	taint := request.GetString("taint", "")
 
 	klog.Infof("Adding taint %s to node %s in cluster %s", taint, meta.Name, meta.Cluster)
 

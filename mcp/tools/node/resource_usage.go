@@ -30,10 +30,7 @@ func NodeResourceUsageHandler(ctx context.Context, request mcp.CallToolRequest) 
 		return nil, err
 	}
 
-	cacheSeconds := int32(20)
-	if cacheSecondsVal, ok := request.Params.Arguments["cacheSeconds"].(float64); ok {
-		cacheSeconds = int32(cacheSecondsVal)
-	}
+	cacheSeconds := int32(request.GetInt("cacheSeconds", 20))
 
 	klog.Infof("Querying resource usage for node %s in cluster %s with cache duration %d seconds", meta.Name, meta.Cluster, cacheSeconds)
 

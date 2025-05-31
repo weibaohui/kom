@@ -61,8 +61,8 @@ func RolloutUndoDeploymentHandler(ctx context.Context, request mcp.CallToolReque
 	}
 
 	var revision int
-	if revisionVal, ok := request.Params.Arguments["revision"].(float64); ok {
-		revision = int(revisionVal)
+	if revisionVal := request.GetInt("revision", -1); revisionVal != -1 {
+		revision = revisionVal
 	}
 
 	klog.Infof("Rolling back deployment %s/%s in cluster %s to revision %s", meta.Namespace, meta.Name, meta.Cluster, revision)

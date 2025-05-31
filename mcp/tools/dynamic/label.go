@@ -31,8 +31,9 @@ func LabelDynamicResourceHandler(ctx context.Context, request mcp.CallToolReques
 	}
 
 	// 获取标签操作
-	label, ok := request.Params.Arguments["label"].(string)
-	if !ok || label == "" {
+	// label, ok := request.Params.Arguments["label"].(string)
+	label := request.GetString("label", "")
+	if label == "" {
 		return nil, fmt.Errorf("label parameter is required")
 	}
 
