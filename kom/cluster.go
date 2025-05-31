@@ -2,6 +2,7 @@ package kom
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -208,7 +209,26 @@ func (c *ClusterInstances) GetClusterById(id string) *ClusterInst {
 
 // RemoveClusterById 删除集群
 func (c *ClusterInstances) RemoveClusterById(id string) {
+	if value, exists := c.clusters.Load(id); exists {
+		cluster := value.(*ClusterInst)
+		// 释放 ristretto.Cache 资源
+		if cluster.Cache != nil {
+			cluster.Cache.Close()
+			cluster.Cache = nil
+		}
+		// 释放其他成员（如有需要，可扩展）
+		cluster.Client = nil
+		cluster.DynamicClient = nil
+		cluster.apiResources = nil
+		cluster.crdList = nil
+		cluster.callbacks = nil
+		cluster.docs = nil
+		cluster.serverVersion = nil
+		cluster.describerMap = nil
+		cluster.openAPISchema = nil
+	}
 	c.clusters.Delete(id)
+	go runtime.GC()
 }
 
 // AllClusters 返回所有集群实例
