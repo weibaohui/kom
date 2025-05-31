@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
-	"github.com/google/gnostic-models/openapiv2"
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/utils"
 	"k8s.io/klog/v2"
 )
 
-var trees []TreeNode
+// 移除全局变量 trees
 
 type Docs struct {
 	Trees []TreeNode
@@ -152,7 +152,7 @@ func parseID(id string) (group, version, kind string) {
 // buildTree 根据 SchemaDefinition 构建 TreeNode
 func buildTree(def SchemaDefinition, parentId string) TreeNode {
 	// todo 应该使用GVK作为
-	klog.V(6).Infof("buildTree %s", def.Name)
+	klog.V(8).Infof("buildTree %s", def.Name)
 
 	labelParts := strings.Split(def.Name, ".")
 	label := labelParts[len(labelParts)-1]
@@ -264,6 +264,7 @@ func printTree(node *TreeNode, level int) {
 	}
 }
 
+// InitTrees 解析 OpenAPI Schema 并构建 Docs 结构体，避免全局变量，减少内存占用
 func InitTrees(schema *openapi_v2.Document) *Docs {
 	definitionsMap = make(map[string]SchemaDefinition)
 
@@ -273,9 +274,6 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 		klog.V(2).Infof("Error marshaling OpenAPI schema to JSON: %v\n", err)
 		return nil
 	}
-	// os.WriteFile("def.json", schemaBytes, 0644)
-	// 打印部分 Schema 以供调试
-	// klog.V(2).Infof(string(schemaBytes))
 
 	root := &RootDefinitions{}
 	err = json.Unmarshal(schemaBytes, root)
@@ -285,6 +283,7 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 	}
 	definitionList := root.Definitions.AdditionalProperties
 
+	var trees []TreeNode
 	// 进行第一遍处理，此时Ref并没有读取，只是记录了引用
 	for _, definition := range definitionList {
 		str := utils.ToJSON(definition)
@@ -297,80 +296,76 @@ func InitTrees(schema *openapi_v2.Document) *Docs {
 		trees = append(trees, treeRoot)
 	}
 
+	docs := &Docs{Trees: trees}
 	// 进行遍历处理，将child中ref对应的类型提取出来
 	// 此时应该所有的类型都已经存在了
-	for _, item := range trees {
-		loadChild(&item)
+	for i := range docs.Trees {
+		docs.loadChild(&docs.Trees[i])
 	}
-
-	for _, item := range trees {
-		loadArrayItems(&item)
+	for i := range docs.Trees {
+		docs.loadArrayItems(&docs.Trees[i])
 	}
-
 	// 此时 层级结构当中是ref 下面是具体的一个结构体A
 	// 结构体A的child是各个属性
 	// 我们需要把child下的属性上提一级，避免出现A、再展开才是具体属性的情况
-	for _, item := range trees {
-		childMoveUpLevel(&item)
+
+	for i := range docs.Trees {
+		docs.childMoveUpLevel(&docs.Trees[i])
 	}
-
-	// 处理Array Items的情况
-	// "items": {
-	//   "schema": [
-	//     {
-	//        "_ref": "#/definitions/io.k8s.api.core.v1.Container"
-	//     }
-	//    ]
-	// }
-
 	// 将所有节点的ID，改为唯一的
-	for _, item := range trees {
-		uniqueID(&item)
-	}
 
-	return &Docs{
-		Trees: trees,
+	for i := range docs.Trees {
+		docs.uniqueID(&docs.Trees[i])
 	}
+	return docs
 }
-func loadArrayItems(node *TreeNode) {
 
+// loadArrayItems 递归处理数组类型引用，作为 Docs 的方法
+func (d *Docs) loadArrayItems(node *TreeNode) {
 	if len(node.Items.Schema) > 0 && node.Items.Schema[0].Ref != "" {
-
 		ref := node.Items.Schema[0].Ref
 		if !slice.Contain(blackList, ref) {
-			refNode := FetchByRef(ref)
-			node.Children = refNode.Children
+			refNode := d.FetchByRef(ref)
+			if refNode != nil {
+				node.Children = refNode.Children
+			}
 		}
 	}
 	for i := range node.Children {
-		loadArrayItems(node.Children[i])
+		d.loadArrayItems(node.Children[i])
 	}
 }
-func childMoveUpLevel(item *TreeNode) {
+
+// childMoveUpLevel 属性上提，作为 Docs 的方法
+func (d *Docs) childMoveUpLevel(item *TreeNode) {
 	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 	if item.Ref != "" && len(item.Children) == 1 && item.Children[0].ID == name && len(item.Children[0].Children) > 0 {
-
 		item.Children = item.Children[0].Children
 	}
 	for i := range item.Children {
-		childMoveUpLevel(item.Children[i])
+		d.childMoveUpLevel(item.Children[i])
 	}
 }
-func loadChild(item *TreeNode) {
-	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 
+// loadChild 递归处理引用，作为 Docs 的方法
+func (d *Docs) loadChild(item *TreeNode) {
+	name := strings.TrimPrefix(item.Ref, "#/definitions/")
 	if item.Ref != "" && len(item.Children) > 0 && item.Children[0].ID == name {
-		refNode := FetchByRef(item.Ref)
-		item.Children[0] = refNode
+		refNode := d.FetchByRef(item.Ref)
+		if refNode != nil {
+			item.Children[0] = refNode
+		}
 	}
 	for i := range item.Children {
-		loadChild(item.Children[i])
+		d.loadChild(item.Children[i])
 	}
 }
-func uniqueID(item *TreeNode) {
+
+// uniqueID 递归生成唯一ID，作为 Docs 的方法
+func (d *Docs) uniqueID(item *TreeNode) {
 	item.Value = utils.RandNLengthString(20)
 	for i := range item.Children {
-		uniqueID(item.Children[i])
+		d.uniqueID(item.Children[i])
 	}
 }
 
@@ -379,20 +374,20 @@ func (d *Docs) ListNames() {
 		klog.Infof("tree info ID: %s\tLabel:%s\t\n Parse GVK=[%s,%s,%s]", tree.ID, tree.Label, tree.group, tree.version, tree.kind)
 	}
 }
-func FetchByRef(ref string) *TreeNode {
-	// #/definitions/io.k8s.api.core.v1.PodSpec
-	klog.V(6).Infof("doc FetchByRef: %s", ref)
+
+// FetchByRef 通过引用查找节点，作为 Docs 的方法
+func (d *Docs) FetchByRef(ref string) *TreeNode {
+	klog.V(8).Infof("doc FetchByRef: %s", ref)
 	id := strings.TrimPrefix(ref, "#/definitions/")
-	for _, tree := range trees {
+	for _, tree := range d.Trees {
 		if tree.ID == id {
-			// 为了避免多个node引用同一个节点，需要深拷贝
-			// 否则会有相同的value，前端显示会有点显示错位
 			dcp, _ := utils.DeepCopy(tree)
 			return &dcp
 		}
 	}
 	return nil
 }
+
 func (d *Docs) Fetch(kind string) *TreeNode {
 	for _, tree := range d.Trees {
 		if tree.Label == kind {
