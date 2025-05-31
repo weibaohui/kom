@@ -28,8 +28,8 @@ func ListDeployEventResourceHandler(ctx context.Context, request mcp.CallToolReq
 	}
 
 	// 获取标签选择器和涉及对象名称
-	involvedObjectName, _ := request.Params.Arguments["name"].(string)
-
+	// involvedObjectName := request.Params.Arguments["name"].(string)
+	involvedObjectName := request.GetString("name", "")
 	// 获取事件列表
 	var list []*v1.Event
 	kubectl := kom.Cluster(meta.Cluster).WithContext(ctx).CRD("events.k8s.io", "v1", "Event").Namespace(meta.Namespace).RemoveManagedFields()

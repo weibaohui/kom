@@ -34,21 +34,14 @@ func GetPodLogsHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return nil, err
 	}
 
-	tailLines := int64(100)
-	if tailLinesVal, ok := request.Params.Arguments["tail"].(float64); ok {
-		tailLines = int64(tailLinesVal)
-	}
-	containerName := ""
-	if containerNameVal, ok := request.Params.Arguments["container"].(string); ok {
-		containerName = containerNameVal
-	}
+	tailLines := int64(request.GetInt("tail", 100))
+	previous := request.GetBool("previous", false)
+	containerName := request.GetString("container", "")
 	var stream io.ReadCloser
 	opt := &v1.PodLogOptions{}
 	opt.TailLines = utils2.Ptr(tailLines)
 	// 设置是否获取上一个容器的日志
-	if previous, ok := request.Params.Arguments["previous"].(bool); ok && previous {
-		opt.Previous = true
-	}
+	opt.Previous = previous
 	err = kom.Cluster(meta.Cluster).WithContext(ctx).Namespace(meta.Namespace).Name(meta.Name).Ctl().Pod().ContainerName(containerName).GetLogs(&stream, opt).Error
 	if err != nil {
 		return nil, err

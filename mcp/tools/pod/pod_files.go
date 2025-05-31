@@ -30,8 +30,10 @@ func ListPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		return nil, err
 	}
 
-	path, _ := request.Params.Arguments["path"].(string)
-	container, _ := request.Params.Arguments["container"].(string)
+	// path, _ := request.Params.Arguments["path"].(string)
+	// container, _ := request.Params.Arguments["container"].(string)
+	path := request.GetString("path", "")
+	container := request.GetString("container", "")
 
 	if path == "" {
 		return nil, fmt.Errorf("路径参数不能为空")
@@ -73,8 +75,10 @@ func ListAllPodFilesHandler(ctx context.Context, request mcp.CallToolRequest) (*
 		return nil, err
 	}
 
-	path, _ := request.Params.Arguments["path"].(string)
-	container, _ := request.Params.Arguments["container"].(string)
+	// path, _ := request.Params.Arguments["path"].(string)
+	// container, _ := request.Params.Arguments["container"].(string)
+	path := request.GetString("path", "")
+	container := request.GetString("container", "")
 
 	if path == "" {
 		return nil, fmt.Errorf("路径参数不能为空")
@@ -116,8 +120,10 @@ func DeletePodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 		return nil, err
 	}
 
-	path, _ := request.Params.Arguments["path"].(string)
-	container, _ := request.Params.Arguments["container"].(string)
+	// path, _ := request.Params.Arguments["path"].(string)
+	// container, _ := request.Params.Arguments["container"].(string)
+	path := request.GetString("path", "")
+	container := request.GetString("container", "")
 
 	if path == "" {
 		return nil, fmt.Errorf("路径参数不能为空")

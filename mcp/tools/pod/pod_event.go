@@ -28,7 +28,8 @@ func ListPodEventResourceHandler(ctx context.Context, request mcp.CallToolReques
 	}
 
 	// 获取标签选择器和涉及对象名称
-	involvedObjectName, _ := request.Params.Arguments["name"].(string)
+	// involvedObjectName, _ := request.Params.Arguments["name"].(string)
+	involvedObjectName := request.GetString("name", "")
 
 	// 获取事件列表
 	var list []*v1.Event

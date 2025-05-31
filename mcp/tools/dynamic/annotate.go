@@ -31,8 +31,9 @@ func AnnotateDynamicResourceHandler(ctx context.Context, request mcp.CallToolReq
 	}
 
 	// 获取注解操作
-	annotation, ok := request.Params.Arguments["annotation"].(string)
-	if !ok || annotation == "" {
+	// annotation, ok := request.Params.Arguments["annotation"].(string)
+	annotation := request.GetString("annotation", "")
+	if annotation == "" {
 		return nil, fmt.Errorf("annotation parameter is required")
 	}
 

@@ -35,20 +35,12 @@ func ExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToo
 	}
 
 	// 容器名称必填校验
-	containerName := request.Params.Arguments["container"].(string)
+	// containerName := request.Params.Arguments["container"].(string)
+	containerName := request.GetString("container", "")
 
 	// 解析命令参数
-	var argsVal []string
-	args, ok := request.Params.Arguments["args"].([]interface{})
-	if ok {
-		// 将 []interface{} 转换为 []string
-		for _, arg := range args {
-			if str, ok := arg.(string); ok {
-				argsVal = append(argsVal, str)
-			}
-		}
-	}
-	command := request.Params.Arguments["command"].(string)
+	argsVal := request.GetStringSlice("args", []string{})
+	command := request.GetString("command", "")
 
 	klog.V(6).Infof("Executing command in pod %s/%s container %s: %v %v", meta.Namespace, meta.Name, containerName, command, argsVal)
 

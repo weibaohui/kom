@@ -35,7 +35,7 @@ func DeleteDynamicResourceHandler(ctx context.Context, request mcp.CallToolReque
 	if meta.Namespace == "" {
 		kubectl = kubectl.AllNamespace()
 	}
-	if force, ok := request.Params.Arguments["force"].(bool); ok && force {
+	if request.GetBool("force", false) {
 		err = kubectl.Name(meta.Name).ForceDelete().Error
 	} else {
 		err = kubectl.Name(meta.Name).Delete().Error

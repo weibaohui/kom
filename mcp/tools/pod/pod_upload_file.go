@@ -32,11 +32,14 @@ func UploadPodFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mc
 	}
 
 	// 容器名称必填校验
-	containerName := request.Params.Arguments["container"].(string)
+	// containerName := request.Params.Arguments["container"].(string)
+	containerName := request.GetString("container", "")
 
 	// 获取文件路径和内容
-	filePath := request.Params.Arguments["file_path"].(string)
-	content := request.Params.Arguments["content"].(string)
+	// filePath := request.Params.Arguments["file_path"].(string)
+	// content := request.Params.Arguments["content"].(string)
+	filePath := request.GetString("file_path", "")
+	content := request.GetString("content", "")
 
 	klog.V(6).Infof("Uploading file to pod %s/%s container %s: path %s", meta.Namespace, meta.Name, containerName, filePath)
 

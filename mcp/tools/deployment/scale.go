@@ -31,9 +31,11 @@ func ScaleDeploymentHandler(ctx context.Context, request mcp.CallToolRequest) (*
 	}
 
 	replicas := int32(1)
-	if replicasVal, ok := request.Params.Arguments["replicas"].(float64); ok {
+
+	if replicasVal := request.GetInt("replicas", -1); replicas != -1 {
 		replicas = int32(replicasVal)
 	}
+
 	klog.Infof("Scaling deployment %s/%s in cluster %s to %d replicas", meta.Namespace, meta.Name, meta.Cluster, replicas)
 
 	err = kom.Cluster(meta.Cluster).WithContext(ctx).Resource(&appsv1.Deployment{}).Namespace(meta.Namespace).Name(meta.Name).Ctl().Deployment().Scale(replicas)

@@ -33,8 +33,10 @@ func ListDynamicResourceHandler(ctx context.Context, request mcp.CallToolRequest
 	}
 
 	// 获取标签选择器和字段选择器
-	labelSelector, _ := request.Params.Arguments["labelSelector"].(string)
-	fieldSelector, _ := request.Params.Arguments["fieldSelector"].(string)
+	// labelSelector, _ := request.Params.Arguments["labelSelector"].(string)
+	// fieldSelector, _ := request.Params.Arguments["fieldSelector"].(string)
+	labelSelector := request.GetString("labelSelector", "")
+	fieldSelector := request.GetString("fieldSelector", "")
 
 	// 获取资源列表
 	var list []*unstructured.Unstructured

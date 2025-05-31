@@ -25,8 +25,8 @@ func ApplyDynamicResourceHandler(ctx context.Context, request mcp.CallToolReques
 		return nil, err
 	}
 
-	yamlContent, ok := request.Params.Arguments["yaml"].(string)
-	if !ok {
+	yamlContent := request.GetString("yaml", "")
+	if yamlContent == "" {
 		return nil, fmt.Errorf("invalid yaml content")
 	}
 

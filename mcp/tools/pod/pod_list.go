@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// ListPod 用于定义获取 Pod 列表的工具，支持通过 cluster、namespace、fieldSelector 参数过滤
 func ListPod() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_pod",
@@ -21,14 +22,15 @@ func ListPod() mcp.Tool {
 	)
 }
 
+// ListPodHandler 处理获取 Pod 列表的请求
 func ListPodHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-
 	// 获取资源元数据
 	ctx, meta, err := tools.ParseFromRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
-	fieldSelector, _ := request.Params.Arguments["fieldSelector"].(string)
+	// fieldSelector 参数获取方式升级
+	fieldSelector := request.GetString("fieldSelector", "")
 
 	// 获取资源列表
 	var list []*unstructured.Unstructured
