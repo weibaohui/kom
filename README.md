@@ -1081,4 +1081,5 @@ fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
 
 ## 微信群
 
-![输入图片说明](https://foruda.gitee.com/images/1748253095781805253/3f9ee36c_77493.png "屏幕截图")
+
+![输入图片说明](https://foruda.gitee.com/images/1749030782660211627/7c0fb11e_77493.png "屏幕截图")
