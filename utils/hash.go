@@ -2,6 +2,8 @@ package utils
 
 import (
 	"hash/fnv"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 const (
@@ -21,4 +23,10 @@ func FNV1(data []byte) uint32 {
 	h := fnv.New32a()
 	h.Write(data)
 	return h.Sum32()
+}
+// MD5Hash 计算输入字符串的MD5值并返回16进制字符串
+func MD5Hash(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
 }

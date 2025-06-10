@@ -27,8 +27,13 @@ func List(k *kom.Kubectl) error {
 
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
+	listOptionsMD5 := "" //cache key值
 	if len(opts) > 0 {
 		listOptions = opts[0]
+
+		// 将listOptions序列化为JSON字符串，并取MD5摘要，加入cacheKey
+		listOptionsStr := utils.ToJSON(listOptions)
+		listOptionsMD5 = utils.MD5Hash(listOptionsStr)
 	}
 
 	// 使用反射获取 dest 的值
@@ -42,7 +47,7 @@ func List(k *kom.Kubectl) error {
 	// 获取切片的元素类型
 	elemType := destValue.Elem().Type().Elem()
 
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", ns, gvr.Group, gvr.Resource, gvr.Version)
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s/%s", ns, gvr.Group, gvr.Resource, gvr.Version, listOptionsMD5)
 	list, err := utils.GetOrSetCache(stmt.ClusterCache(), cacheKey, stmt.CacheTTL, func() (list *unstructured.UnstructuredList, err error) {
 		// TODO 获取列表改为使用Option,解决大数据量获取问题。
 		if namespaced {
