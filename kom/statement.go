@@ -36,6 +36,7 @@ type Statement struct {
 	useCustomGVK         bool                         `json:"-"`                             // 如果通过CRD方法设置了GVK，那么就强制使用，不再进行GVK的自动解析
 	ContainerName        string                       `json:"containerName,omitempty"`       // 容器名称，执行获取容器内日志等操作使用
 	Command              string                       `json:"command,omitempty"`             // 容器内执行命令,包括ls、cat以及用户输入的命令
+	DocField             string                       `json:"doc_field,omitempty"`           // doc 字段，如spec.spec
 	Args                 []string                     `json:"args,omitempty"`                // 容器内执行命令参数
 	PodLogOptions        *v1.PodLogOptions            `json:"-" `                            // 获取容器日志使用
 	Stdin                io.Reader                    `json:"-" `                            // 设置输入

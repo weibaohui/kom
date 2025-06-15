@@ -30,6 +30,7 @@ type callback struct {
 func (k *Kubectl) initializeCallbacks() *callbacks {
 	return &callbacks{
 		processors: map[string]*processor{
+			"doc":          {km: k},
 			"get":          {km: k},
 			"patch":        {km: k},
 			"create":       {km: k},
@@ -54,6 +55,9 @@ func (cs *callbacks) Patch() *processor {
 }
 func (cs *callbacks) Get() *processor {
 	return cs.processors["get"]
+}
+func (cs *callbacks) Doc() *processor {
+	return cs.processors["doc"]
 }
 func (cs *callbacks) Describe() *processor {
 	return cs.processors["describe"]
