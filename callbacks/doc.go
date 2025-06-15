@@ -6,6 +6,7 @@ import (
 
 	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/kom/doc"
+	"github.com/weibaohui/kom/utils"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 )
@@ -28,15 +29,22 @@ func Doc(k *kom.Kubectl) error {
 		return fmt.Errorf("请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s")
 	}
 
-	apiDoc := doc.DocField{
-		Kind: gvk.Kind,
-		ApiVersion: schema.GroupVersion{
-			Group:   gvk.Group,
-			Version: gvk.Version,
-		},
-		OpenapiSchema: k.Status().OpenAPISchema(),
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", gvk.Group, gvk.Version, gvk.Kind, field)
+	result, err := utils.GetOrSetCache(stmt.ClusterCache(), cacheKey, stmt.CacheTTL, func() (result string, err error) {
+		apiDoc := doc.DocField{
+			Kind: gvk.Kind,
+			ApiVersion: schema.GroupVersion{
+				Group:   gvk.Group,
+				Version: gvk.Version,
+			},
+			OpenapiSchema: k.Status().OpenAPISchema(),
+		}
+		result = apiDoc.GetApiDocV2(field)
+		return
+	})
+	if err != nil {
+		return err
 	}
-	result := apiDoc.GetApiDocV2(field)
 
 	// 将结果写入 tx.Statement.Dest
 	if destBytes, ok := k.Statement.Dest.(*[]byte); ok {
