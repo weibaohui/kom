@@ -4,11 +4,21 @@ import (
 	"testing"
 
 	"github.com/weibaohui/kom/kom"
-	"github.com/weibaohui/kom/utils"
+	v1 "k8s.io/api/apps/v1"
 )
 
-func TestDoc(t *testing.T) {
-	docs := kom.DefaultCluster().Status().Docs()
-	pc := docs.FetchByGVK("v1", "Pod")
-	t.Log(utils.ToJSON(pc))
+func TestGetDoc(t *testing.T) {
+	var docResult []byte
+	item := v1.Deployment{}
+	field := "spec.replicas"
+	field = "spec.template.spec.containers.name"
+	field = "spec.template.spec.containers.imagePullPolicy"
+	field = "spec.template.spec.containers.livenessProbe.successThreshold"
+	err := kom.DefaultCluster().
+		Resource(&item).DocField(field).Doc(&docResult).Error
+	if err != nil {
+		t.Errorf("Get Deployment Doc [%s]error :%v", field, err)
+	}
+	t.Logf("Get Deployment Doc [%s] :%s", field, string(docResult))
+
 }
