@@ -6,6 +6,7 @@ import (
 
 	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 )
 
 type DocField struct {
@@ -15,6 +16,7 @@ type DocField struct {
 }
 
 func (k *DocField) GetApiDocV2(field string) string {
+	klog.V(8).Infof("GetApiDocV2 %s", field)
 	startPoint := ""
 	// the path must be formated like "path1.path2.path3"
 	paths := strings.Split(field, ".")
