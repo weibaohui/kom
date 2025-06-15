@@ -1073,7 +1073,18 @@ fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
   }
 }
 ```
-
+#### 获取字段文档解释
+```go
+var docResult []byte
+	item := v1.Deployment{}
+	field := "spec.replicas"
+	field = "spec.template.spec.containers.name"
+	field = "spec.template.spec.containers.imagePullPolicy"
+	field = "spec.template.spec.containers.livenessProbe.successThreshold"
+	err := kom.DefaultCluster().
+		Resource(&item).DocField(field).Doc(&docResult).Error
+	fmt.Printf("Get Deployment Doc [%s] :%s", field, string(docResult))
+```
 ## 联系我
 
 微信（大罗马的太阳） 搜索ID：daluomadetaiyang,备注kom。
