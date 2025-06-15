@@ -725,8 +725,8 @@ kom.DefaultCluster().Status().ServerVersion()
 ### 7. callback机制
 * 内置了callback机制，可以自定义回调函数，当执行完某项操作后，会调用对应的回调函数。
 * 如果回调函数返回true，则继续执行后续操作，否则终止后续操作。
-* 当前支持的callback有：get,list,create,update,patch,delete,exec,stream-exec,logs,watch.
-* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:stream:exec","kom:pod:logs","kom:pod:port:forward"
+* 当前支持的callback有：get,list,create,update,patch,delete,exec,stream-exec,logs,watch,doc.
+* 内置的callback名称有："kom:get","kom:list","kom:create","kom:update","kom:patch","kom:watch","kom:delete","kom:pod:exec","kom:pod:stream:exec","kom:pod:logs","kom:pod:port:forward","kom:doc"
 * 支持回调函数排序，默认按注册顺序执行，可以通过kom.DefaultCluster().Callback().After("kom:get")或者.Before("kom:get")设置顺序。
 * 支持删除回调函数，通过kom.DefaultCluster().Callback().Delete("kom:get")
 * 支持替换回调函数，通过kom.DefaultCluster().Callback().Replace("kom:get",cb)
@@ -1073,7 +1073,18 @@ fmt.Printf("Pod Usage %s\n", utils.ToJSON(usage))
   }
 }
 ```
-
+#### 获取字段文档解释
+```go
+var docResult []byte
+	item := v1.Deployment{}
+	field := "spec.replicas"
+	field = "spec.template.spec.containers.name"
+	field = "spec.template.spec.containers.imagePullPolicy"
+	field = "spec.template.spec.containers.livenessProbe.successThreshold"
+	err := kom.DefaultCluster().
+		Resource(&item).DocField(field).Doc(&docResult).Error
+	fmt.Printf("Get Deployment Doc [%s] :%s", field, string(docResult))
+```
 ## 联系我
 
 微信（大罗马的太阳） 搜索ID：daluomadetaiyang,备注kom。

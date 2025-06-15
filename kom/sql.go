@@ -148,6 +148,19 @@ func (k *Kubectl) Get(dest interface{}) *Kubectl {
 	tx.Error = tx.Callback().Get().Execute(tx)
 	return tx
 }
+
+// DocField 获取字段信息,如spec.spec
+func (k *Kubectl) DocField(field string) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.DocField = field
+	return tx
+}
+func (k *Kubectl) Doc(dest interface{}) *Kubectl {
+	tx := k.getInstance()
+	tx.Statement.Dest = dest
+	tx.Error = tx.Callback().Doc().Execute(tx)
+	return tx
+}
 func (k *Kubectl) Describe(dest interface{}) *Kubectl {
 	tx := k.getInstance()
 	tx.Statement.Dest = dest
