@@ -34,7 +34,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	podLogs()
+	StatefulSetLinksPod()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -43,6 +43,25 @@ func Example() {
 	// ALLNodeUsageExample()
 	// NodePodCount()
 	// PodLink()
+}
+func StatefulSetLinksPod() {
+	list, err := kom.DefaultCluster().
+		Resource(&corev1.Pod{}).
+		Namespace("default").
+		Name("nginx-statefulset").
+		Ctl().StatefulSet().
+		ManagedPods()
+	if err != nil {
+		fmt.Printf("ManagedPods error: %v", err)
+	}
+	fmt.Printf("ManagedPods Count %d", len(list))
+	if len(list) == 0 {
+		fmt.Printf("ManagedPods error: %v", err)
+		return
+	}
+	for _, pod := range list {
+		fmt.Printf("ManagedPods: %v", pod.Name)
+	}
 }
 func PodLink() {
 	services, err := kom.DefaultCluster().Resource(&corev1.Pod{}).
