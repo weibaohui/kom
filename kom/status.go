@@ -2,17 +2,24 @@ package kom
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
-	"github.com/google/gnostic-models/openapiv2"
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	"github.com/weibaohui/kom/utils"
+	apixclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apixinformers "k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 )
 
@@ -20,6 +27,10 @@ type status struct {
 	kubectl *Kubectl
 }
 
+func (s *status) SetAPIResources(apiResources []*metav1.APIResource) {
+	cluster := s.kubectl.parentCluster()
+	cluster.apiResources = apiResources
+}
 func (s *status) APIResources() []*metav1.APIResource {
 	cluster := s.kubectl.parentCluster()
 	return cluster.apiResources
@@ -84,7 +95,62 @@ func (k *Kubectl) initializeCRDList(ttl time.Duration) []*unstructured.Unstructu
 	return cache
 
 }
+func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
+	klog.V(6).Infof("Watching CRD resources")
+
+	cfg := k.RestConfig()
+
+	apixClient, err := apixclient.NewForConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create apiextensions client: %v", err)
+	}
+
+	rawDiscovery, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %v", err)
+	}
+
+	cachedDiscovery := memory.NewMemCacheClient(rawDiscovery)
+
+	var started atomic.Bool // 标志是否完成首次同步
+
+	refresh := func() {
+		if !started.Load() {
+			klog.V(6).Infof("Skipping refresh (initial load)")
+			return
+		}
+		cachedDiscovery.Invalidate()
+		k.Status().SetAPIResources(k.initializeAPIResources())
+	}
+
+	factory := apixinformers.NewSharedInformerFactory(apixClient, 0)
+	crdInformer := factory.Apiextensions().V1().CustomResourceDefinitions().Informer()
+
+	crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			refresh()
+		},
+		DeleteFunc: func(obj interface{}) {
+			refresh()
+		},
+	})
+
+	factory.Start(ctx.Done())
+
+	if ok := cache.WaitForCacheSync(ctx.Done(), crdInformer.HasSynced); !ok {
+		return fmt.Errorf("failed to sync CRD informer cache")
+	}
+
+	klog.V(6).Infof("Initial CRD sync done, loading API resources")
+	k.Status().SetAPIResources(k.initializeAPIResources()) // 初始化加载
+	started.Store(true)                                    // 之后才处理变更事件
+
+	klog.V(6).Infof("CRD watcher initialized and running")
+	return nil
+}
+
 func (k *Kubectl) initializeAPIResources() (apiResources []*metav1.APIResource) {
+	klog.V(6).Infof("Loading API resources")
 	// 提取ApiResources
 	_, lists, _ := k.Client().Discovery().ServerGroupsAndResources()
 	for _, list := range lists {
