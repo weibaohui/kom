@@ -17,7 +17,7 @@ import (
 )
 
 type Statement struct {
-	*Kubectl             `json:"Kubectl,omitempty"`   // 基础配置
+	*Kubectl             `json:"Kubectl,omitempty"`                                          // 基础配置
 	RowsAffected         int64                        `json:"rowsAffected,omitempty"`        // 返回受影响的行数
 	TotalCount           *int64                       `json:"totalCount,omitempty"`          // 返回查询总数，分页使用。只在List查询列表方法中生效。
 	AllNamespace         bool                         `json:"allNamespace,omitempty"`        // 所有名空间
@@ -77,25 +77,33 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	gvk := s.Tools().GetGVK(gvks, versions...)
 	s.GVK = gvk
 
-	// 获取GVR
-	if s.Tools().IsBuiltinResource(gvk.Kind) {
-		// 内置资源
-		if s.useCustomGVK {
-			// 设置了CRD，带有version
-			s.GVR, s.Namespaced = s.Tools().GetGVRByGVK(gvk)
-		} else {
-			s.GVR, s.Namespaced = s.Tools().GetGVRByKind(gvk.Kind)
-		}
-		klog.V(6).Infof("useCustomGVK=%v \t GVR=%v \t GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
-	} else {
-		crd, err := s.Tools().GetCRD(gvk.Kind, gvk.Group)
-		if err != nil {
-			return s
-		}
-		// 检查CRD是否是Namespaced
-		s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-		s.GVR = s.Tools().GetGVRFromCRD(crd)
+	// // 获取GVR
+	// if s.Tools().IsBuiltinResourceByGVK(gvk) {
+	// 	// 内置资源，第一次启动时就存在的
+	//
+	//
+	//
+	// 	klog.V(6).Infof("useCustomGVK=%v \t GVR=%v \t GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
+	// } else {
+	// 	// 启动后，新增加的CRD，
+	// 	crd, err := s.Tools().GetCRD(gvk.Kind, gvk.Group)
+	// 	if err != nil {
+	// 		return s
+	// 	}
+	// 	// 检查CRD是否是Namespaced
+	// 	s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
+	// 	s.GVR = s.Tools().GetGVRFromCRD(crd)
+	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
+	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
+	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
+	//
+	// }
 
+	gvr, namespaced, ok := s.Tools().GetGVRByGVK(gvk)
+	if ok {
+		s.GVR, s.Namespaced = gvr, namespaced
+	} else {
+		s.GVR, s.Namespaced = s.Tools().GetGVRByKind(gvk.Kind)
 	}
 
 	return s
