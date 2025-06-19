@@ -1,6 +1,7 @@
 package kom
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -31,19 +32,20 @@ type ClusterInstances struct {
 
 // ClusterInst 单一集群实例
 type ClusterInst struct {
-	ID            string                       // 集群ID
-	Kubectl       *Kubectl                     // kom
-	Client        *kubernetes.Clientset        // kubernetes 客户端
-	Config        *rest.Config                 // rest config
-	DynamicClient *dynamic.DynamicClient       // 动态客户端
-	apiResources  []*metav1.APIResource        // 当前k8s已注册资源
-	crdList       []*unstructured.Unstructured // 当前k8s已注册资源 //TODO 定时更新或者Watch更新
-	callbacks     *callbacks                   // 回调
-	docs          *doc.Docs                    // 文档
-	serverVersion *version.Info                // 服务器版本
-	describerMap  map[schema.GroupKind]describe.ResourceDescriber
-	Cache         *ristretto.Cache[string, any]
-	openAPISchema *openapi_v2.Document // openapi
+	ID                 string                       // 集群ID
+	Kubectl            *Kubectl                     // kom
+	Client             *kubernetes.Clientset        // kubernetes 客户端
+	Config             *rest.Config                 // rest config
+	DynamicClient      *dynamic.DynamicClient       // 动态客户端
+	apiResources       []*metav1.APIResource        // 当前k8s已注册资源
+	crdList            []*unstructured.Unstructured // 当前k8s已注册资源 //TODO 定时更新或者Watch更新
+	callbacks          *callbacks                   // 回调
+	docs               *doc.Docs                    // 文档
+	serverVersion      *version.Info                // 服务器版本
+	describerMap       map[schema.GroupKind]describe.ResourceDescriber
+	Cache              *ristretto.Cache[string, any]
+	openAPISchema      *openapi_v2.Document // openapi
+	watchCRDCancelFunc context.CancelFunc   // CRD取消方法，用于断开连接的时候停止
 }
 
 // Clusters 集群实例管理器
@@ -178,7 +180,6 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		cluster.Client = client               // kubernetes 客户端
 		cluster.DynamicClient = dynamicClient // 动态客户端
 		// 缓存
-		cluster.apiResources = k.initializeAPIResources()       // API 资源
 		cluster.crdList = k.initializeCRDList(time.Minute * 10) // CRD列表,10分钟缓存
 		cluster.callbacks = k.initializeCallbacks()             // 回调
 		cluster.serverVersion = k.initializeServerVersion()     // 服务器版本
@@ -195,6 +196,15 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 			BufferItems: 64,      // number of keys per Get buffer.
 		})
 		cluster.Cache = cache
+
+		// 启动CRD监控，有更新的时候，更新APIResources
+		ctx, cf := context.WithCancel(context.Background())
+		cluster.watchCRDCancelFunc = cf
+		err = k.WatchCRDAndRefreshDiscovery(ctx)
+
+		if err != nil {
+			return nil, err
+		}
 		return k, nil
 	}
 }
@@ -226,6 +236,10 @@ func (c *ClusterInstances) RemoveClusterById(id string) {
 		cluster.serverVersion = nil
 		cluster.describerMap = nil
 		cluster.openAPISchema = nil
+		if cluster.watchCRDCancelFunc != nil {
+			cluster.watchCRDCancelFunc()
+		}
+
 	}
 	c.clusters.Delete(id)
 	go runtime.GC()
