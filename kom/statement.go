@@ -76,36 +76,12 @@ func (s *Statement) ParseGVKs(gvks []schema.GroupVersionKind, versions ...string
 	// 获取单个GVK
 	gvk := s.Tools().GetGVK(gvks, versions...)
 	s.GVK = gvk
-
-	// // 获取GVR
-	// if s.Tools().IsBuiltinResourceByGVK(gvk) {
-	// 	// 内置资源，第一次启动时就存在的
-	//
-	//
-	//
-	// 	klog.V(6).Infof("useCustomGVK=%v \t GVR=%v \t GVK=%v", s.useCustomGVK, s.GVR, s.GVK)
-	// } else {
-	// 	// 启动后，新增加的CRD，
-	// 	crd, err := s.Tools().GetCRD(gvk.Kind, gvk.Group)
-	// 	if err != nil {
-	// 		return s
-	// 	}
-	// 	// 检查CRD是否是Namespaced
-	// 	s.Namespaced = crd.Object["spec"].(map[string]interface{})["scope"].(string) == "Namespaced"
-	// 	s.GVR = s.Tools().GetGVRFromCRD(crd)
-	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
-	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
-	// 	klog.V(6).Infof("ParseGVKs GetCRD %s %s", gvk.Kind, gvk.Group)
-	//
-	// }
-
 	gvr, namespaced, ok := s.Tools().GetGVRByGVK(gvk)
 	if ok {
 		s.GVR, s.Namespaced = gvr, namespaced
 	} else {
 		s.GVR, s.Namespaced = s.Tools().GetGVRByKind(gvk.Kind)
 	}
-
 	return s
 }
 
