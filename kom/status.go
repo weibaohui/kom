@@ -66,6 +66,17 @@ func (s *status) IsGatewayAPISupported() bool {
 	return false
 }
 
+// IsCRDSupportedByName 判断CRD是否存在
+func (s *status) IsCRDSupportedByName(name string) bool {
+	list := s.CRDList()
+	for _, crd := range list {
+		if crd.GetName() == name {
+			return true
+		}
+	}
+	return false
+}
+
 // 获取版本信息
 func (k *Kubectl) initializeServerVersion() *version.Info {
 	versionInfo, err := k.Client().Discovery().ServerVersion()
