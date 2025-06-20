@@ -34,7 +34,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	StatefulSetLinksPod()
+	CRDList()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -44,6 +44,40 @@ func Example() {
 	// NodePodCount()
 	// PodLink()
 }
+
+func CRDList() {
+	// stable.example.com / v1  CronTab
+	var list []*unstructured.Unstructured
+	err := kom.DefaultCluster().
+		CRD("stable.example.com", "v1", "CronTab").
+		Namespace("default").
+		List(&list).Error
+	if err != nil {
+		fmt.Printf("ManagedPods error: %v", err)
+	}
+
+	if len(list) == 0 {
+		fmt.Printf("ManagedPods error: %v", err)
+		return
+	}
+	for _, pod := range list {
+		fmt.Printf("ManagedPods: %v", pod.GetName())
+	}
+
+	// 获取某一个
+	var item *unstructured.Unstructured
+	err = kom.DefaultCluster().
+		CRD("stable.example.com", "v1", "CronTab").
+		Namespace("default").
+		Name("test-crontab").
+		Get(&item).Error
+	if err != nil {
+		fmt.Printf("ManagedPods error: %v", err)
+	}
+	fmt.Printf("ManagedPods: %v", item.GetName())
+
+}
+
 func StatefulSetLinksPod() {
 	list, err := kom.DefaultCluster().
 		Resource(&corev1.Pod{}).
