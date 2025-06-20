@@ -9,6 +9,11 @@ func (c *ctl) Deployment() *deploy {
 		kubectl: c.kubectl,
 	}
 }
+func (c *ctl) CRD() *crd {
+	return &crd{
+		kubectl: c.kubectl,
+	}
+}
 func (c *ctl) ReplicationController() *replicationController {
 	return &replicationController{
 		kubectl: c.kubectl,
