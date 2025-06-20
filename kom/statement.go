@@ -17,7 +17,7 @@ import (
 )
 
 type Statement struct {
-	*Kubectl             `json:"Kubectl,omitempty"`                                          // 基础配置
+	*Kubectl             `json:"Kubectl,omitempty"`   // 基础配置
 	RowsAffected         int64                        `json:"rowsAffected,omitempty"`        // 返回受影响的行数
 	TotalCount           *int64                       `json:"totalCount,omitempty"`          // 返回查询总数，分页使用。只在List查询列表方法中生效。
 	AllNamespace         bool                         `json:"allNamespace,omitempty"`        // 所有名空间
