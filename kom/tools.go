@@ -43,7 +43,7 @@ func (u *tools) ConvertRuntimeObjectToUnstructuredObject(obj runtime.Object) (*u
 
 	return unstructuredObj, nil
 }
-func (u *tools) GetGVRByGVK(gvk schema.GroupVersionKind) (gvr schema.GroupVersionResource, namespaced bool) {
+func (u *tools) GetGVRByGVK(gvk schema.GroupVersionKind) (gvr schema.GroupVersionResource, namespaced bool, ok bool) {
 	apiResources := u.kubectl.Status().APIResources()
 	for _, resource := range apiResources {
 		if resource.Kind == gvk.Kind &&
@@ -54,10 +54,10 @@ func (u *tools) GetGVRByGVK(gvk schema.GroupVersionKind) (gvr schema.GroupVersio
 				Version:  resource.Version,
 				Resource: resource.Name, // 通常是 Kind 的复数形式
 			}
-			return gvr, resource.Namespaced
+			return gvr, resource.Namespaced, true
 		}
 	}
-	return schema.GroupVersionResource{}, false
+	return schema.GroupVersionResource{}, false, false
 }
 
 // getGVR 返回对应 string 的 GroupVersionResource
@@ -94,6 +94,7 @@ func (u *tools) GetGVRByKind(kind string) (gvr schema.GroupVersionResource, name
 //	bool: 如果kind是内置资源种类之一，则返回true；否则返回false。
 func (u *tools) IsBuiltinResource(kind string) bool {
 	apiResources := u.kubectl.Status().APIResources()
+
 	for _, list := range apiResources {
 		if list.Kind == kind {
 			return true
@@ -102,6 +103,27 @@ func (u *tools) IsBuiltinResource(kind string) bool {
 	return false
 }
 
+// IsBuiltinResourceByGVK 检查给定的资源种类是否为内置资源。
+// 该函数通过遍历apiResources列表，对比每个列表项的Kind属性与给定的kind参数是否匹配。
+// 如果找到匹配项，即表明该资源种类是内置资源，函数返回true；否则，返回false。
+// 此函数主要用于资源种类的精确校验gvk三个参数，以确定资源是否属于预定义的内置类型。
+//
+// 参数:
+//
+//	gvk (schema.GroupVersionKind): 要检查的资源种类的名称。
+//
+// 返回值:
+//
+//	bool: 如果kind是内置资源种类之一，则返回true；否则返回false。
+func (u *tools) IsBuiltinResourceByGVK(gvk schema.GroupVersionKind) bool {
+	apiResources := u.kubectl.Status().APIResources()
+	for _, list := range apiResources {
+		if list.Kind == gvk.Kind && list.Group == gvk.Group && list.Version == gvk.Version {
+			return true
+		}
+	}
+	return false
+}
 func (u *tools) GetCRD(kind string, group string) (*unstructured.Unstructured, error) {
 
 	crdList := u.kubectl.Status().CRDList()
