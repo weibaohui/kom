@@ -3,6 +3,7 @@ package kom
 import (
 	"fmt"
 
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -34,4 +35,16 @@ func (c *crd) ManagedPod() (*corev1.Pod, error) {
 		return podList[0], nil
 	}
 	return nil, fmt.Errorf("未发现 CRD [%s]下的Pod", c.kubectl.Statement.GVK)
+}
+
+func (c *crd) HPAList() ([]*autoscalingv2.HorizontalPodAutoscaler, error) {
+	// 通过rs 获取pod
+	var list []*autoscalingv2.HorizontalPodAutoscaler
+	err := c.kubectl.newInstance().WithCache(c.kubectl.Statement.CacheTTL).
+		GVK("autoscaling", "v2", "HorizontalPodAutoscaler").
+		Resource(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Namespace(c.kubectl.Statement.Namespace).
+		Where(fmt.Sprintf("spec.scaleTargetRef.name='%s' and spec.scaleTargetRef.kind='%s'", c.kubectl.Statement.Name, c.kubectl.Statement.GVK.Kind)).
+		List(&list).Error
+	return list, err
 }
