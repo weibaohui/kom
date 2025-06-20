@@ -34,7 +34,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	CRDList()
+	CRDManagedPods()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -45,6 +45,26 @@ func Example() {
 	// PodLink()
 }
 
+func CRDManagedPods() {
+	//  /
+
+	pods, err := kom.DefaultCluster().
+		CRD("apps.kruise.io", "v1beta1", "StatefulSet").
+		Namespace("default").Name("sample").Ctl().CRD().ManagedPods()
+
+	if err != nil {
+		fmt.Printf("Get pods error: %v", err)
+	}
+
+	if len(pods) == 0 {
+		fmt.Printf("Get pods error: %v", err)
+		return
+	}
+	for _, pod := range pods {
+		fmt.Printf("Get pods: %v", pod.GetName())
+	}
+}
+
 func CRDList() {
 	// stable.example.com / v1  CronTab
 	var list []*unstructured.Unstructured
@@ -53,15 +73,15 @@ func CRDList() {
 		Namespace("default").
 		List(&list).Error
 	if err != nil {
-		fmt.Printf("ManagedPods error: %v", err)
+		fmt.Printf("Get CRD error: %v", err)
 	}
 
 	if len(list) == 0 {
-		fmt.Printf("ManagedPods error: %v", err)
+		fmt.Printf("Get CRD error: %v", err)
 		return
 	}
 	for _, pod := range list {
-		fmt.Printf("ManagedPods: %v", pod.GetName())
+		fmt.Printf("Get CRD: %v", pod.GetName())
 	}
 
 	// 获取某一个
@@ -72,9 +92,9 @@ func CRDList() {
 		Name("test-crontab").
 		Get(&item).Error
 	if err != nil {
-		fmt.Printf("ManagedPods error: %v", err)
+		fmt.Printf("Get CRD error: %v", err)
 	}
-	fmt.Printf("ManagedPods: %v", item.GetName())
+	fmt.Printf("Get CRD: %v", item.GetName())
 
 }
 
