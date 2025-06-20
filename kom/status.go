@@ -112,26 +112,46 @@ func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 
 	cachedDiscovery := memory.NewMemCacheClient(rawDiscovery)
 
-	var started atomic.Bool // 标志是否完成首次同步
+	var started atomic.Bool
 
-	refresh := func() {
-		if !started.Load() {
-			klog.V(6).Infof("Skipping refresh (initial load)")
-			return
+	// 创建一个刷新请求通道（带缓冲，防抖）
+	refreshCh := make(chan struct{}, 1)
+
+	// 后台刷新 worker，只处理信号，不管来源
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-refreshCh:
+				if !started.Load() {
+					klog.V(8).Infof("Skipping refresh (initial load)")
+					continue
+				}
+				klog.V(6).Infof("Refreshing API resources due to CRD change")
+				cachedDiscovery.Invalidate()
+				k.Status().SetAPIResources(k.initializeAPIResources())
+			}
 		}
-		cachedDiscovery.Invalidate()
-		k.Status().SetAPIResources(k.initializeAPIResources())
-	}
+	}()
 
+	// 创建 informer
 	factory := apixinformers.NewSharedInformerFactory(apixClient, 0)
 	crdInformer := factory.Apiextensions().V1().CustomResourceDefinitions().Informer()
 
-	crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			refresh()
+			select {
+			case refreshCh <- struct{}{}:
+			default:
+				// 已有信号在队列中，不重复推送
+			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			refresh()
+			select {
+			case refreshCh <- struct{}{}:
+			default:
+			}
 		},
 	})
 
@@ -142,8 +162,8 @@ func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 	}
 
 	klog.V(6).Infof("Initial CRD sync done, loading API resources")
-	k.Status().SetAPIResources(k.initializeAPIResources()) // 初始化加载
-	started.Store(true)                                    // 之后才处理变更事件
+	k.Status().SetAPIResources(k.initializeAPIResources())
+	started.Store(true)
 
 	klog.V(6).Infof("CRD watcher initialized and running")
 	return nil
