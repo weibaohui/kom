@@ -706,8 +706,16 @@ go func() {
 ```go
 // Describe default 命名空间下名为 nginx 的 Deployment
 var describeResult []byte
-err := kom.DefaultCluster()..CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&item).Error
+err := kom.DefaultCluster().CRD("stable.example.com", "v1", "CronTab").Namespace("default").Name(item.GetName()).Describe(&item).Error
 fmt.Printf("describeResult: %s", describeResult)
+```
+#### 获取CRD下的Pod资源
+```go
+pods, err := kom.DefaultCluster().CRD("apps.kruise.io", "v1beta1", "StatefulSet").
+Namespace("default").Name("sample").Ctl().CRD().ManagedPods()
+	for _, pod := range pods {
+		fmt.Printf("Get pods: %v", pod.GetName())
+	}
 ```
 
 ### 6. 集群参数信息
