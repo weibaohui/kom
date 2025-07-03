@@ -53,6 +53,12 @@ func ResourceCount() {
 	for gvr, count := range sm {
 		klog.V(6).Infof("%-50s   %-10d\n", gvr.String(), count)
 	}
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	for gvr, count := range sm {
+		klog.V(6).Infof("%-50s   %-10d\n", gvr.String(), count)
+	}
 }
 
 func CRDManagedPods() {

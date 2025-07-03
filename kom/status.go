@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -106,7 +107,17 @@ func (s *status) GetResourceCountSummary(cacheSeconds int) (map[schema.GroupVers
 			return nil, err
 		}
 		apiGroupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
-		summary := make(map[schema.GroupVersionResource]int)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			summary = make(map[schema.GroupVersionResource]int)
+			mu      sync.Mutex
+			wg      sync.WaitGroup
+			sema    = make(chan struct{}, 5) // 最多5个并发list
+		)
+
 		for _, group := range apiGroupResources {
 			for v, resources := range group.VersionedResources {
 				for _, resource := range resources {
@@ -121,17 +132,26 @@ func (s *status) GetResourceCountSummary(cacheSeconds int) (map[schema.GroupVers
 						Resource: resource.Name,
 					}
 
-					count, err := countResources(ctx, dynamicClient, gvr, resource.Namespaced)
-					if err != nil {
-						klog.V(6).Infof("failed to list %s: %v", gvr.String(), err)
-						continue
-					}
-
-					summary[gvr] = count
+					wg.Add(1)
+					sema <- struct{}{} // 获取信号量
+					go func(namespaced bool, gvr schema.GroupVersionResource) {
+						defer wg.Done()
+						defer func() {
+							<-sema // 释放信号量
+						}()
+						count, err := countResources(ctx, dynamicClient, gvr, namespaced)
+						if err != nil {
+							klog.V(6).Infof("[ResourceCount][error] err=%v", err)
+							return
+						}
+						mu.Lock()
+						summary[gvr] = count
+						mu.Unlock()
+					}(resource.Namespaced, gvr)
 				}
 			}
-
 		}
+		wg.Wait()
 		return summary, nil
 	})
 }
