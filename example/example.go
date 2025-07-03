@@ -34,7 +34,7 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	CRDManagedPods()
+	ResourceCount()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -43,6 +43,22 @@ func Example() {
 	// ALLNodeUsageExample()
 	// NodePodCount()
 	// PodLink()
+}
+
+func ResourceCount() {
+	sm, err := kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for gvr, count := range sm {
+		klog.V(6).Infof("%-50s   %-10d\n", gvr.String(), count)
+	}
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	sm, _ = kom.DefaultCluster().Status().GetResourceCountSummary(10)
+	for gvr, count := range sm {
+		klog.V(6).Infof("%-50s   %-10d\n", gvr.String(), count)
+	}
 }
 
 func CRDManagedPods() {

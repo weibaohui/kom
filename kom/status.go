@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -19,8 +20,11 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/strings/slices"
 )
 
 type status struct {
@@ -77,6 +81,113 @@ func (s *status) IsCRDSupportedByName(name string) bool {
 	return false
 }
 
+// GetResourceCountSummary 获取集群内资源状态统计数据
+// Resource                                          Namespaced Count
+// ---------------------------------------------------------------------------
+// v1/pods                                           true       192
+// apps/v1/deployments                               true       43
+// batch/v1/jobs                                     true       11
+// networking.k8s.io/v1/ingresses                    true       22
+// monitoring.coreos.com/v1/servicemonitors          true       8
+// apiextensions.k8s.io/v1/customresourcedefinitions false      15
+func (s *status) GetResourceCountSummary(cacheSeconds int) (map[schema.GroupVersionResource]int, error) {
+	d := time.Duration(cacheSeconds) * time.Second
+	return utils.GetOrSetCache(s.kubectl.ClusterCache(), "GetResourceCountSummary", d, func() (map[schema.GroupVersionResource]int, error) {
+		ctx := s.kubectl.Statement.Context
+
+		config := s.kubectl.RestConfig()
+		dynamicClient, err := dynamic.NewForConfig(config)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create clients
+		discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		apiGroupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			summary = make(map[schema.GroupVersionResource]int)
+			mu      sync.Mutex
+			wg      sync.WaitGroup
+			sema    = make(chan struct{}, 5) // 最多5个并发list
+		)
+
+		for _, group := range apiGroupResources {
+			for v, resources := range group.VersionedResources {
+				for _, resource := range resources {
+					// Skip subresources (e.g., pods/status)
+					if strings.Contains(resource.Name, "/") || !slices.Contains(resource.Verbs, "list") {
+						continue
+					}
+
+					gvr := schema.GroupVersionResource{
+						Group:    group.Group.Name,
+						Version:  v,
+						Resource: resource.Name,
+					}
+
+					wg.Add(1)
+					sema <- struct{}{} // 获取信号量
+					go func(namespaced bool, gvr schema.GroupVersionResource) {
+						defer wg.Done()
+						defer func() {
+							<-sema // 释放信号量
+						}()
+						count, err := countResources(ctx, dynamicClient, gvr, namespaced)
+						if err != nil {
+							klog.V(6).Infof("[ResourceCount][error] err=%v", err)
+							return
+						}
+						mu.Lock()
+						summary[gvr] = count
+						mu.Unlock()
+					}(resource.Namespaced, gvr)
+				}
+			}
+		}
+		wg.Wait()
+		return summary, nil
+	})
+}
+func countResources(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, namespaced bool) (int, error) {
+	total := 0
+	var continueToken string
+
+	for {
+		var list *unstructured.UnstructuredList
+		var err error
+
+		if namespaced {
+			list, err = client.Resource(gvr).Namespace(metav1.NamespaceAll).List(ctx, metav1.ListOptions{
+				Limit:    500,
+				Continue: continueToken,
+			})
+		} else {
+			list, err = client.Resource(gvr).List(ctx, metav1.ListOptions{
+				Limit:    500,
+				Continue: continueToken,
+			})
+		}
+		if err != nil {
+			return total, err
+		}
+		total += len(list.Items)
+
+		continueToken = list.GetContinue()
+		if continueToken == "" {
+			break
+		}
+	}
+
+	return total, nil
+}
+
 // 获取版本信息
 func (k *Kubectl) initializeServerVersion() *version.Info {
 	versionInfo, err := k.Client().Discovery().ServerVersion()
@@ -96,19 +207,18 @@ func (k *Kubectl) getOpenAPISchema() *openapi_v2.Document {
 }
 
 func (k *Kubectl) initializeCRDList(ttl time.Duration) []*unstructured.Unstructured {
-	cache, err := utils.GetOrSetCache(k.ClusterCache(), "crdList", ttl, func() (ret []*unstructured.Unstructured, err error) {
+	ck, err := utils.GetOrSetCache(k.ClusterCache(), "crdList", ttl, func() (ret []*unstructured.Unstructured, err error) {
 		crdList, err := k.listResources(context.TODO(), "CustomResourceDefinition", "")
 		return crdList, err
 	})
 	if err != nil {
 		return nil
 	}
-	return cache
+	return ck
 
 }
 func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 	klog.V(6).Infof("Watching CRD resources")
-
 	cfg := k.RestConfig()
 
 	apixClient, err := apixclient.NewForConfig(cfg)

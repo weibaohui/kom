@@ -728,6 +728,8 @@ kom.DefaultCluster().Status().APIResources()
 kom.DefaultCluster().Status().CRDList()
 // 集群版本信息
 kom.DefaultCluster().Status().ServerVersion()
+// 获取集群内各资源种类数量
+kom.DefaultCluster().Status().GetResourceCountSummary(10)
 ```
 
 ### 7. callback机制
