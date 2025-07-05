@@ -146,7 +146,7 @@ spec:
 
 	t.Run("Create CR", func(t *testing.T) {
 		time.Sleep(10 * time.Second)
-		var crontab = unstructured.Unstructured{
+		var crontab = &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": "stable.example.com/v1",
 				"kind":       "CronTab",
@@ -173,7 +173,7 @@ spec:
 	})
 
 	t.Run("Get CR", func(t *testing.T) {
-		var crontab unstructured.Unstructured
+		var crontab *unstructured.Unstructured
 		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").
@@ -186,7 +186,7 @@ spec:
 	})
 
 	t.Run("List CR", func(t *testing.T) {
-		var crontabList []unstructured.Unstructured
+		var crontabList []*unstructured.Unstructured
 		err := kom.DefaultCluster().
 			WithContext(context.TODO()).
 			CRD("stable.example.com", "v1", "CronTab").

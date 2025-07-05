@@ -50,7 +50,7 @@ func (s *scale) Stop() error {
 		s.kubectl.Error = fmt.Errorf("%s %s/%s Scale is not supported", kind, s.kubectl.Statement.Namespace, s.kubectl.Statement.Name)
 		return s.kubectl.Error
 	}
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err := s.kubectl.Get(&item).Error
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (s *scale) Restore() error {
 		s.kubectl.Error = fmt.Errorf("%s %s/%s Scale is not supported", kind, s.kubectl.Statement.Namespace, s.kubectl.Statement.Name)
 		return s.kubectl.Error
 	}
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err := s.kubectl.Get(&item).Error
 	if err != nil {
 		return err

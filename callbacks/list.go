@@ -15,6 +15,14 @@ import (
 	"k8s.io/klog/v2"
 )
 
+func ConvertUnstructuredItems(src *unstructured.UnstructuredList) []*unstructured.Unstructured {
+	var dstItems []*unstructured.Unstructured
+	for i := range src.Items {
+		// 注意：使用 &src.Items[i] 是安全的，因为我们遍历的是 index，而不是 range 中的值副本
+		dstItems = append(dstItems, &src.Items[i])
+	}
+	return dstItems
+}
 func List(k *kom.Kubectl) error {
 
 	stmt := k.Statement
@@ -27,7 +35,7 @@ func List(k *kom.Kubectl) error {
 
 	opts := stmt.ListOptions
 	listOptions := metav1.ListOptions{}
-	listOptionsMD5 := "" //cache key值
+	listOptionsMD5 := "" // cache key值
 	if len(opts) > 0 {
 		listOptions = opts[0]
 
@@ -81,8 +89,10 @@ func List(k *kom.Kubectl) error {
 		return fmt.Errorf("list Items is nil")
 	}
 
+	items := ConvertUnstructuredItems(list)
+
 	// 对结果进行过滤，执行where 条件
-	result := executeFilter(list.Items, conditions)
+	result := executeFilter(items, conditions)
 	if stmt.TotalCount != nil {
 		*stmt.TotalCount = int64(len(result))
 	}
@@ -129,7 +139,7 @@ func List(k *kom.Kubectl) error {
 	return nil
 }
 
-func executeOrderBy(result []unstructured.Unstructured, order string) {
+func executeOrderBy(result []*unstructured.Unstructured, order string) {
 	// order by `metadata.name` asc, `metadata.host` asc
 	// todo 目前只实现了单一字段的排序，还没有搞定多个字段的排序
 	order = strings.TrimPrefix(strings.TrimSpace(order), "order by")
@@ -149,7 +159,7 @@ func executeOrderBy(result []unstructured.Unstructured, order string) {
 		field = strings.TrimSpace(utils.TrimQuotes(field))
 		klog.V(6).Infof("Sorting by field: %s, Desc: %v", field, desc)
 
-		slice.SortBy(result, func(a, b unstructured.Unstructured) bool {
+		slice.SortBy(result, func(a, b *unstructured.Unstructured) bool {
 			// 获取字段值
 			aFieldValues, found, err := getNestedFieldAsString(a.Object, field)
 			if err != nil || !found {

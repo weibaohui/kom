@@ -36,7 +36,7 @@ func TestSQL(t *testing.T) {
 	// sql = "select * from virtualmachine where (metadata.namespace='kube-system' or metadata.namespace='default' )  order by id desc"
 	// sql = "select * from deploy where (metadata.namespace='kube-system' or metadata.namespace='default' ) and  metadata.creationTimestamp in ('2024-11-08','2024-11-09','2024-11-10') order by id desc limit 2"
 
-	var list []unstructured.Unstructured
+	var list []*unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	if err != nil {
 		t.Logf("List error %v", err)
@@ -49,7 +49,7 @@ func TestSQL(t *testing.T) {
 func TestCRDSQL(t *testing.T) {
 	sql := "select * from vm where (metadata.namespace='kube-system' or metadata.namespace='default' )  "
 
-	var list []unstructured.Unstructured
+	var list []*unstructured.Unstructured
 	err := kom.DefaultCluster().Sql(sql).List(&list).Error
 	if err != nil {
 		t.Logf("List error %v", err)
@@ -128,7 +128,7 @@ func TestPodPorts2Sql(t *testing.T) {
 }
 func TestCRD2Sql(t *testing.T) {
 
-	var list []unstructured.Unstructured
+	var list []*unstructured.Unstructured
 	err := kom.DefaultCluster().GVK(
 		"apiextensions.k8s.io",
 		"v1",

@@ -23,12 +23,15 @@ func (a *applier) Apply(str string) (result []string) {
 			continue
 		}
 		// 解析 YAML 到 Unstructured 对象
-		var obj unstructured.Unstructured
-		if err := yaml.Unmarshal([]byte(doc), &obj.Object); err != nil {
+		var obj *unstructured.Unstructured
+		obj = &unstructured.Unstructured{
+			Object: make(map[string]interface{}),
+		}
+		if err := yaml.Unmarshal([]byte(doc), obj.Object); err != nil {
 			result = append(result, fmt.Sprintf("YAML 解析失败: %v", err))
 			continue
 		}
-		result = append(result, a.createOrUpdateCRD(&obj))
+		result = append(result, a.createOrUpdateCRD(obj))
 	}
 
 	return result
@@ -41,12 +44,15 @@ func (a *applier) Delete(str string) (result []string) {
 			continue
 		}
 		// 解析 YAML 到 Unstructured 对象
-		var obj unstructured.Unstructured
-		if err := yaml.Unmarshal([]byte(doc), &obj.Object); err != nil {
+		var obj *unstructured.Unstructured
+		obj = &unstructured.Unstructured{
+			Object: make(map[string]interface{}),
+		}
+		if err := yaml.Unmarshal([]byte(doc), obj.Object); err != nil {
 			result = append(result, fmt.Sprintf("YAML 解析失败: %v", err))
 			continue
 		}
-		result = append(result, a.deleteCRD(&obj))
+		result = append(result, a.deleteCRD(obj))
 	}
 
 	return result

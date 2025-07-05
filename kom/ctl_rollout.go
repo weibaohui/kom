@@ -127,7 +127,7 @@ func (d *rollout) Status() (string, error) {
 		return "", err
 	}
 
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err := d.kubectl.Get(&item).Error
 	if err != nil {
 		return "", d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "status", err)
@@ -204,7 +204,7 @@ func (d *rollout) History() ([]RolloutHistory, error) {
 		return nil, err
 	}
 
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err := d.kubectl.Get(&item).Error
 	if err != nil {
 		return nil, d.handleError(kind, d.kubectl.Statement.Namespace, d.kubectl.Statement.Name, "history", err)
@@ -395,7 +395,7 @@ func (d *rollout) Undo(toVersions ...int) (string, error) {
 		return "", err
 	}
 
-	var item unstructured.Unstructured
+	var item *unstructured.Unstructured
 	err := d.kubectl.Get(&item).Error
 	if err != nil {
 		return "", d.handleError(kind, namespace, name, "Undo", err)
