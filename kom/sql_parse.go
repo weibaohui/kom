@@ -10,13 +10,13 @@ import (
 )
 
 // 解析 WHERE 表达式
-func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlparser.Expr) []Condition {
+func parseWhereExpr(conditions []*Condition, depth int, andor string, expr sqlparser.Expr) []*Condition {
 	klog.V(6).Infof("expr type [%v],string %s, type [%s]", reflect.TypeOf(expr), sqlparser.String(expr), andor)
 	d := depth + 1 // 深度递增
 	switch node := expr.(type) {
 	case *sqlparser.ComparisonExpr:
 		// 处理比较表达式 (比如 age > 80)
-		cond := Condition{
+		cond := &Condition{
 			Depth:    depth,
 			AndOr:    andor,
 			Field:    utils.TrimQuotes(sqlparser.String(node.Left)),
@@ -36,7 +36,7 @@ func parseWhereExpr(conditions []Condition, depth int, andor string, expr sqlpar
 		conditions = parseWhereExpr(conditions, d, "AND", node.Right)
 	case *sqlparser.RangeCond:
 		// 递归解析 between 1 and 3 表达式
-		cond := Condition{
+		cond := &Condition{
 			Depth:    depth,
 			AndOr:    andor,
 			Field:    utils.TrimQuotes(sqlparser.String(node.Left)),                                                                        // 左侧的字段

@@ -51,14 +51,14 @@ type Statement struct {
 	PortForwardStopCh    chan struct{}                `json:"-"`
 }
 type Filter struct {
-	Columns    []string    `json:"columns,omitempty"`
-	Conditions []Condition `json:"condition,omitempty"` // xx=?
-	Order      string      `json:"order,omitempty"`
-	Limit      int         `json:"limit,omitempty"`
-	Offset     int         `json:"offset,omitempty"`
-	Sql        string      `json:"sql,omitempty"`    // 原始sql
-	Parsed     bool        `json:"parsed,omitempty"` // 是否解析过
-	From       string      `json:"from,omitempty"`   // From TableName
+	Columns    []string     `json:"columns,omitempty"`
+	Conditions []*Condition `json:"condition,omitempty"` // xx=?
+	Order      string       `json:"order,omitempty"`
+	Limit      int          `json:"limit,omitempty"`
+	Offset     int          `json:"offset,omitempty"`
+	Sql        string       `json:"sql,omitempty"`    // 原始sql
+	Parsed     bool         `json:"parsed,omitempty"` // 是否解析过
+	From       string       `json:"from,omitempty"`   // From TableName
 }
 type Condition struct {
 	Depth     int

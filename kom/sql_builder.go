@@ -33,7 +33,7 @@ func (k *Kubectl) Sql(sql string, values ...interface{}) *Kubectl {
 		return tx
 	}
 
-	var conditions []Condition // 存储解析后的条件
+	var conditions []*Condition // 存储解析后的条件
 
 	// 断言为 *sqlparser.Select 类型
 	selectStmt, ok := stmt.(*sqlparser.Select)
@@ -127,7 +127,7 @@ func (k *Kubectl) Where(condition string, values ...interface{}) *Kubectl {
 		return tx
 	}
 
-	var conditions []Condition // 存储解析后的条件
+	var conditions []*Condition // 存储解析后的条件
 
 	// 断言为 *sqlparser.Select 类型
 	selectStmt, ok := stmt.(*sqlparser.Select)
