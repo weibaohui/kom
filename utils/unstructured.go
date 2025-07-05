@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func SortByCreationTime(items []unstructured.Unstructured) []unstructured.Unstructured {
+func SortByCreationTime(items []*unstructured.Unstructured) []*unstructured.Unstructured {
 	sort.Slice(items, func(i, j int) bool {
 		ti := items[i].GetCreationTimestamp()
 		tj := items[j].GetCreationTimestamp()

@@ -16,7 +16,7 @@ import (
 )
 
 // executeFilter 使用 lancet 执行过滤
-func executeFilter(result []unstructured.Unstructured, conditions []kom.Condition) []unstructured.Unstructured {
+func executeFilter(result []*unstructured.Unstructured, conditions []kom.Condition) []*unstructured.Unstructured {
 
 	// 最终的结果，按照条件列表，逐一执行过滤
 
@@ -61,7 +61,7 @@ func groupByOperator(conditions []kom.Condition) map[string][]kom.Condition {
 	}
 	return groups
 }
-func evaluateCondition(result []unstructured.Unstructured, group []kom.Condition) []unstructured.Unstructured {
+func evaluateCondition(result []*unstructured.Unstructured, group []kom.Condition) []*unstructured.Unstructured {
 
 	// 一般一组 and or 都相同
 	if group[0].AndOr == "OR" {
@@ -72,8 +72,8 @@ func evaluateCondition(result []unstructured.Unstructured, group []kom.Condition
 }
 
 // matchAll 判断所有条件都满足 (AND 逻辑)
-func matchAll(result []unstructured.Unstructured, conditions []kom.Condition) []unstructured.Unstructured {
-	return slice.Filter(result, func(index int, item unstructured.Unstructured) bool {
+func matchAll(result []*unstructured.Unstructured, conditions []kom.Condition) []*unstructured.Unstructured {
+	return slice.Filter(result, func(index int, item *unstructured.Unstructured) bool {
 		// 遍历所有条件，只有全部条件成立才返回 true
 		for _, c := range conditions {
 			condition := matchCondition(item, c)
@@ -87,8 +87,8 @@ func matchAll(result []unstructured.Unstructured, conditions []kom.Condition) []
 }
 
 // matchAny 判断任一条件满足 (OR 逻辑)
-func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []unstructured.Unstructured {
-	return slice.Filter(result, func(index int, item unstructured.Unstructured) bool {
+func matchAny(result []*unstructured.Unstructured, conditions []kom.Condition) []*unstructured.Unstructured {
+	return slice.Filter(result, func(index int, item *unstructured.Unstructured) bool {
 		// 遍历所有条件，任意一个条件成立就返回 true
 		for _, c := range conditions {
 			condition := matchCondition(item, c)
@@ -118,7 +118,7 @@ func matchAny(result []unstructured.Unstructured, conditions []kom.Condition) []
 //
 // 对于 正向操作符（如 =, like, in, between），只要找到一个匹配的值就返回 true。
 // 对于 负向操作符（如 !=, not in, not between），则要确保所有值都不匹配才返回 true。
-func matchCondition(resource unstructured.Unstructured, condition kom.Condition) bool {
+func matchCondition(resource *unstructured.Unstructured, condition kom.Condition) bool {
 	klog.V(6).Infof("matchCondition  %s %s %s", condition.Field, condition.Operator, condition.Value)
 
 	// 获取字段值

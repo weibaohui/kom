@@ -35,6 +35,7 @@ func Example() {
 	// podCommand()
 	// podFileCommand()
 	ResourceCount()
+	sql()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -395,7 +396,7 @@ spec:
 		fmt.Printf("CRD Get %v\n", err)
 	}
 
-	var crontabList []unstructured.Unstructured
+	var crontabList []*unstructured.Unstructured
 	err = kom.DefaultCluster().
 		CRD("stable.example.com", "v1", "CronTab").
 		Namespace(crontab.GetNamespace()).
