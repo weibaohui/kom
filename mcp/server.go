@@ -6,6 +6,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/cluster"
+	"github.com/weibaohui/kom/mcp/tools/daemonset"
 	"github.com/weibaohui/kom/mcp/tools/deployment"
 	"github.com/weibaohui/kom/mcp/tools/dynamic"
 	"github.com/weibaohui/kom/mcp/tools/event"
@@ -156,6 +157,7 @@ func GetMCPServerWithOption(cfg *ServerConfig) *server.MCPServer {
 	ingressclass.RegisterTools(s)
 	yaml.RegisterTools(s)
 	ns.RegisterTools(s)
+	daemonset.RegisterTools(s)
 	return s
 
 }
