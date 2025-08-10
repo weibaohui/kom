@@ -1110,6 +1110,6 @@ var docResult []byte
 
 ## 微信群
 
-![输入图片说明](https://foruda.gitee.com/images/1753455031254775761/148f6887_77493.png "屏幕截图")
+![输入图片说明](https://foruda.gitee.com/images/1754796150513753779/023c19e6_77493.png "屏幕截图")
 ## QQ群
 ![输入图片说明](https://foruda.gitee.com/images/1753099785542398999/184a765a_77493.png "屏幕截图")
