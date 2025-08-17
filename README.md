@@ -1103,13 +1103,4 @@ var docResult []byte
 		Resource(&item).DocField(field).Doc(&docResult).Error
 	fmt.Printf("Get Deployment Doc [%s] :%s", field, string(docResult))
 ```
-## 联系我
 
-微信（大罗马的太阳） 搜索ID：daluomadetaiyang,备注kom。
-<br><img width="214" alt="Image" src="https://github.com/user-attachments/assets/166db141-42c5-42c4-9964-8e25cf12d04c" />
-
-## 微信群
-
-![输入图片说明](https://foruda.gitee.com/images/1754796150513753779/023c19e6_77493.png "屏幕截图")
-## QQ群
-![输入图片说明](https://foruda.gitee.com/images/1753099785542398999/184a765a_77493.png "屏幕截图")
