@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/cache"
@@ -226,36 +225,44 @@ func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 		return fmt.Errorf("failed to create apiextensions client: %v", err)
 	}
 
-	rawDiscovery, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to create discovery client: %v", err)
-	}
-
-	cachedDiscovery := memory.NewMemCacheClient(rawDiscovery)
-
 	var started atomic.Bool
 
 	// 创建一个刷新请求通道（带缓冲，防抖）
 	refreshCh := make(chan struct{}, 1)
-
-	// 后台刷新 worker，只处理信号，不管来源
 	go func() {
+		var (
+			debounceTimer *time.Timer
+			mu            sync.Mutex
+		)
+
+		triggerRefresh := func() {
+			if !started.Load() {
+				klog.V(8).Infof("Skipping refresh (initial load)")
+				return
+			}
+			klog.V(6).Infof("Refreshing API resources due to CRD change")
+			k.Status().SetAPIResources(k.initializeAPIResources())
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-refreshCh:
-				if !started.Load() {
-					klog.V(8).Infof("Skipping refresh (initial load)")
-					continue
+				mu.Lock()
+				if debounceTimer != nil {
+					// 如果已有定时器，重置它（延迟合并）
+					if debounceTimer.Stop() {
+						<-debounceTimer.C
+					}
 				}
-				klog.V(6).Infof("Refreshing API resources due to CRD change")
-				cachedDiscovery.Invalidate()
-				k.Status().SetAPIResources(k.initializeAPIResources())
+				debounceTimer = time.AfterFunc(2*time.Second, func() {
+					triggerRefresh()
+				})
+				mu.Unlock()
 			}
 		}
 	}()
-
 	// 创建 informer
 	factory := apixinformers.NewSharedInformerFactory(apixClient, 0)
 	crdInformer := factory.Apiextensions().V1().CustomResourceDefinitions().Informer()
@@ -278,9 +285,18 @@ func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 
 	factory.Start(ctx.Done())
 
-	if ok := cache.WaitForCacheSync(ctx.Done(), crdInformer.HasSynced); !ok {
-		return fmt.Errorf("failed to sync CRD informer cache")
+	// 创建一个带超时的context，默认30秒超时
+	syncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if ok := cache.WaitForCacheSync(syncCtx.Done(), crdInformer.HasSynced); !ok {
+		klog.Warningf("Failed to sync CRD informer cache within 30 seconds")
 	}
+
+	// started.Store 防止 初始化阶段重复刷新
+	// informer 启动后会把现有 CRD 全量同步一遍，此时会产生大量的 “Add” 事件。
+	// 如果没有 started，worker 会在第一次 sync 阶段被疯狂触发，从而浪费资源。
+	// 有了 started.Store(true) 之后，只有在第一次初始化加载完成后，才允许后续事件触发刷新。
 
 	klog.V(6).Infof("Initial CRD sync done, loading API resources")
 	k.Status().SetAPIResources(k.initializeAPIResources())
@@ -293,6 +309,7 @@ func (k *Kubectl) WatchCRDAndRefreshDiscovery(ctx context.Context) error {
 func (k *Kubectl) initializeAPIResources() (apiResources []*metav1.APIResource) {
 	klog.V(6).Infof("Loading API resources")
 	// 提取ApiResources
+	k.Client()
 	_, lists, _ := k.Client().Discovery().ServerGroupsAndResources()
 	for _, list := range lists {
 		resources := list.APIResources
