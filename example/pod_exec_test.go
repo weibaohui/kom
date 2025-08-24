@@ -2,10 +2,11 @@ package example
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
+	"math/big"
 	"sync"
 	"testing"
 	"time"
@@ -51,11 +52,18 @@ type fakeTerminalSizeQueue struct {
 // randomTerminalSize returns a TerminalSize with random values in the
 // range (0-65535) for the fields Width and Height.
 func randomTerminalSize() remotecommand.TerminalSize {
-	randWidth := uint16(rand.Intn(int(math.Pow(2, 16))))
-	randHeight := uint16(rand.Intn(int(math.Pow(2, 16))))
+	maxVal := big.NewInt(int64(math.Pow(2, 16)))
+	widthBig, err := rand.Int(rand.Reader, maxVal)
+	if err != nil {
+		widthBig = big.NewInt(0)
+	}
+	heightBig, err := rand.Int(rand.Reader, maxVal)
+	if err != nil {
+		heightBig = big.NewInt(0)
+	}
 	return remotecommand.TerminalSize{
-		Width:  randWidth,
-		Height: randHeight,
+		Width:  uint16(widthBig.Int64()),
+		Height: uint16(heightBig.Int64()),
 	}
 }
 
