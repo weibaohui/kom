@@ -14,13 +14,21 @@ func RandNDigitInt(n int) int {
 	}
 	_min := intPow(10, n-1)
 	_max := intPow(10, n) - 1
-	rangeBig := big.NewInt(int64(_max - _min + 1))
-	nBig, err := rand.Int(rand.Reader, rangeBig)
-	if err != nil {
-		// Fallback to 0 if there's an error
+
+	// Use int64 for all intermediate calculations to avoid overflow
+	r := int64(_max) - int64(_min) + 1
+	if r <= 0 {
+		// Handle error case - return min value
 		return _min
 	}
-	return int(nBig.Int64()) + _min
+
+	rangeBig := big.NewInt(r)
+	randomNum, err := rand.Int(rand.Reader, rangeBig)
+	if err != nil {
+		// Fallback to min if there's an error
+		return _min
+	}
+	return int(randomNum.Int64()) + _min
 }
 
 // RandNLengthString generates a random string of specified length using the default charset
