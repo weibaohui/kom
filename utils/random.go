@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"math/big"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -12,10 +12,15 @@ func RandNDigitInt(n int) int {
 	if n <= 0 {
 		return 0
 	}
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	_min := intPow(10, n-1)
 	_max := intPow(10, n) - 1
-	return rng.Intn(_max-_min+1) + _min
+	rangeBig := big.NewInt(int64(_max - _min + 1))
+	nBig, err := rand.Int(rand.Reader, rangeBig)
+	if err != nil {
+		// Fallback to 0 if there's an error
+		return _min
+	}
+	return int(nBig.Int64()) + _min
 }
 
 // RandNLengthString generates a random string of specified length using the default charset
@@ -23,10 +28,15 @@ func RandNLengthString(n int) string {
 	if n <= 0 {
 		return ""
 	}
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	result := make([]byte, n)
 	for i := range result {
-		result[i] = charset[rng.Intn(len(charset))]
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			// Fallback to first character if there's an error
+			result[i] = charset[0]
+			continue
+		}
+		result[i] = charset[nBig.Int64()]
 	}
 	return string(result)
 }
