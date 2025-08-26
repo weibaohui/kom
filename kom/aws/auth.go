@@ -49,7 +49,7 @@ func (ap *AuthProvider) InitializeFromKubeconfig(kubeconfigContent []byte) error
 
 	ap.tokenManager = tokenManager
 
-	klog.V(2).Infof("Initialized AWS auth provider for cluster: %s, region: %s", 
+	klog.V(2).Infof("Initialized AWS auth provider for cluster: %s, region: %s",
 		eksConfig.ClusterName, eksConfig.Region)
 
 	return nil
@@ -181,4 +181,14 @@ func (ap *AuthProvider) AssumeRole(ctx context.Context) error {
 	}
 
 	return ap.tokenManager.AssumeRole(ctx)
+}
+
+// SetEKSConfig 设置 EKS 配置
+func (ap *AuthProvider) SetEKSConfig(config *EKSAuthConfig) {
+	ap.eksConfig = config
+}
+
+// SetTokenManager 设置 token 管理器
+func (ap *AuthProvider) SetTokenManager(manager *TokenManager) {
+	ap.tokenManager = manager
 }
