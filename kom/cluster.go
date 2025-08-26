@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgraph-io/ristretto/v2"
 	openapi_v2 "github.com/google/gnostic-models/openapiv2"
+	"github.com/weibaohui/kom/kom/aws"
 	"github.com/weibaohui/kom/kom/describe"
 	"github.com/weibaohui/kom/kom/doc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,11 @@ type ClusterInst struct {
 	Cache              *ristretto.Cache[string, any]
 	openAPISchema      *openapi_v2.Document // openapi
 	watchCRDCancelFunc context.CancelFunc   // CRD取消方法，用于断开连接的时候停止
+
+	// AWS EKS 特定字段
+	AWSAuthProvider    *aws.AuthProvider    // AWS 认证提供者
+	IsEKS              bool                 // 是否为 EKS 集群
+	tokenRefreshCancel context.CancelFunc   // token 刷新取消函数
 }
 
 // Clusters 集群实例管理器
@@ -102,6 +108,14 @@ func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 
 // RegisterByString 通过kubeconfig文件的string 内容进行注册
 func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
+	// 自动检测是否为 EKS 配置
+	authProvider := aws.NewAuthProvider()
+	if authProvider.IsEKSConfig([]byte(str)) {
+		klog.V(2).Infof("Detected EKS configuration, using EKS registration method")
+		return c.RegisterEKSByString(str)
+	}
+
+	// 使用标准注册方法
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByString Error,content=:\n%s\n,err:%v", str, err)
@@ -117,6 +131,14 @@ func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
 
 // RegisterByStringWithID 通过kubeconfig文件的string 内容进行注册
 func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubectl, error) {
+	// 自动检测是否为 EKS 配置
+	authProvider := aws.NewAuthProvider()
+	if authProvider.IsEKSConfig([]byte(str)) {
+		klog.V(2).Infof("Detected EKS configuration for ID %s, using EKS registration method", id)
+		return c.RegisterEKSByStringWithID(str, id)
+	}
+
+	// 使用标准注册方法
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByStringWithID Error content=\n%s\n,id:%s,err:%v", str, id, err)
@@ -221,6 +243,17 @@ func (c *ClusterInstances) GetClusterById(id string) *ClusterInst {
 func (c *ClusterInstances) RemoveClusterById(id string) {
 	if value, exists := c.clusters.Load(id); exists {
 		cluster := value.(*ClusterInst)
+		
+		// 如果是 EKS 集群，停止 token 刷新
+		if cluster.IsEKS {
+			if cluster.tokenRefreshCancel != nil {
+				cluster.tokenRefreshCancel()
+			}
+			if cluster.AWSAuthProvider != nil {
+				cluster.AWSAuthProvider.Stop()
+			}
+		}
+		
 		// 释放 ristretto.Cache 资源
 		if cluster.Cache != nil {
 			cluster.Cache.Close()
@@ -296,4 +329,233 @@ func (c *ClusterInstances) Show() {
 		}
 		return true
 	})
+}
+
+// AWS EKS 相关注册方法
+
+// RegisterEKSByString 通过 kubeconfig 字符串注册 EKS 集群
+func (c *ClusterInstances) RegisterEKSByString(str string) (*Kubectl, error) {
+	// 检测是否为 EKS 配置
+	authProvider := aws.NewAuthProvider()
+	if !authProvider.IsEKSConfig([]byte(str)) {
+		return nil, fmt.Errorf("not an EKS kubeconfig")
+	}
+
+	// 解析配置并获取集群名称作为 ID
+	if err := authProvider.InitializeFromKubeconfig([]byte(str)); err != nil {
+		return nil, fmt.Errorf("failed to initialize EKS auth provider: %w", err)
+	}
+
+	clusterName, _, _ := authProvider.GetClusterInfo()
+	id := fmt.Sprintf("eks-%s", clusterName)
+
+	return c.RegisterEKSByStringWithID(str, id)
+}
+
+// RegisterEKSByStringWithID 通过 kubeconfig 字符串注册 EKS 集群 (带 ID)
+func (c *ClusterInstances) RegisterEKSByStringWithID(str string, id string) (*Kubectl, error) {
+	// 检查是否已存在
+	if value, exists := c.clusters.Load(id); exists {
+		cluster := value.(*ClusterInst)
+		return cluster.Kubectl, nil
+	}
+
+	// 创建 AWS 认证提供者
+	authProvider := aws.NewAuthProvider()
+	if err := authProvider.InitializeFromKubeconfig([]byte(str)); err != nil {
+		return nil, fmt.Errorf("failed to initialize EKS auth provider: %w", err)
+	}
+
+	// 获取初始 token
+	ctx := context.Background()
+	token, _, err := authProvider.GetToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get initial AWS token: %w", err)
+	}
+
+	// 解析标准 kubeconfig 结构
+	config, err := clientcmd.Load([]byte(str))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
+	}
+
+	// 创建 rest.Config，但使用 Bearer token 认证
+	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
+	restConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rest config: %w", err)
+	}
+
+	// 清除原有认证信息，使用 Bearer token
+	restConfig.Username = ""
+	restConfig.Password = ""
+	restConfig.CertFile = ""
+	restConfig.KeyFile = ""
+	restConfig.CertData = nil
+	restConfig.KeyData = nil
+	restConfig.BearerToken = token
+	restConfig.BearerTokenFile = ""
+
+	// 设置性能参数
+	restConfig.QPS = 200
+	restConfig.Burst = 2000
+
+	// 创建集群实例
+	k := initKubectl(restConfig, id)
+	cluster := &ClusterInst{
+		ID:               id,
+		Kubectl:          k,
+		Config:           restConfig,
+		AWSAuthProvider:  authProvider,
+		IsEKS:            true,
+	}
+	c.clusters.Store(id, cluster)
+
+	// 创建 Kubernetes 客户端
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
+	dynamicClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
+	}
+
+	cluster.Client = client
+	cluster.DynamicClient = dynamicClient
+
+	// 初始化其他组件
+	cluster.crdList = k.initializeCRDList(time.Minute * 10)
+	cluster.callbacks = k.initializeCallbacks()
+	cluster.serverVersion = k.initializeServerVersion()
+	cluster.openAPISchema = k.getOpenAPISchema()
+	cluster.docs = doc.InitTrees(k.getOpenAPISchema())
+	cluster.describerMap = k.initializeDescriberMap()
+
+	// 注册回调
+	if c.callbackRegisterFunc != nil {
+		c.callbackRegisterFunc(cluster)
+	}
+
+	// 创建缓存
+	cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
+		NumCounters: 1e7,
+		MaxCost:     1 << 30,
+		BufferItems: 64,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cache: %w", err)
+	}
+	cluster.Cache = cache
+
+	// 启动 CRD 监控
+	crdCtx, crdCancel := context.WithCancel(context.Background())
+	cluster.watchCRDCancelFunc = crdCancel
+	if err := k.WatchCRDAndRefreshDiscovery(crdCtx); err != nil {
+		return nil, fmt.Errorf("failed to start CRD watch: %w", err)
+	}
+
+	// 启动 token 自动刷新
+	tokenCtx, tokenCancel := context.WithCancel(context.Background())
+	cluster.tokenRefreshCancel = tokenCancel
+	authProvider.StartAutoRefresh(tokenCtx)
+
+	// 设置 token 刷新回调，更新 rest.Config 中的 BearerToken
+	go c.startTokenRefreshForCluster(tokenCtx, cluster)
+
+	klog.V(2).Infof("Successfully registered EKS cluster: %s", id)
+
+	return k, nil
+}
+
+// RegisterEKSByPath 通过 kubeconfig 文件路径注册 EKS 集群
+func (c *ClusterInstances) RegisterEKSByPath(path string) (*Kubectl, error) {
+	// 读取文件内容
+	content, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig from file %s: %w", path, err)
+	}
+
+	// 将配置转换为字节数组
+	kubeconfigBytes, err := clientcmd.Write(*content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize kubeconfig: %w", err)
+	}
+
+	return c.RegisterEKSByString(string(kubeconfigBytes))
+}
+
+// RegisterEKSByPathWithID 通过 kubeconfig 文件路径注册 EKS 集群 (带 ID)
+func (c *ClusterInstances) RegisterEKSByPathWithID(path string, id string) (*Kubectl, error) {
+	// 读取文件内容
+	content, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig from file %s: %w", path, err)
+	}
+
+	// 将配置转换为字节数组
+	kubeconfigBytes, err := clientcmd.Write(*content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize kubeconfig: %w", err)
+	}
+
+	return c.RegisterEKSByStringWithID(string(kubeconfigBytes), id)
+}
+
+// startTokenRefreshForCluster 为 EKS 集群启动 token 刷新循环
+func (c *ClusterInstances) startTokenRefreshForCluster(ctx context.Context, cluster *ClusterInst) {
+	if !cluster.IsEKS || cluster.AWSAuthProvider == nil {
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Minute) // 每5分钟检查一次
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			klog.V(2).Infof("Stopping token refresh for cluster %s", cluster.ID)
+			return
+		case <-ticker.C:
+			// 检查 token 是否需要刷新
+			if !cluster.AWSAuthProvider.IsTokenValid() {
+				klog.V(3).Infof("Token expired for cluster %s, refreshing...", cluster.ID)
+				if token, _, err := cluster.AWSAuthProvider.GetToken(ctx); err != nil {
+					klog.Errorf("Failed to refresh token for cluster %s: %v", cluster.ID, err)
+				} else {
+					// 更新 rest.Config 中的 BearerToken
+					cluster.Config.BearerToken = token
+					klog.V(2).Infof("Successfully refreshed token for cluster %s", cluster.ID)
+				}
+			}
+		}
+	}
+}
+
+// IsEKSCluster 检查集群是否为 EKS 集群
+func (ci *ClusterInst) IsEKSCluster() bool {
+	return ci.IsEKS
+}
+
+// GetAWSAuthProvider 获取 AWS 认证提供者
+func (ci *ClusterInst) GetAWSAuthProvider() *aws.AuthProvider {
+	return ci.AWSAuthProvider
+}
+
+// StopTokenRefresh 停止 token 自动刷新
+func (ci *ClusterInst) StopTokenRefresh() {
+	if ci.tokenRefreshCancel != nil {
+		ci.tokenRefreshCancel()
+		ci.tokenRefreshCancel = nil
+	}
+}
+
+// GetServerVersion 获取服务器版本信息
+func (ci *ClusterInst) GetServerVersion() *version.Info {
+	return ci.serverVersion
+}
+
+// NewAWSAuthProvider 创建新的 AWS 认证提供者实例
+func NewAWSAuthProvider() *aws.AuthProvider {
+	return aws.NewAuthProvider()
 }

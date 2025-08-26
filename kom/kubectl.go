@@ -92,6 +92,11 @@ func (k *Kubectl) parentCluster() *ClusterInst {
 	cluster := Clusters().GetClusterById(k.ID)
 	return cluster
 }
+
+// ParentCluster 获取父集群实例
+func (k *Kubectl) ParentCluster() *ClusterInst {
+	return k.parentCluster()
+}
 func (k *Kubectl) Applier() *applier {
 	return &applier{
 		kubectl: k,
