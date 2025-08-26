@@ -49,9 +49,9 @@ type ClusterInst struct {
 	watchCRDCancelFunc context.CancelFunc   // CRD取消方法，用于断开连接的时候停止
 
 	// AWS EKS 特定字段
-	AWSAuthProvider    *aws.AuthProvider    // AWS 认证提供者
-	IsEKS              bool                 // 是否为 EKS 集群
-	tokenRefreshCancel context.CancelFunc   // token 刷新取消函数
+	AWSAuthProvider    *aws.AuthProvider  // AWS 认证提供者
+	IsEKS              bool               // 是否为 EKS 集群
+	tokenRefreshCancel context.CancelFunc // token 刷新取消函数
 }
 
 // Clusters 集群实例管理器
@@ -99,6 +99,26 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 
 // RegisterByPath 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
+	// 先读取文件内容以检测是否为 EKS 配置
+	content, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByPath Error loading file %s: %v", path, err)
+	}
+
+	// 将配置转换为字节数组进行 EKS 检测
+	kubeconfigBytes, err := clientcmd.Write(*content)
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByPath Error serializing kubeconfig %s: %v", path, err)
+	}
+
+	// 自动检测是否为 EKS 配置
+	authProvider := aws.NewAuthProvider()
+	if authProvider.IsEKSConfig(kubeconfigBytes) {
+		klog.V(2).Infof("Detected EKS configuration for path %s, using EKS registration method", path)
+		return c.RegisterEKSByString(string(kubeconfigBytes))
+	}
+
+	// 使用标准注册方法
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
@@ -154,6 +174,26 @@ func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubec
 
 // RegisterByPathWithID 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
+	// 先读取文件内容以检测是否为 EKS 配置
+	content, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByPathWithID Error loading file path:%s,id:%s,err:%v", path, id, err)
+	}
+
+	// 将配置转换为字节数组进行 EKS 检测
+	kubeconfigBytes, err := clientcmd.Write(*content)
+	if err != nil {
+		return nil, fmt.Errorf("RegisterByPathWithID Error serializing kubeconfig path:%s,id:%s,err:%v", path, id, err)
+	}
+
+	// 自动检测是否为 EKS 配置
+	authProvider := aws.NewAuthProvider()
+	if authProvider.IsEKSConfig(kubeconfigBytes) {
+		klog.V(2).Infof("Detected EKS configuration for path %s, ID %s, using EKS registration method", path, id)
+		return c.RegisterEKSByStringWithID(string(kubeconfigBytes), id)
+	}
+
+	// 使用标准注册方法
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
@@ -243,7 +283,7 @@ func (c *ClusterInstances) GetClusterById(id string) *ClusterInst {
 func (c *ClusterInstances) RemoveClusterById(id string) {
 	if value, exists := c.clusters.Load(id); exists {
 		cluster := value.(*ClusterInst)
-		
+
 		// 如果是 EKS 集群，停止 token 刷新
 		if cluster.IsEKS {
 			if cluster.tokenRefreshCancel != nil {
@@ -253,7 +293,7 @@ func (c *ClusterInstances) RemoveClusterById(id string) {
 				cluster.AWSAuthProvider.Stop()
 			}
 		}
-		
+
 		// 释放 ristretto.Cache 资源
 		if cluster.Cache != nil {
 			cluster.Cache.Close()
@@ -403,11 +443,11 @@ func (c *ClusterInstances) RegisterEKSByStringWithID(str string, id string) (*Ku
 	// 创建集群实例
 	k := initKubectl(restConfig, id)
 	cluster := &ClusterInst{
-		ID:               id,
-		Kubectl:          k,
-		Config:           restConfig,
-		AWSAuthProvider:  authProvider,
-		IsEKS:            true,
+		ID:              id,
+		Kubectl:         k,
+		Config:          restConfig,
+		AWSAuthProvider: authProvider,
+		IsEKS:           true,
 	}
 	c.clusters.Store(id, cluster)
 
