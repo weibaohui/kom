@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // AWSAuthProvider AWS 认证提供者接口
@@ -21,13 +20,13 @@ type AWSAuthProvider interface {
 
 // EKSAuthConfig AWS EKS 认证配置
 type EKSAuthConfig struct {
-	ClusterName   string            `json:"cluster_name"`   // EKS 集群名称
-	Region        string            `json:"region"`         // AWS 区域
-	Profile       string            `json:"profile"`        // AWS Profile (可选)
-	RoleARN       string            `json:"role_arn"`       // 要承担的 IAM 角色 ARN (可选)
-	ExecConfig    *ExecConfig       `json:"exec_config"`    // exec 命令配置
-	TokenCache    *TokenCache       `json:"token_cache"`    // token 缓存
-	AWSConfig     *aws.Config       `json:"-"`              // AWS 配置，不序列化
+	ClusterName string      `json:"cluster_name"` // EKS 集群名称
+	Region      string      `json:"region"`       // AWS 区域
+	Profile     string      `json:"profile"`      // AWS Profile (可选)
+	RoleARN     string      `json:"role_arn"`     // 要承担的 IAM 角色 ARN (可选)
+	ExecConfig  *ExecConfig `json:"exec_config"`  // exec 命令配置
+	TokenCache  *TokenCache `json:"token_cache"`  // token 缓存
+	AWSConfig   *aws.Config `json:"-"`            // AWS 配置，不序列化
 }
 
 // ExecConfig 执行命令配置
@@ -39,9 +38,9 @@ type ExecConfig struct {
 
 // TokenCache token 缓存
 type TokenCache struct {
-	Token     string        `json:"token"`      // Bearer token
-	ExpiresAt time.Time     `json:"expires_at"` // 过期时间
-	mutex     sync.RWMutex  `json:"-"`          // 读写锁，不序列化
+	Token     string       `json:"token"`      // Bearer token
+	ExpiresAt time.Time    `json:"expires_at"` // 过期时间
+	mutex     sync.RWMutex `json:"-"`          // 读写锁，不序列化
 }
 
 // IsValid 检查 token 是否有效
@@ -97,37 +96,12 @@ func NewEKSAuthError(errorType, message string, cause error) *EKSAuthError {
 	}
 }
 
-// ParseExecConfigFromKubeconfig 从 kubeconfig 中解析 exec 配置
-func ParseExecConfigFromKubeconfig(config *api.Config) (*ExecConfig, error) {
-	for _, authInfo := range config.AuthInfos {
-		if authInfo.Exec != nil {
-			execConfig := &ExecConfig{
-				Command: authInfo.Exec.Command,
-				Args:    make([]string, len(authInfo.Exec.Args)),
-				Env:     make(map[string]string),
-			}
-			
-			// 复制参数
-			copy(execConfig.Args, authInfo.Exec.Args)
-			
-			// 复制环境变量
-			for _, env := range authInfo.Exec.Env {
-				execConfig.Env[env.Name] = env.Value
-			}
-			
-			return execConfig, nil
-		}
-	}
-	
-	return nil, NewEKSAuthError("NoExecConfig", "no exec configuration found in kubeconfig", nil)
-}
-
 // Constants for error types
 const (
-	ErrorTypeTokenExpired       = "TokenExpired"
-	ErrorTypeAWSConfigMissing   = "AWSConfigMissing"
-	ErrorTypeExecFailed         = "ExecFailed"
-	ErrorTypeInvalidKubeconfig  = "InvalidKubeconfig"
-	ErrorTypeNetworkError       = "NetworkError"
-	ErrorTypePermissionDenied   = "PermissionDenied"
+	ErrorTypeTokenExpired      = "TokenExpired"
+	ErrorTypeAWSConfigMissing  = "AWSConfigMissing"
+	ErrorTypeExecFailed        = "ExecFailed"
+	ErrorTypeInvalidKubeconfig = "InvalidKubeconfig"
+	ErrorTypeNetworkError      = "NetworkError"
+	ErrorTypePermissionDenied  = "PermissionDenied"
 )

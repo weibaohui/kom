@@ -56,30 +56,11 @@ users:
     client-certificate-data: LS0tLS1CRUdJTi1DRVJUSUZJQ0FURS0tLS0tCk1JSURBVENDQWVtZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFXTVJRd0VnWURWUVFERXd0amRHOXYKYkVGa2JXbHVVM1Z5ZGpBZUZ3MHhPVEF5TWpneE56QTBNVEphRncweU9UQXlNalV4TnpBME1USmFNRGN4SERSQW5CZ05WQkFNVEIydHVZV0YwYjJGa2QybHVVM1J5YkRBZkJnTlZCQU1URUE==
     client-key-data: LS0tLS1CRUdJTi1QUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRREVZZnRIOG1sMndsaDQKVEFpbm9VZjZHdWNvM0tSV0lBOStBWnFQaCtYL0lFd3pZdWFNcmJRYUFKZGZNblJjYTBsVGhvV2E5Ym1jSWxoUwp2Q2hyay9wT1FnMFhoN3VHRkVEQ1MrM2FSRXNyYjJJQlZNRUxEbThuL3pBWDJvV0xNQkFUeE5RNkJHTUZqRjdvCmJpUk10SnRBVGZTRW55SmJIMlJ6WXNJUWZVVVFrRTBMNS96V1FFbHF1cjhUNlBNbmlIWEVNb0xKSXE1OVJZdmcKZzdZbU50NHpPOGFHWUdEZ0d5UUFnWUVBd2VjY005NUI3SkNLS2tGV1JDQS5qVXdzRjh5enpIV3dLVlVYcUlaNwpid3gvaXRVTGFPRVhUZ0FBZUVZQWt6MG1ZVDM3a0ZINlhCNWFVSmhBWVUvUklNRi9ZOGdLVjVlZUtaNHVuSXdvCmNGdDNFYkZoeXArWVNQUWdqSXdOR3Y1WTJGRnJPdk5idz09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K`
 
-func TestNewAWSAuthProvider(t *testing.T) {
-	provider := NewAWSAuthProvider()
-	if provider == nil {
-		t.Error("NewAWSAuthProvider() should not return nil")
-	}
-
-	// Test that it can detect EKS config
-	isEKS := provider.IsEKSConfig([]byte(testEKSKubeconfig))
-	if !isEKS {
-		t.Error("Should detect EKS kubeconfig")
-	}
-
-	// Test that it doesn't detect standard config as EKS
-	isNotEKS := provider.IsEKSConfig([]byte(testStandardKubeconfig))
-	if isNotEKS {
-		t.Error("Should not detect standard kubeconfig as EKS")
-	}
-}
-
 func TestClusterInst_EKSMethods(t *testing.T) {
 	// Create a mock cluster instance
 	cluster := &ClusterInst{
-		ID:    "test-cluster",
-		IsEKS: true,
+		ID:              "test-cluster",
+		IsEKS:           true,
 		AWSAuthProvider: aws.NewAuthProvider(),
 	}
 
@@ -112,9 +93,9 @@ func TestClusterInst_EKSMethods(t *testing.T) {
 func TestClusterInstances_EKSRegistration(t *testing.T) {
 	// Note: These are unit tests that test the logic without actually connecting to AWS/EKS
 	// They will fail at the AWS authentication step, but should pass the initial validation
-	
+
 	clusters := &ClusterInstances{}
-	
+
 	t.Run("EKS config detection in RegisterByString", func(t *testing.T) {
 		// This should detect EKS config and attempt EKS registration
 		// It will fail due to missing AWS credentials, but the detection should work
@@ -122,10 +103,10 @@ func TestClusterInstances_EKSRegistration(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error due to missing AWS credentials")
 		}
-		
+
 		// The error should be related to AWS authentication, not config parsing
-		if !strings.Contains(err.Error(), "failed to initialize EKS auth provider") && 
-		   !strings.Contains(err.Error(), "failed to get initial AWS token") {
+		if !strings.Contains(err.Error(), "failed to initialize EKS auth provider") &&
+			!strings.Contains(err.Error(), "failed to get initial AWS token") {
 			t.Logf("Error was: %v", err)
 			// This is expected - we don't have real AWS credentials in tests
 		}
@@ -137,7 +118,7 @@ func TestClusterInstances_EKSRegistration(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error due to invalid server endpoint")
 		}
-		
+
 		// Should not mention EKS in the error
 		if strings.Contains(strings.ToLower(err.Error()), "eks") {
 			t.Errorf("Standard kubeconfig should not trigger EKS registration: %v", err)
@@ -202,7 +183,7 @@ func TestConfigParser_Integration(t *testing.T) {
 	t.Run("Extract region from endpoint", func(t *testing.T) {
 		endpoint := "https://ABC123.gr7.us-east-1.eks.amazonaws.com"
 		region := parser.ExtractRegionFromClusterEndpoint(endpoint)
-		
+
 		expectedRegion := "us-east-1"
 		if region != expectedRegion {
 			t.Errorf("Expected region '%s', got '%s'", expectedRegion, region)

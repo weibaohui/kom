@@ -20,41 +20,7 @@ func NewAuthProvider() *AuthProvider {
 		configParser: NewConfigParser(),
 	}
 }
-
-// IsEKSConfig 检测是否为 EKS 配置
-func (ap *AuthProvider) IsEKSConfig(kubeconfig []byte) bool {
-	return ap.configParser.IsEKSConfig(kubeconfig)
-}
-
-// InitializeFromKubeconfig 从 kubeconfig 初始化认证提供者
-func (ap *AuthProvider) InitializeFromKubeconfig(kubeconfigContent []byte) error {
-	// 解析 EKS 配置
-	eksConfig, err := ap.configParser.ParseEKSConfig(kubeconfigContent)
-	if err != nil {
-		return err
-	}
-
-	// 验证配置
-	if err := ap.configParser.ValidateEKSConfig(eksConfig); err != nil {
-		return err
-	}
-
-	ap.eksConfig = eksConfig
-
-	// 创建 token 管理器
-	tokenManager, err := NewTokenManager(eksConfig)
-	if err != nil {
-		return err
-	}
-
-	ap.tokenManager = tokenManager
-
-	klog.V(2).Infof("Initialized AWS auth provider for cluster: %s, region: %s",
-		eksConfig.ClusterName, eksConfig.Region)
-
-	return nil
-}
-
+ 
 // GetToken 获取认证 token
 func (ap *AuthProvider) GetToken(ctx context.Context) (string, time.Time, error) {
 	if ap.tokenManager == nil {
