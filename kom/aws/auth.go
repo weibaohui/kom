@@ -21,40 +21,6 @@ func NewAuthProvider() *AuthProvider {
 	}
 }
 
-// IsEKSConfig 检测是否为 EKS 配置
-func (ap *AuthProvider) IsEKSConfig(kubeconfig []byte) bool {
-	return ap.configParser.IsEKSConfig(kubeconfig)
-}
-
-// InitializeFromKubeconfig 从 kubeconfig 初始化认证提供者
-func (ap *AuthProvider) InitializeFromKubeconfig(kubeconfigContent []byte) error {
-	// 解析 EKS 配置
-	eksConfig, err := ap.configParser.ParseEKSConfig(kubeconfigContent)
-	if err != nil {
-		return err
-	}
-
-	// 验证配置
-	if err := ap.configParser.ValidateEKSConfig(eksConfig); err != nil {
-		return err
-	}
-
-	ap.eksConfig = eksConfig
-
-	// 创建 token 管理器
-	tokenManager, err := NewTokenManager(eksConfig)
-	if err != nil {
-		return err
-	}
-
-	ap.tokenManager = tokenManager
-
-	klog.V(2).Infof("Initialized AWS auth provider for cluster: %s, region: %s",
-		eksConfig.ClusterName, eksConfig.Region)
-
-	return nil
-}
-
 // GetToken 获取认证 token
 func (ap *AuthProvider) GetToken(ctx context.Context) (string, time.Time, error) {
 	if ap.tokenManager == nil {
@@ -96,28 +62,6 @@ func (ap *AuthProvider) Stop() {
 	}
 }
 
-// GetEKSConfig 获取 EKS 配置
-func (ap *AuthProvider) GetEKSConfig() *EKSAuthConfig {
-	return ap.eksConfig
-}
-
-// ValidateCredentials 验证 AWS 凭证
-func (ap *AuthProvider) ValidateCredentials(ctx context.Context) error {
-	if ap.tokenManager == nil {
-		return NewEKSAuthError(ErrorTypeAWSConfigMissing, "token manager not initialized", nil)
-	}
-
-	return ap.tokenManager.ValidateAWSCredentials(ctx)
-}
-
-// GetClusterInfo 获取集群信息
-func (ap *AuthProvider) GetClusterInfo() (clusterName, region, profile string) {
-	if ap.eksConfig == nil {
-		return "", "", ""
-	}
-	return ap.eksConfig.ClusterName, ap.eksConfig.Region, ap.eksConfig.Profile
-}
-
 // IsTokenValid 检查 token 是否有效
 func (ap *AuthProvider) IsTokenValid() bool {
 	if ap.eksConfig == nil || ap.eksConfig.TokenCache == nil {
@@ -147,40 +91,6 @@ func (ap *AuthProvider) TriggerRefresh() {
 	if ap.tokenManager != nil {
 		ap.tokenManager.TriggerRefresh()
 	}
-}
-
-// GetCallerIdentity 获取 AWS 身份信息
-func (ap *AuthProvider) GetCallerIdentity(ctx context.Context) (string, string, string, error) {
-	if ap.tokenManager == nil {
-		return "", "", "", NewEKSAuthError(ErrorTypeAWSConfigMissing, "token manager not initialized", nil)
-	}
-
-	identity, err := ap.tokenManager.GetCallerIdentity(ctx)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	var account, arn, userId string
-	if identity.Account != nil {
-		account = *identity.Account
-	}
-	if identity.Arn != nil {
-		arn = *identity.Arn
-	}
-	if identity.UserId != nil {
-		userId = *identity.UserId
-	}
-
-	return account, arn, userId, nil
-}
-
-// AssumeRole 承担 IAM 角色
-func (ap *AuthProvider) AssumeRole(ctx context.Context) error {
-	if ap.tokenManager == nil {
-		return NewEKSAuthError(ErrorTypeAWSConfigMissing, "token manager not initialized", nil)
-	}
-
-	return ap.tokenManager.AssumeRole(ctx)
 }
 
 // SetEKSConfig 设置 EKS 配置
