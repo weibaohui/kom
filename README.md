@@ -12,7 +12,7 @@
 
 ## **特点**
 1. 简单易用：kom 提供了丰富的功能，包括创建、更新、删除、获取、列表等，包括对内置资源以及CRD资源的操作。
-2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群。
+2. 多集群支持：通过RegisterCluster，你可以轻松地管理多个 Kubernetes 集群，支持AWS EKS集群。
 3. MCP支持：支持多集群的MCP管理,同时支持stdio、sse两种模式，内置58种工具，支持SSE模式，支持私有化部署，多人共享。支持超过百种组合操作。
 4. 支持跨命名空间：通过kom.Namespace("default","kube-system").List(&items) 跨命名空间查询资源。
 5. 链式调用：kom 提供了链式调用，使得操作资源更加简单和直观。
@@ -117,66 +117,66 @@ http://IP:9096/sse 模式，可以当做sse 模式使用。
 
 ####  MCP工具列表（58种）
 
-| 类别                       | 方法                           | 描述                                                                     |
-| -------------------------- | ------------------------------ | ------------------------------------------------------------------------ |
-| **集群管理（1）**          | `list_k8s_clusters`            | 列出所有已注册的Kubernetes集群                                           |
-| **DaemonSet管理（1）**     | `restart_k8s_daemonset`        | 通过集群、命名空间和名称,重启DaemonSet                                   |
-| **部署管理（12）**         | `scale_k8s_deployment`         | 通过集群、命名空间、名称 扩缩容Deployment，设置副本数                    |
-|                            | `restart_k8s_deployment`       | 通过集群、命名空间和名称,重启Deployment                                  |
-|                            | `stop_k8s_deployment`          | 停止Deployment                                                           |
-|                            | `restore_k8s_deployment`       | 恢复Deployment副本数                                                     |
-|                            | `update_k8s_deployment_image_tag` | 更新Deployment中容器的镜像Tag                                          |
-|                            | `get_k8s_deployment_rollout_history` | 查询升级历史                                                             |
-|                            | `undo_k8s_deployment_rollout`  | 回滚                                                                     |
-|                            | `pause_k8s_deployment_rollout` | 暂停升级                                                                 |
-|                            | `resume_k8s_deployment_rollout` | 恢复升级                                                                 |
-|                            | `get_k8s_deployment_rollout_status` | 查询升级状态                                                             |
-|                            | `get_k8s_deployment_hpa_list`  | 查询Deployment的HPA列表                                                  |
-|                            | `list_k8s_deploy_event`        | 列出Deployment相关的事件                                                 |
-| **动态资源管理(含CRD，8)** | `get_k8s_resource`             | 通过集群、命名空间和名称获取Kubernetes资源详情                           |
-|                            | `describe_k8s_resource`        | 通过集群、命名空间和名称获取Kubernetes资源详情                           |
-|                            | `delete_k8s_resource`          | 通过集群、命名空间和名称删除Kubernetes资源                               |
-|                            | `list_k8s_resource`            | 按集群和资源类型列出Kubernetes资源                                       |
-|                            | `annotate_k8s_resource`        | 为Kubernetes资源添加或删除注解                                           |
-|                            | `label_k8s_resource`           | 为Kubernetes资源添加或删除标签                                           |
-|                            | `patch_k8s_resource`           | 通过集群、命名空间和名称更新Kubernetes资源                               |
-|                            | `GetDynamicResource`           | 获取动态资源                                                             |
-| **节点管理（11）**         | `taint_k8s_node`               | 为节点添加污点                                                           |
-|                            | `untaint_k8s_node`             | 为节点移除污点                                                           |
-|                            | `cordon_k8s_node`              | 设置节点为不可调度状态                                                   |
-|                            | `uncordon_k8s_node`            | 设置节点为可调度状态                                                     |
-|                            | `drain_k8s_node`               | 清空节点上的Pod并防止新的Pod调度                                         |
-|                            | `get_k8s_node_ip_usage`        | 查询节点IP资源使用情况                                                   |
-|                            | `list_k8s_node`                | 获取Node列表                                                             |
-|                            | `get_k8s_top_node`             | 获取Node节点CPU和内存资源用量排名列表                                   |
-|                            | `get_k8s_pod_count_running_on_node` | 查询某个节点上运行的Pod数量统计                                       |
-|                            | `get_k8s_node_resource_usage`  | 查询节点资源使用情况统计                                                 |
-|                            | `TaintNodeTool`                | 为节点添加污点                                                           |
-| **事件管理（1）**          | `list_k8s_event`               | 按集群和命名空间列出Kubernetes事件                                       |
-| **Ingress管理（1）**       | `set_default_k8s_ingressclass` | 设置IngressClass为默认                                                   |
-| **Pod 管理（18）**         | `run_command_in_k8s_pod`       | 在Pod内执行命令                                                          |
-|                            | `list_k8s_pod_event`           | 列出Pod相关的事件                                                        |
-|                            | `list_files_in_k8s_pod`        | 获取Pod中指定路径下的文件列表                                           |
-|                            | `list_pod_all_files`           | 获取Pod中指定路径下的所有文件列表，包含子目录                           |
-|                            | `delete_pod_file`              | 删除Pod中的指定文件                                                     |
-|                            | `get_k8s_pod_linked_env`       | 获取Pod运行时的环境变量信息                                             |
-|                            | `get_pod_linked_env_from_yaml` | 通过Pod yaml 定义 获取Pod定义中的环境变量信息                            |
-|                            | `get_k8s_pod_linked_services`  | 获取与Pod关联的Service                                                   |
-|                            | `get_pod_linked_ingresses`     | 获取与Pod关联的Ingress                                                   |
-|                            | `get_pod_linked_endpoints`     | 获取与Pod关联的Endpoints                                                 |
-|                            | `list_k8s_pod`                 | 获取Pod列表                                                              |
-|                            | `get_k8s_top_pod`              | 获取Pod CPU 内存 资源用量排名 列表                                       |
-|                            | `ListPodFilesTool`             | 列出Pod文件                                                              |
-|                            | `ListAllPodFilesTool`          | 列出Pod所有文件                                                          |
-|                            | `DeletePodFileTool`            | 删除Pod文件                                                              |
-|                            | `UploadPodFileTool`            | 上传Pod文件                                                              |
-|                            | `GetPodLogsTool`               | 获取Pod日志                                                              |
-|                            | `describe_k8s_pod`             | 描述Pod容器组                                                            |
-| **存储管理（3）**          | `set_k8s_default_storageclass` | 设置StorageClass为默认                                                   |
-|                            | `get_k8s_storageclass_pvc_count` | 获取StorageClass下的PVC数量                                             |
-|                            | `get_k8s_storageclass_pv_count` | 获取StorageClass下的PV数量                                               |
-| **YAML管理（2）**          | `apply_k8s_yaml`               | 通过YAML创建或更新Kubernetes资源                                         |
-|                            | `delete_k8s_yaml`              | 通过YAML删除Kubernetes资源                                               |
+| 类别                       | 方法                                 | 描述                                                  |
+| -------------------------- | ------------------------------------ | ----------------------------------------------------- |
+| **集群管理（1）**          | `list_k8s_clusters`                  | 列出所有已注册的Kubernetes集群                        |
+| **DaemonSet管理（1）**     | `restart_k8s_daemonset`              | 通过集群、命名空间和名称,重启DaemonSet                |
+| **部署管理（12）**         | `scale_k8s_deployment`               | 通过集群、命名空间、名称 扩缩容Deployment，设置副本数 |
+|                            | `restart_k8s_deployment`             | 通过集群、命名空间和名称,重启Deployment               |
+|                            | `stop_k8s_deployment`                | 停止Deployment                                        |
+|                            | `restore_k8s_deployment`             | 恢复Deployment副本数                                  |
+|                            | `update_k8s_deployment_image_tag`    | 更新Deployment中容器的镜像Tag                         |
+|                            | `get_k8s_deployment_rollout_history` | 查询升级历史                                          |
+|                            | `undo_k8s_deployment_rollout`        | 回滚                                                  |
+|                            | `pause_k8s_deployment_rollout`       | 暂停升级                                              |
+|                            | `resume_k8s_deployment_rollout`      | 恢复升级                                              |
+|                            | `get_k8s_deployment_rollout_status`  | 查询升级状态                                          |
+|                            | `get_k8s_deployment_hpa_list`        | 查询Deployment的HPA列表                               |
+|                            | `list_k8s_deploy_event`              | 列出Deployment相关的事件                              |
+| **动态资源管理(含CRD，8)** | `get_k8s_resource`                   | 通过集群、命名空间和名称获取Kubernetes资源详情        |
+|                            | `describe_k8s_resource`              | 通过集群、命名空间和名称获取Kubernetes资源详情        |
+|                            | `delete_k8s_resource`                | 通过集群、命名空间和名称删除Kubernetes资源            |
+|                            | `list_k8s_resource`                  | 按集群和资源类型列出Kubernetes资源                    |
+|                            | `annotate_k8s_resource`              | 为Kubernetes资源添加或删除注解                        |
+|                            | `label_k8s_resource`                 | 为Kubernetes资源添加或删除标签                        |
+|                            | `patch_k8s_resource`                 | 通过集群、命名空间和名称更新Kubernetes资源            |
+|                            | `GetDynamicResource`                 | 获取动态资源                                          |
+| **节点管理（11）**         | `taint_k8s_node`                     | 为节点添加污点                                        |
+|                            | `untaint_k8s_node`                   | 为节点移除污点                                        |
+|                            | `cordon_k8s_node`                    | 设置节点为不可调度状态                                |
+|                            | `uncordon_k8s_node`                  | 设置节点为可调度状态                                  |
+|                            | `drain_k8s_node`                     | 清空节点上的Pod并防止新的Pod调度                      |
+|                            | `get_k8s_node_ip_usage`              | 查询节点IP资源使用情况                                |
+|                            | `list_k8s_node`                      | 获取Node列表                                          |
+|                            | `get_k8s_top_node`                   | 获取Node节点CPU和内存资源用量排名列表                 |
+|                            | `get_k8s_pod_count_running_on_node`  | 查询某个节点上运行的Pod数量统计                       |
+|                            | `get_k8s_node_resource_usage`        | 查询节点资源使用情况统计                              |
+|                            | `TaintNodeTool`                      | 为节点添加污点                                        |
+| **事件管理（1）**          | `list_k8s_event`                     | 按集群和命名空间列出Kubernetes事件                    |
+| **Ingress管理（1）**       | `set_default_k8s_ingressclass`       | 设置IngressClass为默认                                |
+| **Pod 管理（18）**         | `run_command_in_k8s_pod`             | 在Pod内执行命令                                       |
+|                            | `list_k8s_pod_event`                 | 列出Pod相关的事件                                     |
+|                            | `list_files_in_k8s_pod`              | 获取Pod中指定路径下的文件列表                         |
+|                            | `list_pod_all_files`                 | 获取Pod中指定路径下的所有文件列表，包含子目录         |
+|                            | `delete_pod_file`                    | 删除Pod中的指定文件                                   |
+|                            | `get_k8s_pod_linked_env`             | 获取Pod运行时的环境变量信息                           |
+|                            | `get_pod_linked_env_from_yaml`       | 通过Pod yaml 定义 获取Pod定义中的环境变量信息         |
+|                            | `get_k8s_pod_linked_services`        | 获取与Pod关联的Service                                |
+|                            | `get_pod_linked_ingresses`           | 获取与Pod关联的Ingress                                |
+|                            | `get_pod_linked_endpoints`           | 获取与Pod关联的Endpoints                              |
+|                            | `list_k8s_pod`                       | 获取Pod列表                                           |
+|                            | `get_k8s_top_pod`                    | 获取Pod CPU 内存 资源用量排名 列表                    |
+|                            | `ListPodFilesTool`                   | 列出Pod文件                                           |
+|                            | `ListAllPodFilesTool`                | 列出Pod所有文件                                       |
+|                            | `DeletePodFileTool`                  | 删除Pod文件                                           |
+|                            | `UploadPodFileTool`                  | 上传Pod文件                                           |
+|                            | `GetPodLogsTool`                     | 获取Pod日志                                           |
+|                            | `describe_k8s_pod`                   | 描述Pod容器组                                         |
+| **存储管理（3）**          | `set_k8s_default_storageclass`       | 设置StorageClass为默认                                |
+|                            | `get_k8s_storageclass_pvc_count`     | 获取StorageClass下的PVC数量                           |
+|                            | `get_k8s_storageclass_pv_count`      | 获取StorageClass下的PV数量                            |
+| **YAML管理（2）**          | `apply_k8s_yaml`                     | 通过YAML创建或更新Kubernetes资源                      |
+|                            | `delete_k8s_yaml`                    | 通过YAML删除Kubernetes资源                            |
 
 #### 启动命令
 ```go
@@ -229,6 +229,38 @@ kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "docker-desktop")
 // 注册一个名为default的集群，那么kom.DefaultCluster()则会返回该集群。
 kom.Clusters().RegisterByPathWithID("/Users/kom/.kube/config", "default")
 ```
+#### 注册AWS EKS集群
+```go
+// 配置 EKS 集群信息
+config := aws.EKSAuthConfig{
+    AccessKey:       "XXX",        // AWS Access Key ID
+    SecretAccessKey: "yyy",        // AWS Secret Access Key
+    Region:          "us-east-1",  // AWS 区域
+    ClusterName:     "k8m",        // EKS 集群名称
+}
+
+// 注册 AWS EKS 集群
+_, err := kom.Clusters().RegisterAWSCluster(config)
+if err != nil {
+    fmt.Printf("注册 EKS 集群失败: %v", err)
+    return
+}
+
+// 使用注册的 EKS 集群
+var pods []corev1.Pod
+clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName) // 集群ID格式: {Region}-{ClusterName}
+err = kom.Cluster(clusterID).Resource(&corev1.Pod{}).Namespace("kube-system").List(&pods).Error
+```
+
+**AWS EKS 集群注册说明：**
+- `AccessKey`: AWS 访问密钥 ID
+- `SecretAccessKey`: AWS 秘密访问密钥  
+- `Region`: AWS 区域，如 `us-east-1`、`ap-southeast-1` 等
+- `ClusterName`: EKS 集群名称
+- `RoleARN`: (可选) 要承担的 IAM 角色 ARN，用于跨账户访问
+- 集群注册后会自动生成 ID，格式为 `{Region}-{ClusterName}`
+- 支持 IAM 角色承担机制实现跨账户集群访问
+- AWS 凭证信息仅在内存中使用，程序重启后自动清理
 #### 显示已注册集群
 ```go
 kom.Clusters().Show()
