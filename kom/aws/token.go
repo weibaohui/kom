@@ -13,12 +13,12 @@ import (
 
 // TokenManager AWS token 管理器
 type TokenManager struct {
-	eksConfig    *EKSAuthConfig
-	executor     *ExecExecutor
-	awsConfig    aws.Config
-	stsClient    *sts.Client
-	refreshChan  chan struct{}
-	stopChan     chan struct{}
+	eksConfig   *EKSAuthConfig
+	executor    *ExecExecutor
+	awsConfig   aws.Config
+	stsClient   *sts.Client
+	refreshChan chan struct{}
+	stopChan    chan struct{}
 }
 
 // NewTokenManager 创建新的 token 管理器
@@ -50,12 +50,7 @@ func (tm *TokenManager) initAWSConfig(ctx context.Context) error {
 	if tm.eksConfig.Region != "" {
 		opts = append(opts, config.WithRegion(tm.eksConfig.Region))
 	}
-
-	// 设置 Profile
-	if tm.eksConfig.Profile != "" {
-		opts = append(opts, config.WithSharedConfigProfile(tm.eksConfig.Profile))
-	}
-
+ 
 	awsConfig, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
 		return NewEKSAuthError(ErrorTypeAWSConfigMissing, "failed to load AWS config", err)
@@ -63,12 +58,12 @@ func (tm *TokenManager) initAWSConfig(ctx context.Context) error {
 
 	tm.awsConfig = awsConfig
 	tm.stsClient = sts.NewFromConfig(awsConfig)
-	
+
 	// 保存到 EKS 配置中
 	tm.eksConfig.AWSConfig = &awsConfig
 
-	klog.V(2).Infof("Initialized AWS config with region: %s, profile: %s", 
-		awsConfig.Region, tm.eksConfig.Profile)
+	klog.V(2).Infof("Initialized AWS config with region: %s",
+		awsConfig.Region)
 
 	return nil
 }
@@ -102,7 +97,7 @@ func (tm *TokenManager) refreshToken(ctx context.Context) (string, error) {
 	// 更新缓存
 	tm.eksConfig.TokenCache.SetToken(tokenResponse.Status.Token, tokenResponse.Status.ExpirationTimestamp)
 
-	klog.V(2).Infof("Successfully refreshed AWS token, expires at: %v", 
+	klog.V(2).Infof("Successfully refreshed AWS token, expires at: %v",
 		tokenResponse.Status.ExpirationTimestamp)
 
 	return tokenResponse.Status.Token, nil
@@ -144,7 +139,7 @@ func (tm *TokenManager) autoRefreshLoop(ctx context.Context) {
 // checkAndRefreshToken 检查并刷新 token
 func (tm *TokenManager) checkAndRefreshToken(ctx context.Context) {
 	token, expiresAt := tm.eksConfig.TokenCache.GetToken()
-	
+
 	// 如果 token 在10分钟内过期，则刷新
 	refreshThreshold := time.Now().Add(10 * time.Minute)
 	if token == "" || expiresAt.Before(refreshThreshold) {
@@ -220,7 +215,7 @@ func (tm *TokenManager) AssumeRole(ctx context.Context) error {
 		RoleSessionName: &sessionName,
 	})
 	if err != nil {
-		return NewEKSAuthError(ErrorTypePermissionDenied, 
+		return NewEKSAuthError(ErrorTypePermissionDenied,
 			fmt.Sprintf("failed to assume role %s", tm.eksConfig.RoleARN), err)
 	}
 

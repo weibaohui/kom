@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -20,27 +21,34 @@ type AWSAuthProvider interface {
 
 // EKSAuthConfig AWS EKS 认证配置
 type EKSAuthConfig struct {
-	ClusterName string      `json:"cluster_name"` // EKS 集群名称
-	Region      string      `json:"region"`       // AWS 区域
-	Profile     string      `json:"profile"`      // AWS Profile (可选)
-	RoleARN     string      `json:"role_arn"`     // 要承担的 IAM 角色 ARN (可选)
-	ExecConfig  *ExecConfig `json:"exec_config"`  // exec 命令配置
-	TokenCache  *TokenCache `json:"token_cache"`  // token 缓存
-	AWSConfig   *aws.Config `json:"-"`            // AWS 配置，不序列化
+	AccessKey       string      `json:"access_key"`        // AWS Access Key ID
+	SecretAccessKey string      `json:"secret_access_key"` // AWS Secret Access Key
+	ClusterName     string      `json:"cluster_name"`      // EKS 集群名称
+	Region          string      `json:"region"`            // AWS 区域
+	RoleARN         string      `json:"role_arn"`          // 要承担的 IAM 角色 ARN (可选)
+	ExecConfig      *ExecConfig `json:"exec_config"`       // exec 命令配置
+	TokenCache      *TokenCache `json:"token_cache"`       // token 缓存
+	AWSConfig       *aws.Config `json:"-"`                 // AWS 配置，不序列化
+	SessionName     string      `json:"session_name"`      // 会话名称 (可选)
 }
 
 // ExecConfig 执行命令配置
 type ExecConfig struct {
-	Command string            `json:"command"` // 命令 (如 aws)
-	Args    []string          `json:"args"`    // 参数列表
-	Env     map[string]string `json:"env"`     // 环境变量
+	Command         string            `json:"command"`           // 命令 (如 aws)
+	Args            []string          `json:"args"`              // 参数列表
+	Env             map[string]string `json:"env"`               // 环境变量
+	AccessKey       string            `json:"access_key"`        // AWS Access Key ID
+	SecretAccessKey string            `json:"secret_access_key"` // AWS Secret Access Key
+	Region          string            `json:"region"`            // AWS 区域
+	RoleARN         string            `json:"role_arn"`          // IAM 角色 ARN (可选)
+	SessionName     string            `json:"session_name"`      // 会话名称 (可选)
 }
 
 // TokenCache token 缓存
 type TokenCache struct {
 	Token     string       `json:"token"`      // Bearer token
 	ExpiresAt time.Time    `json:"expires_at"` // 过期时间
-	mutex     sync.RWMutex `json:"-"`          // 读写锁，不序列化
+	mutex     sync.RWMutex // 读写锁，不序列化
 }
 
 // IsValid 检查 token 是否有效
@@ -98,10 +106,44 @@ func NewEKSAuthError(errorType, message string, cause error) *EKSAuthError {
 
 // Constants for error types
 const (
-	ErrorTypeTokenExpired      = "TokenExpired"
-	ErrorTypeAWSConfigMissing  = "AWSConfigMissing"
-	ErrorTypeExecFailed        = "ExecFailed"
-	ErrorTypeInvalidKubeconfig = "InvalidKubeconfig"
-	ErrorTypeNetworkError      = "NetworkError"
-	ErrorTypePermissionDenied  = "PermissionDenied"
+	ErrorTypeTokenExpired       = "TokenExpired"
+	ErrorTypeAWSConfigMissing   = "AWSConfigMissing"
+	ErrorTypeExecFailed         = "ExecFailed"
+	ErrorTypeInvalidKubeconfig  = "InvalidKubeconfig"
+	ErrorTypeNetworkError       = "NetworkError"
+	ErrorTypePermissionDenied   = "PermissionDenied"
+	ErrorTypeInvalidCredentials = "InvalidCredentials"
+	ErrorTypeClusterNotFound    = "ClusterNotFound"
+	ErrorTypeRegionMismatch     = "RegionMismatch"
+	ErrorTypeFileSystemError    = "FileSystemError"
+	ErrorTypeKubeconfigInvalid  = "KubeconfigInvalid"
 )
+
+// BuildEnvVariables 构建完整的环境变量列表
+func (ec *ExecConfig) BuildEnvVariables() []string {
+	envVars := make([]string, 0)
+
+	// 添加原有的环境变量
+	for key, value := range ec.Env {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// 添加AWS凭证环境变量
+	if ec.AccessKey != "" {
+		envVars = append(envVars, fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", ec.AccessKey))
+	}
+	if ec.SecretAccessKey != "" {
+		envVars = append(envVars, fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", ec.SecretAccessKey))
+	}
+	if ec.Region != "" {
+		envVars = append(envVars, fmt.Sprintf("AWS_DEFAULT_REGION=%s", ec.Region))
+	}
+	if ec.RoleARN != "" {
+		envVars = append(envVars, fmt.Sprintf("AWS_ROLE_ARN=%s", ec.RoleARN))
+		if ec.SessionName != "" {
+			envVars = append(envVars, fmt.Sprintf("AWS_ROLE_SESSION_NAME=%s", ec.SessionName))
+		}
+	}
+
+	return envVars
+}
