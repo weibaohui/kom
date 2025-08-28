@@ -99,7 +99,6 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 
 // RegisterByPath 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
-	// 使用标准注册方法（统一入口已经处理了 EKS 认证）
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
@@ -109,7 +108,6 @@ func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
 
 // RegisterByString 通过kubeconfig文件的string 内容进行注册
 func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
-	// 使用标准注册方法（统一入口已经处理了 EKS 认证）
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByString Error,content=:\n%s\n,err:%v", str, err)
@@ -125,7 +123,6 @@ func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
 
 // RegisterByStringWithID 通过kubeconfig文件的string 内容进行注册
 func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubectl, error) {
-	// 使用标准注册方法（统一入口已经处理了 EKS 认证）
 	config, err := clientcmd.Load([]byte(str))
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByStringWithID Error content=\n%s\n,id:%s,err:%v", str, id, err)
@@ -136,12 +133,12 @@ func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubec
 	if err != nil {
 		return nil, err
 	}
+
 	return c.RegisterByConfigWithID(restConfig, id)
 }
 
 // RegisterByPathWithID 通过kubeconfig文件路径注册集群
 func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
-	// 使用标准注册方法（统一入口已经处理了 EKS 认证）
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
@@ -167,108 +164,49 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 	config.QPS = 200
 	config.Burst = 2000
 
+	var cluster *ClusterInst
 	// 检查是否已存在
 	if value, exists := clusterInstances.clusters.Load(id); exists {
-		cluster := value.(*ClusterInst)
-		return cluster.Kubectl, nil
+		cluster = value.(*ClusterInst)
+		if cluster.Kubectl != nil {
+			return cluster.Kubectl, nil
+		}
 	}
 
 	// 检查是否需要 exec 认证处理 (AWS EKS 或其他 exec 模式)
-	var authProvider *aws.AuthProvider
-	var isExecAuth bool
-	var tokenRefreshCancel context.CancelFunc
-
-	if config.ExecProvider != nil && config.ExecProvider.Command != "" {
-		isExecAuth = true
-
-		// 检查是否为 AWS EKS 模式
-		if config.ExecProvider.Command == "aws" {
-			// 处理 AWS EKS 认证
-			execConfig := &aws.ExecConfig{
-				Command: config.ExecProvider.Command,
-				Args:    make([]string, len(config.ExecProvider.Args)),
-				Env:     make(map[string]string),
-			}
-			copy(execConfig.Args, config.ExecProvider.Args)
-
-			// 解析环境变量
-			for _, env := range config.ExecProvider.Env {
-				execConfig.Env[env.Name] = env.Value
-			}
-
-			// 创建 AWS 认证提供者
-			authProvider = aws.NewAuthProvider()
-
-			// 从 exec 配置中提取 EKS 信息
-			eksConfig := &aws.EKSAuthConfig{
-				ExecConfig: execConfig,
-				TokenCache: &aws.TokenCache{},
-			}
-
-			// 从命令行参数中提取集群信息
-			for i, arg := range execConfig.Args {
-				switch arg {
-				case "--cluster-name":
-					if i+1 < len(execConfig.Args) {
-						eksConfig.ClusterName = execConfig.Args[i+1]
-					}
-				case "--region":
-					if i+1 < len(execConfig.Args) {
-						eksConfig.Region = execConfig.Args[i+1]
-					}
-				case "--role-arn":
-					if i+1 < len(execConfig.Args) {
-						eksConfig.RoleARN = execConfig.Args[i+1]
-					}
-				}
-			}
-
-			// 从环境变量中提取 AWS Profile
-			if profile, exists := execConfig.Env["AWS_PROFILE"]; exists {
-				eksConfig.Profile = profile
-			}
-
-			// 初始化认证提供者
-			if eksConfig.ClusterName == "" {
-				return nil, fmt.Errorf("cluster name not found in exec args for AWS EKS authentication")
-			}
-
-			// 手动设置 EKS 配置
-			tokenManager, err := aws.NewTokenManager(eksConfig)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create AWS token manager: %w", err)
-			}
-
-			// 设置内部状态
-			authProvider.SetEKSConfig(eksConfig)
-			authProvider.SetTokenManager(tokenManager)
-
-			// 获取初始 token
-			ctx := context.Background()
-			token, _, err := authProvider.GetToken(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get initial AWS token: %w", err)
-			}
-
-			// 清除 exec 配置，使用 Bearer token 认证
-			config.ExecProvider = nil
-			config.BearerToken = token
+	if cluster != nil && cluster.IsEKS {
+		err := cluster.AWSAuthProvider.SetEKSExecProvider(config.ExecProvider)
+		if err != nil {
+			return nil, err
 		}
-		// 这里可以扩展其他 exec 命令的处理逻辑
-		// else if config.ExecProvider.Command == "other-command" {
-		//     // 处理其他 exec 认证
-		// }
-	}
+		// 获取初始 token
+		ctx := context.Background()
+		token, _, err := cluster.AWSAuthProvider.GetToken(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get initial AWS token: %w", err)
+		}
+		config.BearerToken = token
 
+	}
 	// key 不存在，进行初始化
 	k := initKubectl(config, id)
-	cluster := &ClusterInst{
-		ID:              id,
-		Kubectl:         k,
-		Config:          config,
-		AWSAuthProvider: authProvider,
-		IsEKS:           authProvider != nil,
+	// 正常情况下，走到这里，cluster都是空
+	if cluster == nil {
+		cluster = &ClusterInst{
+			ID:      id,
+			Kubectl: k,
+			Config:  config,
+		}
+	} else {
+		// 注册EKS集群时，在之前已经占用了一个空的cluster实例，
+		// 存储了如下的信息，但是没有kubectl、config
+		// IsEKS:              true,
+		// AWSAuthProvider:    authProvider,
+		// tokenRefreshCancel: tokenCancel,
+		cluster.Kubectl = k
+		cluster.Config = config
 	}
+
 	clusterInstances.clusters.Store(id, cluster)
 
 	client, err := kubernetes.NewForConfig(config)
@@ -308,44 +246,6 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 	err = k.WatchCRDAndRefreshDiscovery(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// 如果是 exec 认证模式且有 AWS 认证提供者，启动 token 自动刷新
-	if isExecAuth && authProvider != nil {
-		tokenCtx, tokenCancel := context.WithCancel(context.Background())
-		tokenRefreshCancel = tokenCancel
-		cluster.tokenRefreshCancel = tokenRefreshCancel
-
-		// 启动自动刷新
-		authProvider.StartAutoRefresh(tokenCtx)
-
-		// 启动 token 刷新循环
-		go func() {
-			ticker := time.NewTicker(5 * time.Minute) // 每5分钟检查一次
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-tokenCtx.Done():
-					klog.V(2).Infof("Stopping token refresh for cluster %s", id)
-					return
-				case <-ticker.C:
-					// 检查 token 是否需要刷新
-					if !authProvider.IsTokenValid() {
-						klog.V(3).Infof("Token expired for cluster %s, refreshing...", id)
-						if token, _, err := authProvider.GetToken(tokenCtx); err != nil {
-							klog.Errorf("Failed to refresh token for cluster %s: %v", id, err)
-						} else {
-							// 更新 rest.Config 中的 BearerToken
-							cluster.Config.BearerToken = token
-							klog.V(2).Infof("Successfully refreshed token for cluster %s", id)
-						}
-					}
-				}
-			}
-		}()
-
-		klog.V(2).Infof("Started token auto-refresh for exec authentication cluster: %s", id)
 	}
 
 	return k, nil
@@ -477,4 +377,107 @@ func (ci *ClusterInst) GetServerVersion() *version.Info {
 // NewAWSAuthProvider 创建新的 AWS 认证提供者实例
 func NewAWSAuthProvider() *aws.AuthProvider {
 	return aws.NewAuthProvider()
+}
+
+// RegisterAWSCluster 注册EKS集群
+func (c *ClusterInstances) RegisterAWSCluster(config aws.EKSAuthConfig) (*Kubectl, error) {
+
+	// 生成集群ID
+	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
+
+	var cluster *ClusterInst
+	// 检查是否已存在
+	if value, exists := clusterInstances.clusters.Load(clusterID); exists {
+		cluster = value.(*ClusterInst)
+		if cluster.Kubectl != nil {
+			return cluster.Kubectl, nil
+		}
+	}
+
+	var kubeconfigContent string
+	var err error
+
+	if cluster == nil {
+		// 生成kubeconfig
+		generator := aws.NewKubeconfigGenerator()
+		kubeconfigContent, err = generator.GenerateFromAWS(config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate kubeconfig for EKS cluster %s: %w", clusterID, err)
+		}
+		klog.V(2).Infof("Generated kubeconfig for EKS cluster: %s", clusterID)
+
+		// 手动设置 EKS 配置
+		tokenManager, err := aws.NewTokenManager(&config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create AWS token manager: %w", err)
+		}
+
+		authProvider := NewAWSAuthProvider()
+		// 设置内部状态
+		authProvider.SetEKSConfig(&config)
+		authProvider.SetTokenManager(tokenManager)
+		config.TokenCache = &aws.TokenCache{}
+		tokenCtx, tokenCancel := context.WithCancel(context.Background())
+		// 启动自动刷新
+		authProvider.StartAutoRefresh(tokenCtx)
+
+		// 启动 token 刷新循环
+		go func() {
+			ticker := time.NewTicker(5 * time.Minute) // 每5分钟检查一次
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-tokenCtx.Done():
+					klog.V(2).Infof("Stopping token refresh for cluster %s", clusterID)
+					return
+				case <-ticker.C:
+					// 检查 token 是否需要刷新
+					if !authProvider.IsTokenValid() {
+						klog.V(3).Infof("Token expired for cluster %s, refreshing...", clusterID)
+						if token, _, err := authProvider.GetToken(tokenCtx); err != nil {
+							klog.Errorf("Failed to refresh token for cluster %s: %v", clusterID, err)
+						} else {
+							// 更新 rest.Config 中的 BearerToken
+							cluster.Config.BearerToken = token
+							klog.V(2).Infof("Successfully refreshed token for cluster %s", clusterID)
+						}
+					}
+				}
+			}
+		}()
+		cluster = &ClusterInst{
+			ID:                 clusterID,
+			IsEKS:              true,
+			AWSAuthProvider:    authProvider,
+			tokenRefreshCancel: tokenCancel,
+		}
+	}
+	klog.V(8).Infof("kubeconfigContent=\n%s", kubeconfigContent)
+
+	clusterInstances.clusters.Store(clusterID, cluster)
+
+	// 使用kubeconfig注册集群
+	kubectl, err := c.RegisterByStringWithID(kubeconfigContent, clusterID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register EKS cluster %s: %w", clusterID, err)
+	}
+
+	klog.V(1).Infof("Successfully registered EKS cluster: %s", clusterID)
+
+	return kubectl, nil
+}
+
+// RefreshEKSCredentials 刷新EKS集群凭证
+func (c *ClusterInstances) RefreshEKSCredentials(clusterID string) error {
+
+	// 如果集群实例存在且为EKS集群，触发token刷新
+	if cluster := c.GetClusterById(clusterID); cluster != nil && cluster.IsEKS {
+		if cluster.AWSAuthProvider != nil {
+			cluster.AWSAuthProvider.TriggerRefresh()
+		}
+
+	}
+
+	return nil
 }

@@ -21,9 +21,9 @@ func NewExecExecutor() *ExecExecutor {
 
 // TokenResponse AWS CLI 返回的 token 响应结构
 type TokenResponse struct {
-	Kind       string    `json:"kind"`
-	APIVersion string    `json:"apiVersion"`
-	Spec       TokenSpec `json:"spec"`
+	Kind       string      `json:"kind"`
+	APIVersion string      `json:"apiVersion"`
+	Spec       TokenSpec   `json:"spec"`
 	Status     TokenStatus `json:"status"`
 }
 
@@ -44,20 +44,15 @@ func (ee *ExecExecutor) ExecuteCommand(ctx context.Context, execConfig *ExecConf
 		return nil, NewEKSAuthError(ErrorTypeExecFailed, "exec config is nil", nil)
 	}
 
-	klog.V(4).Infof("Executing AWS command: %s %v", execConfig.Command, execConfig.Args)
+	klog.V(8).Infof("Executing AWS command: %s %v", execConfig.Command, execConfig.Args)
 
 	// 创建命令
 	cmd := exec.CommandContext(ctx, execConfig.Command, execConfig.Args...)
 
-	// 设置环境变量
-	if len(execConfig.Env) > 0 {
-		env := make([]string, 0, len(execConfig.Env))
-		for key, value := range execConfig.Env {
-			env = append(env, fmt.Sprintf("%s=%s", key, value))
-		}
-		cmd.Env = append(cmd.Env, env...)
-	}
-
+	// 构建完整的环境变量列表
+	envVars := execConfig.BuildEnvVariables()
+	cmd.Env = envVars
+	klog.V(8).Infof("cmd args= %s", cmd)
 	// 执行命令
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -66,7 +61,7 @@ func (ee *ExecExecutor) ExecuteCommand(ctx context.Context, execConfig *ExecConf
 	err := cmd.Run()
 	if err != nil {
 		klog.Errorf("Failed to execute AWS command: %v, stderr: %s", err, stderr.String())
-		return nil, NewEKSAuthError(ErrorTypeExecFailed, 
+		return nil, NewEKSAuthError(ErrorTypeExecFailed,
 			fmt.Sprintf("failed to execute AWS command: %s", stderr.String()), err)
 	}
 
@@ -74,7 +69,7 @@ func (ee *ExecExecutor) ExecuteCommand(ctx context.Context, execConfig *ExecConf
 	var tokenResponse TokenResponse
 	if err := json.Unmarshal(stdout.Bytes(), &tokenResponse); err != nil {
 		klog.Errorf("Failed to parse AWS command output: %v, output: %s", err, stdout.String())
-		return nil, NewEKSAuthError(ErrorTypeExecFailed, 
+		return nil, NewEKSAuthError(ErrorTypeExecFailed,
 			fmt.Sprintf("failed to parse AWS command output: %v", err), err)
 	}
 
@@ -83,7 +78,7 @@ func (ee *ExecExecutor) ExecuteCommand(ctx context.Context, execConfig *ExecConf
 		return nil, NewEKSAuthError(ErrorTypeExecFailed, "empty token in AWS response", nil)
 	}
 
-	klog.V(4).Infof("Successfully obtained AWS token, expires at: %v", 
+	klog.V(4).Infof("Successfully obtained AWS token, expires at: %v",
 		tokenResponse.Status.ExpirationTimestamp)
 
 	return &tokenResponse, nil
@@ -92,11 +87,11 @@ func (ee *ExecExecutor) ExecuteCommand(ctx context.Context, execConfig *ExecConf
 // GetTokenWithRetry 带重试机制的获取 token
 func (ee *ExecExecutor) GetTokenWithRetry(ctx context.Context, execConfig *ExecConfig, maxRetries int) (*TokenResponse, error) {
 	var lastErr error
-	
+
 	for i := 0; i <= maxRetries; i++ {
 		if i > 0 {
 			klog.V(2).Infof("Retrying AWS token fetch, attempt %d/%d", i+1, maxRetries+1)
-			
+
 			// 指数退避
 			waitTime := time.Duration(i) * time.Second
 			select {
@@ -110,7 +105,7 @@ func (ee *ExecExecutor) GetTokenWithRetry(ctx context.Context, execConfig *ExecC
 		if err == nil {
 			return tokenResponse, nil
 		}
-		
+
 		lastErr = err
 		klog.V(3).Infof("AWS token fetch attempt %d failed: %v", i+1, err)
 	}
@@ -131,54 +126,9 @@ func (ee *ExecExecutor) ValidateCommand(execConfig *ExecConfig) error {
 	// 检查命令是否存在
 	_, err := exec.LookPath(execConfig.Command)
 	if err != nil {
-		return NewEKSAuthError(ErrorTypeExecFailed, 
+		return NewEKSAuthError(ErrorTypeExecFailed,
 			fmt.Sprintf("command %s not found in PATH", execConfig.Command), err)
 	}
 
 	return nil
-}
-
-// BuildGetTokenCommand 构建获取 token 的命令配置
-func (ee *ExecExecutor) BuildGetTokenCommand(clusterName, region, profile, roleARN string) *ExecConfig {
-	args := []string{"eks", "get-token", "--cluster-name", clusterName}
-	
-	if region != "" {
-		args = append(args, "--region", region)
-	}
-	
-	if roleARN != "" {
-		args = append(args, "--role-arn", roleARN)
-	}
-
-	execConfig := &ExecConfig{
-		Command: "aws",
-		Args:    args,
-		Env:     make(map[string]string),
-	}
-
-	if profile != "" {
-		execConfig.Env["AWS_PROFILE"] = profile
-	}
-
-	return execConfig
-}
-
-// IsCommandAvailable 检查 AWS CLI 是否可用
-func (ee *ExecExecutor) IsCommandAvailable() bool {
-	_, err := exec.LookPath("aws")
-	return err == nil
-}
-
-// GetAWSCLIVersion 获取 AWS CLI 版本信息
-func (ee *ExecExecutor) GetAWSCLIVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "aws", "--version")
-	
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-	
-	return stdout.String(), nil
 }
