@@ -30,7 +30,7 @@ func NewKubeconfigGenerator() *KubeconfigGenerator {
 }
 
 // GenerateFromAWS 通过AWS CLI生成kubeconfig
-func (kg *KubeconfigGenerator) GenerateFromAWS(config EKSAuthConfig) (string, error) {
+func (kg *KubeconfigGenerator) GenerateFromAWS(config *EKSAuthConfig) (string, error) {
 	if err := kg.validateConfig(config); err != nil {
 		return "", err
 	}
@@ -70,7 +70,7 @@ func (kg *KubeconfigGenerator) GenerateFromAWS(config EKSAuthConfig) (string, er
 }
 
 // validateConfig 验证配置
-func (kg *KubeconfigGenerator) validateConfig(config EKSAuthConfig) error {
+func (kg *KubeconfigGenerator) validateConfig(config *EKSAuthConfig) error {
 	if config.AccessKey == "" {
 		return NewEKSAuthError(ErrorTypeInvalidCredentials, "AccessKey is required", nil)
 	}
@@ -112,7 +112,7 @@ func generateRandomString(length int) (string, error) {
 }
 
 // buildEnvVariables 构建环境变量
-func (kg *KubeconfigGenerator) buildEnvVariables(config EKSAuthConfig, kubeconfigPath string) []string {
+func (kg *KubeconfigGenerator) buildEnvVariables(config *EKSAuthConfig, kubeconfigPath string) []string {
 	envVars := []string{
 		fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", config.AccessKey),
 		fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", config.SecretAccessKey),
@@ -131,7 +131,7 @@ func (kg *KubeconfigGenerator) buildEnvVariables(config EKSAuthConfig, kubeconfi
 }
 
 // executeAWSCommandWithEnv 执行AWS CLI命令
-func (kg *KubeconfigGenerator) executeAWSCommandWithEnv(config EKSAuthConfig, envVars []string) error {
+func (kg *KubeconfigGenerator) executeAWSCommandWithEnv(config *EKSAuthConfig, envVars []string) error {
 	// 构建AWS CLI命令
 	args := []string{
 		"eks",

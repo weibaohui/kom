@@ -381,9 +381,11 @@ func NewAWSAuthProvider() *aws.AuthProvider {
 
 // RegisterAWSCluster 注册EKS集群
 func (c *ClusterInstances) RegisterAWSCluster(config aws.EKSAuthConfig) (*Kubectl, error) {
-
 	// 生成集群ID
 	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
+	return c.RegisterAWSClusterWithID(config, clusterID)
+}
+func (c *ClusterInstances) RegisterAWSClusterWithID(config aws.EKSAuthConfig, clusterID string) (*Kubectl, error) {
 
 	var cluster *ClusterInst
 	// 检查是否已存在
