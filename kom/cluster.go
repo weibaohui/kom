@@ -380,12 +380,12 @@ func NewAWSAuthProvider() *aws.AuthProvider {
 }
 
 // RegisterAWSCluster 注册EKS集群
-func (c *ClusterInstances) RegisterAWSCluster(config aws.EKSAuthConfig) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubectl, error) {
 	// 生成集群ID
 	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
 	return c.RegisterAWSClusterWithID(config, clusterID)
 }
-func (c *ClusterInstances) RegisterAWSClusterWithID(config aws.EKSAuthConfig, clusterID string) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterAWSClusterWithID(config *aws.EKSAuthConfig, clusterID string) (*Kubectl, error) {
 
 	var cluster *ClusterInst
 	// 检查是否已存在
@@ -409,14 +409,14 @@ func (c *ClusterInstances) RegisterAWSClusterWithID(config aws.EKSAuthConfig, cl
 		klog.V(2).Infof("Generated kubeconfig for EKS cluster: %s", clusterID)
 
 		// 手动设置 EKS 配置
-		tokenManager, err := aws.NewTokenManager(&config)
+		tokenManager, err := aws.NewTokenManager(config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create AWS token manager: %w", err)
 		}
 
 		authProvider := NewAWSAuthProvider()
 		// 设置内部状态
-		authProvider.SetEKSConfig(&config)
+		authProvider.SetEKSConfig(config)
 		authProvider.SetTokenManager(tokenManager)
 		config.TokenCache = &aws.TokenCache{}
 		tokenCtx, tokenCancel := context.WithCancel(context.Background())
