@@ -78,4 +78,8 @@ func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
 		TopPod(),
 		TopPodHandler)
+
+	s.AddTool(
+		DeletePodTool(),
+		DeletePodHandler)
 }
