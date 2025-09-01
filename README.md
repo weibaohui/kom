@@ -158,6 +158,7 @@ http://IP:9096/sse 模式，可以当做sse 模式使用。
 |                            | `list_k8s_pod_event`                 | 列出Pod相关的事件                                     |
 |                            | `list_files_in_k8s_pod`              | 获取Pod中指定路径下的文件列表                         |
 |                            | `list_pod_all_files`                 | 获取Pod中指定路径下的所有文件列表，包含子目录         |
+|                            | `delete_k8s_pod`                     | 删除Pod                                               |
 |                            | `delete_pod_file`                    | 删除Pod中的指定文件                                   |
 |                            | `get_k8s_pod_linked_env`             | 获取Pod运行时的环境变量信息                           |
 |                            | `get_pod_linked_env_from_yaml`       | 通过Pod yaml 定义 获取Pod定义中的环境变量信息         |
