@@ -34,11 +34,11 @@ func (c *ClusterInstances) RegisterByTokenWithServerAndID(token string, server s
 		Host:        server,
 		BearerToken: token,
 		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: true, // 默认启用 TLS 验证，可根据需要调整
+			Insecure: false, // 默认启用 TLS 验证，可根据需要调整
 		},
 	}
 	if len(caData) > 0 {
-		config.CAData = []byte(caData[0])
+		config.TLSClientConfig.CAData = []byte(caData[0])
 		config.TLSClientConfig.Insecure = false
 	}
 	return c.RegisterByConfigWithID(config, id)

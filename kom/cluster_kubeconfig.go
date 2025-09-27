@@ -44,6 +44,7 @@ func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
 		return nil, err
 	}
 	return c.RegisterByConfig(restConfig)
+
 }
 
 // RegisterByStringWithID 通过kubeconfig文件的string内容和指定ID进行注册
