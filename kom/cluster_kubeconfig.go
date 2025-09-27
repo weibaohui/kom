@@ -2,7 +2,7 @@ package kom
 
 import (
 	"fmt"
-	"k8s.io/client-go/rest"
+
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -87,22 +87,4 @@ func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubect
 		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
 	}
 	return c.RegisterByConfigWithID(config, id)
-}
-
-// RegisterByConfig 通过rest.Config注册集群
-// 参数:
-//   - config: Kubernetes rest.Config配置对象
-//
-// 返回值:
-//   - *Kubectl: 成功时返回 Kubectl 实例，用于操作集群
-//   - error: 失败时返回错误信息
-//
-// 此函数使用配置中的Host字段作为集群ID
-func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
-	if config == nil {
-		return nil, fmt.Errorf("config is nil")
-	}
-	host := config.Host
-
-	return c.RegisterByConfigWithID(config, host)
 }

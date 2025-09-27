@@ -82,18 +82,27 @@ func Cluster(id string) *Kubectl {
 	return cluster.Kubectl
 }
 
-// RegisterInCluster 注册InCluster集群
-func (c *ClusterInstances) RegisterInCluster() (*Kubectl, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("InCluster Error %v", err)
-	}
-	return c.RegisterByConfigWithID(config, "InCluster")
-}
-
 // SetRegisterCallbackFunc 设置回调注册函数
 func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *ClusterInst) func()) {
 	c.callbackRegisterFunc = callback
+}
+
+// RegisterByConfig 通过rest.Config注册集群
+// 参数:
+//   - config: Kubernetes rest.Config配置对象
+//
+// 返回值:
+//   - *Kubectl: 成功时返回 Kubectl 实例，用于操作集群
+//   - error: 失败时返回错误信息
+//
+// 此函数使用配置中的Host字段作为集群ID
+func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config is nil")
+	}
+	host := config.Host
+
+	return c.RegisterByConfigWithID(config, host)
 }
 
 // RegisterByConfigWithID 注册集群
