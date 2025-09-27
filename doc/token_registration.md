@@ -4,41 +4,24 @@
 
 ## 功能概述
 
-KOM 提供了三种通过 token 注册集群的方法：
+KOM 提供了通过 token 注册集群的方法：
 
-1. `RegisterByTokenWithID` - 基本的 token 注册
-2. `RegisterByTokenWithServerAndID` - 带服务器地址的 token 注册（推荐）
-3. `RegisterByTokenWithOptions` - 带详细选项的 token 注册
+1. `RegisterByTokenWithServerAndID` - 带服务器地址的 token 注册
 
 ## 使用方法
-
-### 1. 基本 Token 注册
-
-```go
-import "github.com/weibaohui/kom/kom"
-
-// 基本注册（需要集群已配置默认服务器地址）
-kubectl, err := kom.Clusters().RegisterByTokenWithID(token, clusterID)
-if err != nil {
-    log.Fatalf("Failed to register cluster: %v", err)
-}
-```
-
-**参数说明：**
-- `token`: Kubernetes 集群的访问令牌 (Bearer Token)
-- `clusterID`: 集群的唯一标识符
-
-### 2. 带服务器地址的 Token 注册（推荐）
+ 
+### 带服务器地址的 Token 注册
 
 ```go
 import "github.com/weibaohui/kom/kom"
 
 // 完整注册（推荐方式）
-token := "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyMzQ1Njc4OTAifQ..."
+token := "<YOUR_TOKEN>"
 server := "https://your-cluster.example.com:6443"
 clusterID := "production-cluster"
-
-kubectl, err := kom.Clusters().RegisterByTokenWithServerAndID(token, server, clusterID)
+caData := "<YOUR_CA_DATA>"
+//当填写了caData时，会启用TLS验证
+kubectl, err := kom.Clusters().RegisterByTokenWithServerAndID(token, server, clusterID, caData)
 if err != nil {
     log.Fatalf("Failed to register cluster: %v", err)
 }
@@ -48,30 +31,8 @@ if err != nil {
 - `token`: Kubernetes 集群的访问令牌 (Bearer Token)
 - `server`: Kubernetes API 服务器地址
 - `clusterID`: 集群的唯一标识符
-
-### 3. 带详细选项的 Token 注册
-
-```go
-import "github.com/weibaohui/kom/kom"
-
-// 带选项的注册（最灵活）
-token := "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyMzQ1Njc4OTAifQ..."
-server := "https://your-cluster.example.com:6443"
-clusterID := "test-cluster"
-insecure := true // 在测试环境中可能需要跳过TLS验证
-
-kubectl, err := kom.Clusters().RegisterByTokenWithOptions(token, server, clusterID, insecure)
-if err != nil {
-    log.Fatalf("Failed to register cluster: %v", err)
-}
-```
-
-**参数说明：**
-- `token`: Kubernetes 集群的访问令牌 (Bearer Token)
-- `server`: Kubernetes API 服务器地址
-- `clusterID`: 集群的唯一标识符
-- `insecure`: 是否跳过 TLS 证书验证（生产环境建议设为 false）
-
+- `caData`: 可选的 CA 证书数据，用于启用 TLS 验证
+ 
 ## 获取 Token
 
 ### 方法 1: 使用 Service Account

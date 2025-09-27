@@ -11,6 +11,7 @@ import (
 //   - token: Kubernetes 集群的访问令牌 (Bearer Token)
 //   - server: Kubernetes API 服务器地址 (例如: https://kubernetes.example.com:6443)
 //   - id: 集群的唯一标识符
+//   - caData: 可选的 CA 证书数据，用于启用 TLS 验证
 //
 // 返回值:
 //   - *Kubectl: 成功时返回 Kubectl 实例，用于操作集群
