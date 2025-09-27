@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 )
 
@@ -59,7 +58,7 @@ func Clusters() *ClusterInstances {
 	return clusterInstances
 }
 
-// 初始化
+// init 初始化
 func init() {
 	clusterInstances = &ClusterInstances{}
 }
@@ -83,70 +82,20 @@ func Cluster(id string) *Kubectl {
 	return cluster.Kubectl
 }
 
-// RegisterInCluster 注册InCluster集群
-func (c *ClusterInstances) RegisterInCluster() (*Kubectl, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("InCluster Error %v", err)
-	}
-	return c.RegisterByConfigWithID(config, "InCluster")
-}
-
 // SetRegisterCallbackFunc 设置回调注册函数
 func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *ClusterInst) func()) {
 	c.callbackRegisterFunc = callback
 }
 
-// RegisterByPath 通过kubeconfig文件路径注册集群
-func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", path)
-	if err != nil {
-		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
-	}
-	return c.RegisterByConfig(config)
-}
-
-// RegisterByString 通过kubeconfig文件的string 内容进行注册
-func (c *ClusterInstances) RegisterByString(str string) (*Kubectl, error) {
-	config, err := clientcmd.Load([]byte(str))
-	if err != nil {
-		return nil, fmt.Errorf("RegisterByString Error,content=:\n%s\n,err:%v", str, err)
-	}
-
-	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
-	restConfig, err := clientConfig.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	return c.RegisterByConfig(restConfig)
-}
-
-// RegisterByStringWithID 通过kubeconfig文件的string 内容进行注册
-func (c *ClusterInstances) RegisterByStringWithID(str string, id string) (*Kubectl, error) {
-	config, err := clientcmd.Load([]byte(str))
-	if err != nil {
-		return nil, fmt.Errorf("RegisterByStringWithID Error content=\n%s\n,id:%s,err:%v", str, id, err)
-	}
-
-	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
-	restConfig, err := clientConfig.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return c.RegisterByConfigWithID(restConfig, id)
-}
-
-// RegisterByPathWithID 通过kubeconfig文件路径注册集群
-func (c *ClusterInstances) RegisterByPathWithID(path string, id string) (*Kubectl, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", path)
-	if err != nil {
-		return nil, fmt.Errorf("RegisterByPathWithID Error path:%s,id:%s,err:%v", path, id, err)
-	}
-	return c.RegisterByConfigWithID(config, id)
-}
-
-// RegisterByConfig 注册集群
+// RegisterByConfig 通过rest.Config注册集群
+// 参数:
+//   - config: Kubernetes rest.Config配置对象
+//
+// 返回值:
+//   - *Kubectl: 成功时返回 Kubectl 实例，用于操作集群
+//   - error: 失败时返回错误信息
+//
+// 此函数使用配置中的Host字段作为集群ID
 func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
@@ -351,135 +300,7 @@ func (c *ClusterInstances) Show() {
 	})
 }
 
-// IsEKSCluster 检查集群是否为 EKS 集群
-func (ci *ClusterInst) IsEKSCluster() bool {
-	return ci.IsEKS
-}
-
-// GetAWSAuthProvider 获取 AWS 认证提供者
-func (ci *ClusterInst) GetAWSAuthProvider() *aws.AuthProvider {
-	return ci.AWSAuthProvider
-}
-
-// StopTokenRefresh 停止 token 自动刷新
-func (ci *ClusterInst) StopTokenRefresh() {
-	if ci.tokenRefreshCancel != nil {
-		ci.tokenRefreshCancel()
-		ci.tokenRefreshCancel = nil
-	}
-}
-
 // GetServerVersion 获取服务器版本信息
 func (ci *ClusterInst) GetServerVersion() *version.Info {
 	return ci.serverVersion
-}
-
-// NewAWSAuthProvider 创建新的 AWS 认证提供者实例
-func NewAWSAuthProvider() *aws.AuthProvider {
-	return aws.NewAuthProvider()
-}
-
-// RegisterAWSCluster 注册EKS集群
-func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubectl, error) {
-	// 生成集群ID
-	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
-	return c.RegisterAWSClusterWithID(config, clusterID)
-}
-func (c *ClusterInstances) RegisterAWSClusterWithID(config *aws.EKSAuthConfig, clusterID string) (*Kubectl, error) {
-
-	var cluster *ClusterInst
-	// 检查是否已存在
-	if value, exists := clusterInstances.clusters.Load(clusterID); exists {
-		cluster = value.(*ClusterInst)
-		if cluster.Kubectl != nil {
-			return cluster.Kubectl, nil
-		}
-	}
-
-	var kubeconfigContent string
-	var err error
-
-	if cluster == nil {
-		// 生成kubeconfig
-		generator := aws.NewKubeconfigGenerator()
-		kubeconfigContent, err = generator.GenerateFromAWS(config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate kubeconfig for EKS cluster %s: %w", clusterID, err)
-		}
-		klog.V(2).Infof("Generated kubeconfig for EKS cluster: %s", clusterID)
-
-		// 手动设置 EKS 配置
-		tokenManager, err := aws.NewTokenManager(config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create AWS token manager: %w", err)
-		}
-
-		authProvider := NewAWSAuthProvider()
-		// 设置内部状态
-		authProvider.SetEKSConfig(config)
-		authProvider.SetTokenManager(tokenManager)
-		config.TokenCache = &aws.TokenCache{}
-		tokenCtx, tokenCancel := context.WithCancel(context.Background())
-		// 启动自动刷新
-		authProvider.StartAutoRefresh(tokenCtx)
-
-		// 启动 token 刷新循环
-		go func() {
-			ticker := time.NewTicker(5 * time.Minute) // 每5分钟检查一次
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-tokenCtx.Done():
-					klog.V(2).Infof("Stopping token refresh for cluster %s", clusterID)
-					return
-				case <-ticker.C:
-					// 检查 token 是否需要刷新
-					if !authProvider.IsTokenValid() {
-						klog.V(3).Infof("Token expired for cluster %s, refreshing...", clusterID)
-						if token, _, err := authProvider.GetToken(tokenCtx); err != nil {
-							klog.Errorf("Failed to refresh token for cluster %s: %v", clusterID, err)
-						} else {
-							// 更新 rest.Config 中的 BearerToken
-							cluster.Config.BearerToken = token
-							klog.V(2).Infof("Successfully refreshed token for cluster %s", clusterID)
-						}
-					}
-				}
-			}
-		}()
-		cluster = &ClusterInst{
-			ID:                 clusterID,
-			IsEKS:              true,
-			AWSAuthProvider:    authProvider,
-			tokenRefreshCancel: tokenCancel,
-		}
-	}
-	klog.V(8).Infof("kubeconfigContent=\n%s", kubeconfigContent)
-
-	clusterInstances.clusters.Store(clusterID, cluster)
-
-	// 使用kubeconfig注册集群
-	kubectl, err := c.RegisterByStringWithID(kubeconfigContent, clusterID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to register EKS cluster %s: %w", clusterID, err)
-	}
-
-	klog.V(1).Infof("Successfully registered EKS cluster: %s", clusterID)
-
-	return kubectl, nil
-}
-
-// RefreshEKSCredentials 刷新EKS集群凭证
-func (c *ClusterInstances) RefreshEKSCredentials(clusterID string) error {
-
-	// 如果集群实例存在且为EKS集群，触发token刷新
-	if cluster := c.GetClusterById(clusterID); cluster != nil && cluster.IsEKS {
-		if cluster.AWSAuthProvider != nil {
-			cluster.AWSAuthProvider.TriggerRefresh()
-		}
-
-	}
-
-	return nil
 }
