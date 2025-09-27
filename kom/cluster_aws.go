@@ -28,6 +28,13 @@ func NewAWSAuthProvider() *aws.AuthProvider {
 //
 // 此函数会自动生成集群ID（格式：区域-集群名称），然后调用RegisterAWSClusterWithID
 func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubectl, error) {
+
+	if config == nil {
+		return nil, fmt.Errorf("RegisterAWSCluster: config is nil")
+	}
+	if config.Region == "" || config.ClusterName == "" {
+		return nil, fmt.Errorf("RegisterAWSCluster: region or cluster_name is empty")
+	}
 	// 生成集群ID
 	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
 	return c.RegisterAWSClusterWithID(config, clusterID)

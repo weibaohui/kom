@@ -2,6 +2,7 @@ package kom
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -16,6 +17,9 @@ import (
 //
 // 此函数会读取指定路径的kubeconfig文件，并使用服务器地址作为集群ID
 func (c *ClusterInstances) RegisterByPath(path string) (*Kubectl, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, fmt.Errorf("RegisterByPath: empty path")
+	}
 	config, err := clientcmd.BuildConfigFromFlags("", path)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterByPath Error %s %v", path, err)
