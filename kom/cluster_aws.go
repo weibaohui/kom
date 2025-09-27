@@ -153,3 +153,21 @@ func (c *ClusterInstances) RefreshEKSCredentials(clusterID string) error {
 
 	return nil
 }
+
+// IsEKSCluster 检查集群是否为 EKS 集群
+func (ci *ClusterInst) IsEKSCluster() bool {
+	return ci.IsEKS
+}
+
+// GetAWSAuthProvider 获取 AWS 认证提供者
+func (ci *ClusterInst) GetAWSAuthProvider() *aws.AuthProvider {
+	return ci.AWSAuthProvider
+}
+
+// StopTokenRefresh 停止 token 自动刷新
+func (ci *ClusterInst) StopTokenRefresh() {
+	if ci.tokenRefreshCancel != nil {
+		ci.tokenRefreshCancel()
+		ci.tokenRefreshCancel = nil
+	}
+}
