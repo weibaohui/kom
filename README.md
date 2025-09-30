@@ -2,6 +2,7 @@
 
 [English](README_en.md) | [中文](README.md)
 [![kom](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](https://github.com/weibaohui/kom/blob/master/LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fweibaohui%2Fkom.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fweibaohui%2Fkom?ref=badge_shield)
 
 
 ## 简介
@@ -1137,3 +1138,7 @@ var docResult []byte
 	fmt.Printf("Get Deployment Doc [%s] :%s", field, string(docResult))
 ```
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fweibaohui%2Fkom.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fweibaohui%2Fkom?ref=badge_large)
