@@ -1,25 +1,27 @@
 package kom
 
 import (
-	"context"
-	"fmt"
-	"runtime"
-	"sync"
-	"time"
+    "context"
+    "fmt"
+    "net/http"
+    "net/url"
+    "runtime"
+    "sync"
+    "time"
 
-	"github.com/dgraph-io/ristretto/v2"
-	openapi_v2 "github.com/google/gnostic-models/openapiv2"
-	"github.com/weibaohui/kom/kom/aws"
-	"github.com/weibaohui/kom/kom/describe"
-	"github.com/weibaohui/kom/kom/doc"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/version"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
+    "github.com/dgraph-io/ristretto/v2"
+    openapi_v2 "github.com/google/gnostic-models/openapiv2"
+    "github.com/weibaohui/kom/kom/aws"
+    "github.com/weibaohui/kom/kom/describe"
+    "github.com/weibaohui/kom/kom/doc"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+    "k8s.io/apimachinery/pkg/runtime/schema"
+    "k8s.io/apimachinery/pkg/version"
+    "k8s.io/client-go/dynamic"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/rest"
+    "k8s.io/klog/v2"
 )
 
 var clusterInstances *ClusterInstances
@@ -96,22 +98,64 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 //   - error: 失败时返回错误信息
 //
 // 此函数使用配置中的Host字段作为集群ID
-func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
-	if config == nil {
-		return nil, fmt.Errorf("config is nil")
-	}
-	host := config.Host
+func (c *ClusterInstances) RegisterByConfig(config *rest.Config, opts ...RegisterOption) (*Kubectl, error) {
+    if config == nil {
+        return nil, fmt.Errorf("config is nil")
+    }
+    host := config.Host
 
-	return c.RegisterByConfigWithID(config, host)
+    return c.RegisterByConfigWithID(config, host, opts...)
 }
 
 // RegisterByConfigWithID 注册集群
-func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string) (*Kubectl, error) {
-	if config == nil {
-		return nil, fmt.Errorf("config is nil")
-	}
-	config.QPS = 200
-	config.Burst = 2000
+func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string, opts ...RegisterOption) (*Kubectl, error) {
+    if config == nil {
+        return nil, fmt.Errorf("config is nil")
+    }
+    // defaults
+    config.QPS = 200
+    config.Burst = 2000
+
+    // collect registration options
+    params := &RegisterParams{}
+    for _, opt := range opts {
+        if opt != nil {
+            opt(params)
+        }
+    }
+
+    // apply rest.Config options
+    if params.QPS != nil {
+        config.QPS = *params.QPS
+    }
+    if params.Burst != nil {
+        config.Burst = *params.Burst
+    }
+    if params.Timeout > 0 {
+        config.Timeout = params.Timeout
+    }
+    if params.UserAgent != "" {
+        config.UserAgent = params.UserAgent
+    }
+    if params.TLSInsecure {
+        config.TLSClientConfig.Insecure = true
+    }
+    if len(params.CACert) > 0 {
+        config.TLSClientConfig.CAData = params.CACert
+        config.TLSClientConfig.Insecure = false
+    }
+    if params.Impersonation != nil {
+        config.Impersonate = *params.Impersonation
+    }
+    if params.ProxyFunc != nil {
+        config.Proxy = params.ProxyFunc
+    } else if params.ProxyURL != "" {
+        if proxyURL, err := url.Parse(params.ProxyURL); err == nil {
+            config.Proxy = func(*http.Request) (*url.URL, error) { return proxyURL, nil }
+        } else {
+            klog.V(4).Infof("invalid proxy url: %s, err: %v", params.ProxyURL, err)
+        }
+    }
 
 	var cluster *ClusterInst
 	// 检查是否已存在
@@ -137,8 +181,8 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		config.BearerToken = token
 
 	}
-	// key 不存在，进行初始化
-	k := initKubectl(config, id)
+    // key 不存在，进行初始化
+    k := initKubectl(config, id)
 	// 正常情况下，走到这里，cluster都是空
 	if cluster == nil {
 		cluster = &ClusterInst{
@@ -179,25 +223,31 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		c.callbackRegisterFunc(cluster)
 	}
 
-	cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
-		NumCounters: 1e7,     // number of keys to track frequency of (10M).
-		MaxCost:     1 << 30, // maximum cost of cache (1GB).
-		BufferItems: 64,      // number of keys per Get buffer.
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cache: %w", err)
-	}
-	cluster.Cache = cache
+    cacheCfg := params.CacheConfig
+    if cacheCfg == nil {
+        cacheCfg = &ristretto.Config[string, any]{
+            NumCounters: 1e7,     // number of keys to track frequency of (10M).
+            MaxCost:     1 << 30, // maximum cost of cache (1GB).
+            BufferItems: 64,      // number of keys per Get buffer.
+        }
+    }
+    cache, err := ristretto.NewCache(cacheCfg)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create cache: %w", err)
+    }
+    cluster.Cache = cache
 
-	// 启动CRD监控，有更新的时候，更新APIResources
-	ctx, cf := context.WithCancel(context.Background())
-	cluster.watchCRDCancelFunc = cf
-	err = k.WatchCRDAndRefreshDiscovery(ctx)
-	if err != nil {
-		return nil, err
-	}
+    // 启动CRD监控，有更新的时候，更新APIResources
+    if !params.DisableCRDWatch {
+        ctx, cf := context.WithCancel(context.Background())
+        cluster.watchCRDCancelFunc = cf
+        err = k.WatchCRDAndRefreshDiscovery(ctx)
+        if err != nil {
+            return nil, err
+        }
+    }
 
-	return k, nil
+    return k, nil
 }
 
 // GetClusterById 根据集群ID获取集群实例
