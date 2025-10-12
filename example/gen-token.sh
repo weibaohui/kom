@@ -3,7 +3,7 @@
 
 NAMESPACE=default
 SA_NAME=my-token-sa
-
+kubectl delete sa  ${SA_NAME} -n ${NAMESPACE} 2>/dev/null || true
 # 获取 API Server 地址
 APISERVER=$(kubectl config view -o jsonpath='{.clusters[0].cluster.server}')
 
@@ -12,7 +12,7 @@ kubectl create sa ${SA_NAME} -n ${NAMESPACE} 2>/dev/null || true
 
 # 绑定 cluster-admin 权限（可改成更细粒度权限）
 kubectl create clusterrolebinding ${SA_NAME}-binding \
-  --clusterrole=cluster-admin \
+  --clusterrole=view \
   --serviceaccount=${NAMESPACE}:${SA_NAME} 2>/dev/null || true
 
 # 获取 Secret 名称 (v1.24+ 需要显式创建)
