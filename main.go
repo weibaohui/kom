@@ -53,6 +53,51 @@ func main() {
 		OnAfterCallTool: []server.OnAfterCallToolFunc{actFn},
 	}
 
+	// 示例：多集群配置
+	// 方式1：手动指定kubeconfig文件
+	kubeconfigs := []mcp.KubeconfigConfig{
+		{
+			ID:        "cluster1",
+			Path:      "/path/to/cluster1-kubeconfig.yaml",
+			IsDefault: true,
+		},
+		{
+			ID:   "cluster2", 
+			Path: "/path/to/cluster2-kubeconfig.yaml",
+		},
+	}
+
+	// 方式2：从目录自动加载kubeconfig文件
+	// kubeconfigs, err := mcp.LoadKubeconfigsFromDirectory("/path/to/kubeconfigs")
+	// if err != nil {
+	//     klog.Errorf("Failed to load kubeconfigs from directory: %v", err)
+	//     return
+	// }
+
+	// 方式3：使用kubeconfig内容
+	// kubeconfigs := []mcp.KubeconfigConfig{
+	//     {
+	//         ID:      "cluster1",
+	//         Content: `apiVersion: v1
+	// clusters:
+	// - cluster:
+	//     server: https://cluster1.example.com:6443
+	//   name: cluster1
+	// contexts:
+	// - context:
+	//     cluster: cluster1
+	//     user: admin
+	//   name: cluster1
+	// current-context: cluster1
+	// kind: Config
+	// users:
+	// - name: admin
+	//   user:
+	//     token: your-token-here`,
+	//         IsDefault: true,
+	//     },
+	// }
+
 	cfg := mcp.ServerConfig{
 		Name:    "kom mcp server",
 		Version: "0.0.1",
@@ -66,8 +111,9 @@ func main() {
 		SSEOption: []server.SSEOption{
 			server.WithSSEContextFunc(ctxFn),
 		},
-		AuthKey: authKey,
-		Mode:    mcp.ServerModeSSE, // 开启STDIO 或者 SSE
+		AuthKey:     authKey,
+		Mode:        mcp.ServerModeSSE, // 开启STDIO 或者 SSE
+		Kubeconfigs: kubeconfigs,       // 多集群配置
 	}
 	mcp.RunMCPServerWithOption(&cfg)
 

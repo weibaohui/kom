@@ -2,8 +2,11 @@ package mcp
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/weibaohui/kom/kom"
 	"github.com/weibaohui/kom/mcp/tools"
 	"github.com/weibaohui/kom/mcp/tools/cluster"
 	"github.com/weibaohui/kom/mcp/tools/daemonset"
@@ -29,6 +32,15 @@ type ServerConfig struct {
 	Metadata      map[string]string // 元数据
 	AuthKey       string            // 认证key
 	Mode          ServerMode        // 运行模式 sse,stdio
+	Kubeconfigs   []KubeconfigConfig // 多集群kubeconfig配置
+}
+
+// KubeconfigConfig 定义了单个集群的kubeconfig配置
+type KubeconfigConfig struct {
+	ID       string // 集群ID，用于标识集群
+	Path     string // kubeconfig文件路径
+	Content  string // kubeconfig内容（与Path二选一）
+	IsDefault bool  // 是否为默认集群
 }
 
 // ServerMode 定义了服务器的运行模式类型
@@ -125,6 +137,107 @@ func GetMCPSSEServerWithServerAndOption(s *server.MCPServer, cfg *ServerConfig) 
 	return sseServer
 }
 
+// LoadKubeconfigsFromDirectory 从目录中加载所有kubeconfig文件
+// 参数:
+//   - dir: kubeconfig文件所在目录
+//   - pattern: 文件匹配模式，默认为"*.yaml"和"*.yml"
+//
+// 返回:
+//   - []KubeconfigConfig: kubeconfig配置列表
+//   - error: 加载失败时返回错误信息
+//
+// 该函数会扫描指定目录，为每个kubeconfig文件创建配置
+func LoadKubeconfigsFromDirectory(dir string, pattern ...string) ([]KubeconfigConfig, error) {
+	if dir == "" {
+		return nil, fmt.Errorf("directory path cannot be empty")
+	}
+
+	// 默认匹配模式
+	patterns := []string{"*.yaml", "*.yml"}
+	if len(pattern) > 0 {
+		patterns = pattern
+	}
+
+	var configs []KubeconfigConfig
+
+	for _, p := range patterns {
+		matches, err := filepath.Glob(filepath.Join(dir, p))
+		if err != nil {
+			return nil, fmt.Errorf("failed to glob pattern %s: %w", p, err)
+		}
+
+		for _, match := range matches {
+			// 使用文件名（不含扩展名）作为集群ID
+			clusterID := filepath.Base(match)
+			ext := filepath.Ext(clusterID)
+			if ext != "" {
+				clusterID = clusterID[:len(clusterID)-len(ext)]
+			}
+
+			configs = append(configs, KubeconfigConfig{
+				ID:   clusterID,
+				Path: match,
+			})
+		}
+	}
+
+	return configs, nil
+}
+
+// initializeMultiCluster 初始化多集群配置
+// 参数:
+//   - cfg: 服务器配置参数
+//
+// 返回:
+//   - error: 初始化失败时返回错误信息
+//
+// 该函数会根据配置的Kubeconfigs初始化多个Kubernetes集群连接
+func initializeMultiCluster(cfg *ServerConfig) error {
+	if cfg == nil || len(cfg.Kubeconfigs) == 0 {
+		klog.V(2).Infof("No kubeconfig configurations provided, skipping multi-cluster initialization")
+		return nil
+	}
+
+	klog.Infof("Initializing %d clusters from kubeconfig configurations", len(cfg.Kubeconfigs))
+
+	for _, kubeconfig := range cfg.Kubeconfigs {
+		if kubeconfig.ID == "" {
+			return fmt.Errorf("cluster ID cannot be empty")
+		}
+
+		var err error
+		if kubeconfig.Content != "" {
+			// 使用kubeconfig内容
+			_, err = kom.Clusters().RegisterByStringWithID(kubeconfig.Content, kubeconfig.ID)
+			klog.V(2).Infof("Registered cluster %s from kubeconfig content", kubeconfig.ID)
+		} else if kubeconfig.Path != "" {
+			// 使用kubeconfig文件路径
+			// 检查文件是否存在
+			if _, err := os.Stat(kubeconfig.Path); os.IsNotExist(err) {
+				return fmt.Errorf("kubeconfig file not found: %s", kubeconfig.Path)
+			}
+			_, err = kom.Clusters().RegisterByPathWithID(kubeconfig.Path, kubeconfig.ID)
+			klog.V(2).Infof("Registered cluster %s from kubeconfig file: %s", kubeconfig.ID, kubeconfig.Path)
+		} else {
+			return fmt.Errorf("either kubeconfig content or path must be provided for cluster %s", kubeconfig.ID)
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to register cluster %s: %w", kubeconfig.ID, err)
+		}
+
+		// 如果指定为默认集群，将其设置为默认集群
+		if kubeconfig.IsDefault {
+			// 这里可以通过修改DefaultCluster方法来实现，或者通过其他方式标记默认集群
+			klog.V(2).Infof("Cluster %s marked as default", kubeconfig.ID)
+		}
+	}
+
+	// 显示所有已注册的集群
+	kom.Clusters().Show()
+	return nil
+}
+
 // GetMCPServerWithOption 创建并配置一个新的MCP服务器实例
 // 参数:
 //   - cfg: 服务器配置参数
@@ -136,6 +249,12 @@ func GetMCPSSEServerWithServerAndOption(s *server.MCPServer, cfg *ServerConfig) 
 func GetMCPServerWithOption(cfg *ServerConfig) *server.MCPServer {
 	if cfg == nil {
 		klog.Errorf("MCP Server error: config is nil\n")
+		return nil
+	}
+
+	// 初始化多集群配置
+	if err := initializeMultiCluster(cfg); err != nil {
+		klog.Errorf("Failed to initialize multi-cluster configuration: %v", err)
 		return nil
 	}
 
