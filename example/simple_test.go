@@ -7,16 +7,14 @@ import (
 	"github.com/weibaohui/kom/mcp"
 )
 
-func TestSimpleMultiClusterSSE(t *testing.T) {
-	// 创建测试kubeconfig文件
-	testDir := "/tmp/kom-simple-test"
+func TestMultiClusterSSE(t *testing.T) {
+	testDir := "/tmp/kom-test"
 	err := os.MkdirAll(testDir, 0755)
 	if err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}
 	defer os.RemoveAll(testDir)
 
-	// 创建示例kubeconfig文件
 	kubeconfig1 := `apiVersion: v1
 clusters:
 - cluster:
@@ -66,38 +64,26 @@ users:
 		t.Fatalf("Failed to write kubeconfig2: %v", err)
 	}
 
-	// 配置多集群
 	cfg := &mcp.ServerConfig{
-		Name:    "kom simple test",
+		Name:    "kom test",
 		Version: "1.0.0",
 		Port:    9096,
 		Mode:    mcp.ServerModeSSE,
 		Kubeconfigs: []mcp.KubeconfigConfig{
-			{
-				ID:        "cluster1",
-				Path:      file1,
-				IsDefault: true,
-			},
-			{
-				ID:   "cluster2",
-				Path: file2,
-			},
+			{ID: "cluster1", Path: file1, IsDefault: true},
+			{ID: "cluster2", Path: file2},
 		},
 	}
 
-	// 创建MCP服务器（不启动）
 	server := mcp.GetMCPServerWithOption(cfg)
 	if server == nil {
 		t.Fatal("Failed to create MCP server")
 	}
 
-	t.Log("✅ Successfully created MCP server with multi-cluster support")
-	t.Log("✅ Cluster1 registered as default")
-	t.Log("✅ Cluster2 registered successfully")
+	t.Log("Multi-cluster SSE support working")
 }
 
 func TestDirectoryLoading(t *testing.T) {
-	// 创建测试目录
 	testDir := "/tmp/kom-dir-test"
 	err := os.MkdirAll(testDir, 0755)
 	if err != nil {
@@ -105,7 +91,6 @@ func TestDirectoryLoading(t *testing.T) {
 	}
 	defer os.RemoveAll(testDir)
 
-	// 创建kubeconfig文件
 	kubeconfig := `apiVersion: v1
 clusters:
 - cluster:
@@ -129,7 +114,6 @@ users:
 		t.Fatalf("Failed to write kubeconfig: %v", err)
 	}
 
-	// 从目录加载
 	configs, err := mcp.LoadKubeconfigsFromDirectory(testDir)
 	if err != nil {
 		t.Fatalf("Failed to load from directory: %v", err)
@@ -143,5 +127,5 @@ users:
 		t.Fatalf("Expected cluster ID 'test', got '%s'", configs[0].ID)
 	}
 
-	t.Log("✅ Directory loading works correctly")
+	t.Log("Directory loading working")
 }
