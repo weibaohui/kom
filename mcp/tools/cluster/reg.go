@@ -10,4 +10,14 @@ func RegisterTools(s *server.MCPServer) {
 		ListClusters(),
 		ListClustersHandler,
 	)
+
+	s.AddTool(
+		RegisterCluster(),
+		RegisterClusterHandler,
+	)
+
+	s.AddTool(
+		UnregisterCluster(),
+		UnregisterClusterHandler,
+	)
 }
