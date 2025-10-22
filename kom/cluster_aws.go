@@ -27,7 +27,7 @@ func NewAWSAuthProvider() *aws.AuthProvider {
 //   - error: 失败时返回错误信息
 //
 // 此函数会自动生成集群ID（格式：区域-集群名称），然后调用RegisterAWSClusterWithID
-func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig, opts ...RegisterOption) (*Kubectl, error) {
 
 	if config == nil {
 		return nil, fmt.Errorf("RegisterAWSCluster: config is nil")
@@ -36,8 +36,8 @@ func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubec
 		return nil, fmt.Errorf("RegisterAWSCluster: region or cluster_name is empty")
 	}
 	// 生成集群ID
-	clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
-	return c.RegisterAWSClusterWithID(config, clusterID)
+    clusterID := fmt.Sprintf("%s-%s", config.Region, config.ClusterName)
+    return c.RegisterAWSClusterWithID(config, clusterID, opts...)
 }
 
 // RegisterAWSClusterWithID 通过指定ID注册EKS集群
@@ -55,7 +55,7 @@ func (c *ClusterInstances) RegisterAWSCluster(config *aws.EKSAuthConfig) (*Kubec
 // 3. 设置AWS token管理器和自动刷新
 // 4. 启动token刷新循环
 // 5. 注册集群并返回Kubectl实例
-func (c *ClusterInstances) RegisterAWSClusterWithID(config *aws.EKSAuthConfig, clusterID string) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterAWSClusterWithID(config *aws.EKSAuthConfig, clusterID string, opts ...RegisterOption) (*Kubectl, error) {
 
 	var cluster *ClusterInst
 	// 检查是否已存在
@@ -130,7 +130,7 @@ func (c *ClusterInstances) RegisterAWSClusterWithID(config *aws.EKSAuthConfig, c
 	clusterInstances.clusters.Store(clusterID, cluster)
 
 	// 使用kubeconfig注册集群
-	kubectl, err := c.RegisterByStringWithID(kubeconfigContent, clusterID)
+    kubectl, err := c.RegisterByStringWithID(kubeconfigContent, clusterID, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register EKS cluster %s: %w", clusterID, err)
 	}

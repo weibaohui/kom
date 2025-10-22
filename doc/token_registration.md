@@ -20,8 +20,13 @@ token := "<YOUR_TOKEN>"
 server := "https://your-cluster.example.com:6443"
 clusterID := "production-cluster"
 caData := "<YOUR_CA_DATA>"
-//当填写了caData时，会启用TLS验证
-kubectl, err := kom.Clusters().RegisterByTokenWithServerAndID(token, server, clusterID, caData)
+// 当需要指定 CA 证书时，使用注册期 Option：
+kubectl, err := kom.Clusters().RegisterByTokenWithServerAndID(
+    token,
+    server,
+    clusterID,
+    kom.RegisterCACert([]byte(caData)),
+)
 if err != nil {
     log.Fatalf("Failed to register cluster: %v", err)
 }

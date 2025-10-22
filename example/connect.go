@@ -28,6 +28,7 @@ func Connect() {
 	// _, _ = kom.Clusters().RegisterAWSCluster(config)
 
 	_, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default")
+	// _, _ = kom.Clusters().RegisterByPathWithID(defaultKubeConfig, "default", kom.RegisterProxyURL("http://localhost:7890"), kom.RegisterDisableCRDWatch(), kom.RegisterBurst(400))
 	kom.Clusters().Show()
 
 }

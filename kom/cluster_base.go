@@ -3,6 +3,8 @@ package kom
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"runtime"
 	"sync"
 	"time"
@@ -96,22 +98,68 @@ func (c *ClusterInstances) SetRegisterCallbackFunc(callback func(cluster *Cluste
 //   - error: 失败时返回错误信息
 //
 // 此函数使用配置中的Host字段作为集群ID
-func (c *ClusterInstances) RegisterByConfig(config *rest.Config) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterByConfig(config *rest.Config, opts ...RegisterOption) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 	host := config.Host
 
-	return c.RegisterByConfigWithID(config, host)
+	return c.RegisterByConfigWithID(config, host, opts...)
 }
 
 // RegisterByConfigWithID 注册集群
-func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string) (*Kubectl, error) {
+func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string, opts ...RegisterOption) (*Kubectl, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
-	config.QPS = 200
-	config.Burst = 2000
+
+	// collect registration options
+	params := &RegisterParams{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(params)
+		}
+	}
+	// defaults
+	if config.QPS == 0 {
+		config.QPS = 200
+	}
+	if config.Burst == 0 {
+		config.Burst = 2000
+	}
+	// apply rest.Config options
+	if params.QPS != nil {
+		config.QPS = *params.QPS
+	}
+	if params.Burst != nil {
+		config.Burst = *params.Burst
+	}
+
+	if params.Timeout > 0 {
+		config.Timeout = params.Timeout
+	}
+	if params.UserAgent != "" {
+		config.UserAgent = params.UserAgent
+	}
+	if params.TLSInsecure {
+		config.TLSClientConfig.Insecure = true
+	}
+	if len(params.CACert) > 0 {
+		config.TLSClientConfig.CAData = params.CACert
+		config.TLSClientConfig.Insecure = false
+	}
+	if params.Impersonation != nil {
+		config.Impersonate = *params.Impersonation
+	}
+	if params.ProxyFunc != nil {
+		config.Proxy = params.ProxyFunc
+	} else if params.ProxyURL != "" {
+		if proxyURL, err := url.Parse(params.ProxyURL); err == nil {
+			config.Proxy = func(*http.Request) (*url.URL, error) { return proxyURL, nil }
+		} else {
+			klog.V(4).Infof("invalid proxy url: %s, err: %v", params.ProxyURL, err)
+		}
+	}
 
 	var cluster *ClusterInst
 	// 检查是否已存在
@@ -179,22 +227,28 @@ func (c *ClusterInstances) RegisterByConfigWithID(config *rest.Config, id string
 		c.callbackRegisterFunc(cluster)
 	}
 
-	cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
-		NumCounters: 1e7,     // number of keys to track frequency of (10M).
-		MaxCost:     1 << 30, // maximum cost of cache (1GB).
-		BufferItems: 64,      // number of keys per Get buffer.
-	})
+	cacheCfg := params.CacheConfig
+	if cacheCfg == nil {
+		cacheCfg = &ristretto.Config[string, any]{
+			NumCounters: 1e7,     // number of keys to track frequency of (10M).
+			MaxCost:     1 << 30, // maximum cost of cache (1GB).
+			BufferItems: 64,      // number of keys per Get buffer.
+		}
+	}
+	cache, err := ristretto.NewCache(cacheCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache: %w", err)
 	}
 	cluster.Cache = cache
 
 	// 启动CRD监控，有更新的时候，更新APIResources
-	ctx, cf := context.WithCancel(context.Background())
-	cluster.watchCRDCancelFunc = cf
-	err = k.WatchCRDAndRefreshDiscovery(ctx)
-	if err != nil {
-		return nil, err
+	if !params.DisableCRDWatch {
+		ctx, cf := context.WithCancel(context.Background())
+		cluster.watchCRDCancelFunc = cf
+		err = k.WatchCRDAndRefreshDiscovery(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return k, nil
