@@ -12,6 +12,13 @@ import (
 )
 
 // ResourceUsage 获取节点的资源使用情况，包括资源的请求和限制，还有当前使用占比
+// 来自 Kubernetes 官方文档：
+// 1.CPU limit 是可选的
+// 2.Memory limit 建议设置且要足够大
+// 3.不要将 CPU request = limit
+// 4.scheduler 只看 request，不看 limit
+// CPU：必须 request，limit 可不设。
+// Memory：必须 request，limit 需要设且要足够宽松。实际值建议基于历史 p95/p99 自动化生成。
 func (p *pod) ResourceUsage() (*ResourceUsageResult, error) {
 
 	var inst *v1.Pod
