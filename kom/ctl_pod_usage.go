@@ -110,19 +110,12 @@ func (p *pod) ResourceUsage(denom ...UsageDenominator) (*ResourceUsageResult, er
 	if len(denom) > 0 {
 		selected = denom[0]
 	}
-	// 根据分母策略构造各资源的分母值
-	chooseLimitOrNode := func(limitQ resource.Quantity, nodeQ resource.Quantity, resName string) resource.Quantity {
-		if limitQ.IsZero() {
-			klog.V(6).Infof("资源 %s 未设置 limit，分母回退为节点可分配值", resName)
-			return nodeQ
-		}
-		return limitQ
-	}
+
 	var denomCPU, denomMemory resource.Quantity
 	switch selected {
 	case DenominatorLimit:
-		denomCPU = chooseLimitOrNode(cpuLimit, *allocatable.Cpu(), "cpu")
-		denomMemory = chooseLimitOrNode(memoryLimit, *allocatable.Memory(), "memory")
+		denomCPU = cpuLimit
+		denomMemory = memoryLimit
 		klog.V(6).Infof("资源占比分母选择：使用 Limit")
 	case DenominatorNode:
 		denomCPU = *allocatable.Cpu()
