@@ -25,7 +25,15 @@ import (
 //
 // 说明：
 //   - 默认分母为 DenominatorAuto。
-//   - 为避免除零，当显式指定 DenominatorLimit 而资源未设置 limit 时，将回退到 Node 可分配值并打印中文日志。
+//   - 为避免除零，当显式指定 DenominatorLimit 而资源未设置 limit 时，将回退到 Node 可分配值并打印日志。
+//
+// 来自 Kubernetes 官方文档：
+// 1.CPU limit 是可选的
+// 2.Memory limit 建议设置且要足够大
+// 3.不要将 CPU request = limit
+// 4.scheduler 只看 request，不看 limit
+// CPU：必须 request，limit 可不设。
+// Memory：必须 request，limit 需要设且要足够宽松。实际值建议基于历史 p95/p99 自动化生成。
 func (p *pod) ResourceUsage(denom ...UsageDenominator) (*ResourceUsageResult, error) {
 
 	var inst *v1.Pod
