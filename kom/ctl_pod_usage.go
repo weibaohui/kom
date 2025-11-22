@@ -142,9 +142,23 @@ func (p *pod) ResourceUsage(denom ...UsageDenominator) (*ResourceUsageResult, er
 		klog.V(6).Infof("资源占比分母选择：自动（优先 Limit，否则节点）")
 	}
 
-	// 实时占比按选定分母计算
-	fractionCpuRealtime := utils.FormatPercent(float64(cpuRealtime.MilliValue()) / float64((&denomCPU).MilliValue()) * 100)
-	fractionMemoryRealtime := utils.FormatPercent(float64(memoryRealtime.Value()) / float64((&denomMemory).Value()) * 100)
+	// 实时占比按选定分母计算，分母为0时防御性置为0
+	var fractionCpuRealtime, fractionMemoryRealtime string
+	denomCpuMilli := (&denomCPU).MilliValue()
+	if denomCpuMilli == 0 {
+		klog.V(6).Infof("CPU 实时占比分母为0，已置为0")
+		fractionCpuRealtime = utils.FormatPercent(0)
+	} else {
+		fractionCpuRealtime = utils.FormatPercent(float64(cpuRealtime.MilliValue()) / float64(denomCpuMilli) * 100)
+	}
+
+	denomMemVal := (&denomMemory).Value()
+	if denomMemVal == 0 {
+		klog.V(6).Infof("内存实时占比分母为0，已置为0")
+		fractionMemoryRealtime = utils.FormatPercent(0)
+	} else {
+		fractionMemoryRealtime = utils.FormatPercent(float64(memoryRealtime.Value()) / float64(denomMemVal) * 100)
+	}
 
 	usageFractions := map[v1.ResourceName]ResourceUsageFraction{
 		v1.ResourceCPU: {
