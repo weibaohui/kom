@@ -175,8 +175,8 @@ func (p *pod) ResourceUsage(denom ...UsageDenominator) (*ResourceUsageResult, er
 		UsageFractions: usageFractions,
 	}, nil
 }
-func (p *pod) ResourceUsageTable() ([]*ResourceUsageRow, error) {
-	usage, err := p.ResourceUsage()
+func (p *pod) ResourceUsageTable(denom ...UsageDenominator) ([]*ResourceUsageRow, error) {
+	usage, err := p.ResourceUsage(denom...)
 	if err != nil {
 		return nil, err
 	}
