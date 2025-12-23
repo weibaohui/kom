@@ -15,6 +15,8 @@ func UpdateTagDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"update_k8s_deployment_image_tag",
 		mcp.WithDescription("更新Deployment中容器的镜像Tag。对应kubectl命令: kubectl set image deployment/<name> <container>=<image>:<tag> -n <namespace> / Update container image tag in deployment. Equivalent kubectl command: kubectl set image deployment/<name> <container>=<image>:<tag> -n <namespace>"),
+		mcp.WithTitleAnnotation("Update Deployment Image Tag"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

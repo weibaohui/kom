@@ -16,6 +16,8 @@ func ListPod() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_pod",
 		mcp.WithDescription("获取Pod列表 (类似命令 kubectl get pods -n ns)"),
+		mcp.WithTitleAnnotation("List Pods"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resources (optional for cluster-scoped resources)")),
 		mcp.WithString("fieldSelector", mcp.Description("用于过滤资源的字段选择器（例如：metadata.name=test-deploy）/ Field selector to filter resources (e.g. metadata.name=test-deploy)")),

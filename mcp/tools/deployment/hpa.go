@@ -16,6 +16,8 @@ func HPAListDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_hpa_list",
 		mcp.WithDescription("查询Deployment的HPA列表。对应kubectl命令: kubectl get hpa -n <namespace> | grep <deployment-name> / Query deployment HPA list. Equivalent kubectl command: kubectl get hpa -n <namespace> | grep <deployment-name>"),
+		mcp.WithTitleAnnotation("Get Deployment HPA List"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 / The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),

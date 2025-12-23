@@ -13,6 +13,8 @@ func ListClusters() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_clusters",
 		mcp.WithDescription("列出所有已注册的Kubernetes集群（可用集群、可操作集群） / List all registered Kubernetes clusters"),
+		mcp.WithTitleAnnotation("List Clusters"),
+		mcp.WithReadOnlyHintAnnotation(true),
 	)
 }
 
@@ -44,6 +46,8 @@ func RegisterCluster() mcp.Tool {
 	return mcp.NewTool(
 		"register_k8s_cluster",
 		mcp.WithDescription("动态注册新的Kubernetes集群 / Dynamically register a new Kubernetes cluster"),
+		mcp.WithTitleAnnotation("Register Cluster"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster_id", mcp.Description("集群的唯一标识符 / Unique identifier for the cluster")),
 		mcp.WithString("kubeconfig_path", mcp.Description("kubeconfig文件路径 / Path to the kubeconfig file")),
 		mcp.WithString("kubeconfig_content", mcp.Description("kubeconfig内容（与kubeconfig_path二选一）/ Kubeconfig content (alternative to kubeconfig_path)")),
@@ -89,6 +93,8 @@ func UnregisterCluster() mcp.Tool {
 	return mcp.NewTool(
 		"unregister_k8s_cluster",
 		mcp.WithDescription("注销Kubernetes集群 / Unregister a Kubernetes cluster"),
+		mcp.WithTitleAnnotation("Unregister Cluster"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster_id", mcp.Description("要注销的集群标识符 / Cluster identifier to unregister")),
 	)
 }

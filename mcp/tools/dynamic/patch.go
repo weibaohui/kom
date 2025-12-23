@@ -14,6 +14,8 @@ func PatchDynamicResource() mcp.Tool {
 	return mcp.NewTool(
 		"patch_k8s_resource",
 		mcp.WithDescription("通过集群、命名空间和名称更新Kubernetes资源 / Patch Kubernetes resource by cluster, namespace, and name"),
+		mcp.WithTitleAnnotation("Patch Resource"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
 		mcp.WithString("namespace", mcp.Description("资源所在的命名空间（集群范围资源可选）/ Namespace of the resource (optional for cluster-scoped resources)")),
 		mcp.WithString("name", mcp.Description("资源的名称 / Name of the resource")),

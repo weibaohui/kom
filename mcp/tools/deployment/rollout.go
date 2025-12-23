@@ -16,6 +16,8 @@ func RolloutHistoryDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_rollout_history",
 		mcp.WithDescription("查询Deployment的升级历史。对应kubectl命令: kubectl rollout history deployment/<name> -n <namespace> / Query deployment rollout history. Equivalent kubectl command: kubectl rollout history deployment/<name> -n <namespace>"),
+		mcp.WithTitleAnnotation("Get Deployment Rollout History"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
@@ -45,6 +47,8 @@ func RolloutUndoDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"undo_k8s_deployment_rollout",
 		mcp.WithDescription("回滚Deployment到指定版本，如果不指定版本则回滚到上一个版本 / Rollback deployment to specific revision, or previous revision if not specified"),
+		mcp.WithTitleAnnotation("Undo Deployment Rollout"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
@@ -80,6 +84,8 @@ func RolloutPauseDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"pause_k8s_deployment_rollout",
 		mcp.WithDescription("暂停Deployment的升级过程 / Pause deployment rollout"),
+		mcp.WithTitleAnnotation("Pause Deployment Rollout"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
@@ -109,6 +115,8 @@ func RolloutResumeDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"resume_k8s_deployment_rollout",
 		mcp.WithDescription("恢复Deployment的升级过程 / Resume deployment rollout"),
+		mcp.WithTitleAnnotation("Resume Deployment Rollout"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
@@ -138,6 +146,8 @@ func RolloutStatusDeploymentTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_deployment_rollout_status",
 		mcp.WithDescription("查询Deployment的升级状态 / Query deployment rollout status"),
+		mcp.WithTitleAnnotation("Get Deployment Rollout Status"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Deployment的集群 （使用空字符串表示默认集群）/ The cluster runs the deployment")),
 		mcp.WithString("namespace", mcp.Description("Deployment所在的命名空间 / The namespace of the deployment")),
 		mcp.WithString("name", mcp.Description("Deployment的名称 / The name of the deployment")),
