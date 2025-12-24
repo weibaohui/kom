@@ -17,6 +17,8 @@ func GetPodLogsTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_logs",
 		mcp.WithDescription("获取Pod日志，通过集群、命名空间和名称，可限制返回行数 (类似命令: kubectl logs [-f] [-p] [-c container] [-n namespace] <pod-name> [--tail=N]) / Get pod logs by cluster, namespace and name with tail lines limit"),
+		mcp.WithTitleAnnotation("Get Pod Logs"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群 （使用空字符串表示默认集群） （使用空字符串表示默认集群）/ The cluster runs the pod")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Pod所在的命名空间 / The namespace of the pod")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Pod的名称 / The name of the pod")),

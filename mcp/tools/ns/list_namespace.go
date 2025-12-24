@@ -15,6 +15,8 @@ func ListNamespace() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_namespace",
 		mcp.WithDescription("获取命名空间列表"),
+		mcp.WithTitleAnnotation("List Namespaces"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行资源的集群（使用空字符串表示默认集群）/ Cluster where the resources are running (use empty string for default cluster)")),
 	)
 }

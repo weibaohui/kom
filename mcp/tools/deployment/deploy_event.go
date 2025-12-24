@@ -14,6 +14,8 @@ func ListDeployEventResource() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_deploy_event",
 		mcp.WithDescription("列出Deployment相关的事件。 kubectl get events -n <namespace> ) "),
+		mcp.WithTitleAnnotation("List Deployment Events"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行事件的集群（使用空字符串表示默认集群）")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Deploy所在的命名空间")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Deploy名称")),

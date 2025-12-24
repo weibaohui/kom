@@ -15,6 +15,8 @@ func DeletePodTool() mcp.Tool {
 	return mcp.NewTool(
 		"delete_k8s_pod",
 		mcp.WithDescription("删除指定的Pod (类似命令: kubectl delete pod <pod-name> -n <namespace>) / Delete specified Pod"),
+		mcp.WithTitleAnnotation("Delete Pod"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("运行Pod的集群（使用空字符串表示默认集群）/ Cluster where the Pod is running (use empty string for default cluster)")),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Pod所在的命名空间 / Namespace of the Pod")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Pod的名称 / Name of the Pod")),

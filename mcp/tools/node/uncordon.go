@@ -15,6 +15,8 @@ func UnCordonNodeTool() mcp.Tool {
 	return mcp.NewTool(
 		"uncordon_k8s_node",
 		mcp.WithDescription("设置节点为可调度状态，等同于kubectl uncordon <node> / Mark node as schedulable, equivalent to kubectl uncordon <node>"),
+		mcp.WithTitleAnnotation("Uncordon Node"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("节点名称 / The name of the node")),
 	)

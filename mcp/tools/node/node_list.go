@@ -16,6 +16,8 @@ func ListNode() mcp.Tool {
 	return mcp.NewTool(
 		"list_k8s_node",
 		mcp.WithDescription("获取Node列表 (类似命令 kubectl get node)"),
+		mcp.WithTitleAnnotation("List Nodes"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("Node所在集群（使用空字符串表示默认集群）")),
 	)
 }

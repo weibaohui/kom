@@ -16,6 +16,8 @@ func NodePodCountTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_pod_count_running_on_node",
 		mcp.WithDescription("查询某个节点上运行的Pod数量统计 (类似命令: kubectl describe node <node-name> | grep Pods) / Query node Pod count statistics"),
+		mcp.WithTitleAnnotation("Get Node Pod Count"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("节点名称 / The name of the node")),
 		mcp.WithNumber("cache_seconds", mcp.Description("缓存时间（默认20秒） / Cache duration in seconds,default 20 seconds")),

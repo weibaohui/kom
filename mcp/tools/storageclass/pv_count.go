@@ -13,6 +13,8 @@ func GetStorageClassPVCountTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_storageclass_pv_count",
 		mcp.WithDescription("获取StorageClass下的PV数量 / Get PV count of StorageClass (等同于 kubectl get pv -l \"storageclass.kubernetes.io/name=<storageclass-name>\" --no-headers | wc -l)"),
+		mcp.WithTitleAnnotation("Get StorageClass PV Count"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("StorageClass所在的集群（使用空字符串表示默认集群） / The cluster of the StorageClass")),
 		mcp.WithString("name", mcp.Description("StorageClass的名称 / The name of the StorageClass")),
 	)

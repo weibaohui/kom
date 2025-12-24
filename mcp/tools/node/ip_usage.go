@@ -16,6 +16,8 @@ func NodeIPUsageTool() mcp.Tool {
 	return mcp.NewTool(
 		"get_k8s_node_ip_usage",
 		mcp.WithDescription("查询节点IP资源使用情况 (类似命令: kubectl describe node <node-name> | grep Allocated) / Query node IP resource usage"),
+		mcp.WithTitleAnnotation("Get Node IP Usage"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString("cluster", mcp.Description("节点所在的集群 （使用空字符串表示默认集群）/ The cluster of the node")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("节点名称 / The name of the node")),
 		mcp.WithNumber("cache_seconds", mcp.Description("缓存时间（默认20秒） / Cache duration in seconds,default 20 seconds")),
