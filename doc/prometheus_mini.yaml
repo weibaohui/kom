@@ -77,10 +77,6 @@ data:
         - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
           regex: "node-exporter"
           action: keep
-        - source_labels: [__address__]
-          regex: (.*):9100
-          target_label: __address__
-          replacement: ${1}
     # Prometheus 自监控
     - job_name: prometheus
       static_configs:
