@@ -34,8 +34,8 @@ func Example() {
 	// fetchDoc2()
 	// podCommand()
 	// podFileCommand()
-	ResourceCount()
-	sql()
+	// ResourceCount()
+	// sql()
 	// sql()
 	// NodeUsageExample()
 	// PodUsageExample()
@@ -44,6 +44,7 @@ func Example() {
 	// ALLNodeUsageExample()
 	// NodePodCount()
 	// PodLink()
+
 }
 
 func ResourceCount() {
