@@ -20,7 +20,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total[5m]))`).
     Query()
 ```
@@ -32,26 +32,13 @@ res, err := kom.
     Cluster("prod-cn-beijing").
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`up`).
     Query()
 ```
+ 
 
-### 2.3 使用命名 Prometheus Client
-
-同一集群下存在多个 Prometheus 实例时，可以按名称选择：
-
-```go
-res, err := kom.
-    DefaultCluster().
-    WithContext(ctx).
-    Prometheus().
-    Client("thanos-global").
-    Expr(`sum(rate(http_requests_total[5m])) by (cluster)`).
-    Query()
-```
-
-### 2.4 使用临时指定 Prometheus 地址
+### 2.3 使用临时指定 Prometheus 地址
 
 无需事先在配置中注册，直接指定地址：
 
@@ -99,20 +86,12 @@ _ = prom // 后续获取 client、构造查询
 
 从 `cluster.Prometheus()` 获得的对象，向外暴露：
 
-- **`DefaultClient()`**
+- **`WithInClusterEndpoint("monitoring", "prometheus")`**
   - 返回当前集群的**默认** Prometheus client。
   - 默认 client 的地址和认证等信息来源于 kom 的配置或集群元数据（annotation/configmap 等）。
-
-- **`Client(name string)`**
-  - 返回当前集群下已注册的、指定名称的 Prometheus client。
-  - 适用场景：
-    - `infra-prom`
-    - `business-prom`
-    - `thanos-global` 等。
-
+ 
 - **`WithAddress(addr string)`**
   - 基于给定 HTTP 地址构造一个临时 client。
-  - 不依赖预先注册配置，适合临时测试或动态发现 endpoint 后直接调用。
 
 示例：
 
@@ -120,13 +99,8 @@ _ = prom // 后续获取 client、构造查询
 client := kom.
     DefaultCluster().
     Prometheus().
-    DefaultClient()
-
-namedClient := kom.
-    DefaultCluster().
-    Prometheus().
-    Client("thanos-global")
-
+    WithInClusterEndpoint("monitoring", "prometheus")
+ 
 tmpClient := kom.
     DefaultCluster().
     Prometheus().
@@ -147,7 +121,7 @@ Prometheus client 用于构建查询：
 q := kom.
     DefaultCluster().
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total{job="api"}[5m]))`)
 ```
 
@@ -174,7 +148,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total[5m]))`).
     Query()
 ```
@@ -197,7 +171,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total[5m]))`).
     QueryRange(start, end, step)
 ```
@@ -222,7 +196,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total[5m]))`).
     WithTimeout(3 * time.Second).
     QueryRange(start, end, time.Minute)
@@ -263,7 +237,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`up`).
     Query()
 if err != nil {
@@ -316,7 +290,7 @@ client := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient()
+    WithInClusterEndpoint("monitoring", "prometheus")
 
 wg := sync.WaitGroup{}
 for i := 0; i < 10; i++ {
@@ -343,16 +317,13 @@ wg.Wait()
   - 外部暴露的地址。
 
 - **多集群场景**：  
-  不同集群可以有各自的 Prometheus 配置，通过 `kom.Cluster("...").Prometheus().DefaultClient()` 访问：
+  不同集群可以有各自的 Prometheus 配置，通过 `kom.Cluster("...").Prometheus().WithInClusterEndpoint("monitoring", "prometheus")` 访问：
 
 ```go
-prodRes,  _ := kom.Cluster("prod").WithContext(ctx).Prometheus().DefaultClient().Expr(`up`).Query()
-stageRes, _ := kom.Cluster("stage").WithContext(ctx).Prometheus().DefaultClient().Expr(`up`).Query()
+prodRes,  _ := kom.Cluster("prod").WithContext(ctx).Prometheus().WithInClusterEndpoint("monitoring", "prometheus").Expr(`up`).Query()
+stageRes, _ := kom.Cluster("stage").WithContext(ctx).Prometheus().WithInClusterEndpoint("monitoring", "prometheus").Expr(`up`).Query()
 ```
-
-- **单集群多 Prometheus 场景**：  
-  一个集群可以注册多个命名 Prometheus，调用方通过 `Client(name)` 选择。
-
+ 
 ---
 
 ## 9. 综合示例
@@ -366,7 +337,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(http_requests_total{job="api"}[5m]))`).
     Query()
 if err != nil {
@@ -387,7 +358,7 @@ res, err := kom.
     DefaultCluster().
     WithContext(ctx).
     Prometheus().
-    DefaultClient().
+    WithInClusterEndpoint("monitoring", "prometheus").
     Expr(`sum(rate(container_cpu_usage_seconds_total{namespace="default"}[2m]))`).
     WithTimeout(5 * time.Second).
     QueryRange(start, end, 30*time.Second)
@@ -400,19 +371,7 @@ for _, s := range series {
     fmt.Printf("metric=%v, points=%d\n", s.Metric, len(s.Samples))
 }
 ```
-
-### 9.3 使用命名 Prometheus Client
-
-```go
-res, err := kom.
-    Cluster("prod").
-    WithContext(ctx).
-    Prometheus().
-    Client("thanos-global").
-    Expr(`sum(rate(http_requests_total[5m])) by (cluster)`).
-    Query()
-```
-
+ 
 ---
 
 ## 10. 待确认问题
@@ -436,7 +395,7 @@ res, err := kom.
         DefaultCluster().
         WithContext(ctx).
         Prometheus().
-        DefaultClient().
+        WithInClusterEndpoint("monitoring", "prometheus").
         Expr(`rate(http_requests_total[5m])`).
         ForPod("default", "mypod").
         QuerySum()
@@ -446,7 +405,7 @@ res, err := kom.
         DefaultCluster().
         WithContext(ctx).
         Prometheus().
-        DefaultClient().
+        WithInClusterEndpoint("monitoring", "prometheus").
         Expr(`rate(http_requests_total[5m])`).
         ForDeployment("default", "my-deploy").
         QuerySumBy("pod")
