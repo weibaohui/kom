@@ -4,8 +4,6 @@ kind: Namespace
 metadata:
   name: monitoring
 ---
-
----
 apiVersion: v1
 kind: Service
 metadata:
