@@ -44,7 +44,6 @@ func Example() {
 	// ALLNodeUsageExample()
 	// NodePodCount()
 	// PodLink()
-	PrometheusDefaultClient()
 	PrometheusNamedClient()
 }
 
