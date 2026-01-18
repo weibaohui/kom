@@ -14,12 +14,15 @@
 ### 2.1 从默认集群执行瞬时查询
 
 ```go
+ctx := context.Background()
+
 res, err := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient().
     Expr(`sum(rate(http_requests_total[5m]))`).
-    Query(ctx)
+    Query()
 ```
 
 ### 2.2 从指定集群执行查询
@@ -78,13 +81,19 @@ res, err := kom.
 - **`Cluster.Prometheus()`**  
   返回“Prometheus 服务访问器”，用于在该集群上下文下构造 Prometheus client 和查询。
 
-示例：
+示例（同时演示 `WithContext` 传入上下文）：
 
 ```go
-cluster := kom.DefaultCluster()
+ctx := context.Background()
+
+cluster := kom.DefaultCluster().
+    WithContext(ctx)
+
 prom := cluster.Prometheus()
 _ = prom // 后续获取 client、构造查询
 ```
+
+> 通过在 `Cluster` 层调用 `WithContext(ctx)`，后续的 Prometheus 查询（`Query` / `QueryRange` / `QuerySum` / `QueryXXX` 等）都会复用同一个 `context.Context`。
 
 ### 3.2 Prometheus 服务层
 
@@ -163,11 +172,14 @@ q := kom.
 ```go
 res, err := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient().
     Expr(`sum(rate(http_requests_total[5m]))`).
-    Query(ctx)
+    Query()
 ```
+
+> 后续可在 Query Builder 上增加若干快捷方法（如 `QuerySum()` / `QueryXXX()`），同样不再接收 `ctx` 参数，而是复用链路上的 `WithContext`。
 
 ### 4.2 范围查询（Range Query）
 
@@ -249,10 +261,11 @@ res, err := kom.
 ```go
 res, err := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient().
     Expr(`up`).
-    Query(ctx)
+    Query()
 if err != nil {
     // 处理错误
     return
@@ -294,13 +307,14 @@ for _, s := range samples {
 
 - **Query Builder 对象**  
   建议：作为**一次性对象**使用，不保证同时在多个 goroutine 中并发调用。  
-  可以支持在同一 goroutine 中多次调用 `Query()` / `Range()`（例如不同时间点重复查询），但推荐“一次构建，一次使用”的模式。
+  可以支持在同一 goroutine 中多次调用 `Query()` / `QueryRange()`（例如不同时间点重复查询），但推荐“一次构建，一次使用”的模式。
 
 示例：多个 goroutine 共享 client，各自构建 query：
 
 ```go
 client := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient()
 
@@ -311,7 +325,7 @@ for i := 0; i < 10; i++ {
         defer wg.Done()
         res, err := client.
             Expr(`up`).
-            Query(ctx)
+            Query()
         // 处理 res/err
     }()
 }
@@ -332,8 +346,8 @@ wg.Wait()
   不同集群可以有各自的 Prometheus 配置，通过 `kom.Cluster("...").Prometheus().DefaultClient()` 访问：
 
 ```go
-prodRes,  _ := kom.Cluster("prod").Prometheus().DefaultClient().Expr(`up`).Query(ctx)
-stageRes, _ := kom.Cluster("stage").Prometheus().DefaultClient().Expr(`up`).Query(ctx)
+prodRes,  _ := kom.Cluster("prod").WithContext(ctx).Prometheus().DefaultClient().Expr(`up`).Query()
+stageRes, _ := kom.Cluster("stage").WithContext(ctx).Prometheus().DefaultClient().Expr(`up`).Query()
 ```
 
 - **单集群多 Prometheus 场景**：  
@@ -350,10 +364,11 @@ ctx := context.Background()
 
 res, err := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient().
     Expr(`sum(rate(http_requests_total{job="api"}[5m]))`).
-    Query(ctx)
+    Query()
 if err != nil {
     log.Fatalf("query prometheus failed: %v", err)
 }
@@ -370,11 +385,12 @@ end   := time.Now()
 
 res, err := kom.
     DefaultCluster().
+    WithContext(ctx).
     Prometheus().
     DefaultClient().
     Expr(`sum(rate(container_cpu_usage_seconds_total{namespace="default"}[2m]))`).
     WithTimeout(5 * time.Second).
-    Range(ctx, start, end, 30*time.Second)
+    QueryRange(start, end, 30*time.Second)
 if err != nil {
     log.Fatalf("query range failed: %v", err)
 }
@@ -390,24 +406,19 @@ for _, s := range series {
 ```go
 res, err := kom.
     Cluster("prod").
+    WithContext(ctx).
     Prometheus().
     Client("thanos-global").
     Expr(`sum(rate(http_requests_total[5m])) by (cluster)`).
-    Query(ctx)
+    Query()
 ```
 
 ---
 
 ## 10. 待确认问题
 
-在进入具体接口定义与实现前，还需要确认几个点：
+当前仍有少量设计细节可以在实现阶段再细化：
 
-- **1）`Query` / `Range` 是否统一接受 `context.Context`？**  
-  当前文档中假定：`Query(ctx)` / `Range(ctx, ...)`。如果需要保持 `.Query()` 无参形式，我们需要再设计传入 `ctx` 的方式（例如构造时传入）。
-
-- **2）范围查询方法命名偏好**：  
-  - `Range(ctx, start, end, step)`  
-  - 还是 `QueryRange(ctx, start, end, step)`。
-
-- **3）结果封装层级**：  
-  当前文档采用的是对外暴露 `PromResult` 包装类型的方案（内部隐藏 Prometheus 官方类型）。如果更倾向直接返回官方类型，也可以调整。
+- **1）快捷方法设计**：是否需要提供一批基于表达式的快捷方法（例如 `QuerySum()` / `QueryAvg()` / `QueryXXX()`），对常见聚合结果做二次封装？这些方法同样不接收 `ctx` 参数，而是复用链路上的 `WithContext`。
+- **2）结果封装层级**：当前文档采用对外暴露 `PromResult` 包装类型（内部隐藏 Prometheus 官方类型）的方案，后续可以根据实际使用情况再决定是否暴露更多底层类型或提供更多 helper。
+- **3）多 Prometheus 实例配置方式**：每个集群下的多 Prometheus 实例（如 `default` / `thanos-global` 等）的配置载体（配置文件 / 注解 / 代码注册）可以在实现阶段结合现有 kom 配置体系再做详细设计。
