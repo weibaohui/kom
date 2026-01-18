@@ -15,7 +15,7 @@ func PrometheusDefaultClient() {
 	res, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithInClusterEndpoint("monitoring", "prometheus").
 		Expr(`up`).
 		WithTimeout(5 * time.Second).
 		Query()
@@ -87,7 +87,7 @@ func PrometheusQueryScalar() {
 	value, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithInClusterEndpoint("monitoring", "prometheus").
 		Expr(`count(up == 1)`).
 		QueryScalar()
 
@@ -109,7 +109,7 @@ func PrometheusQueryRange() {
 	res, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithInClusterEndpoint("monitoring", "prometheus").
 		Expr(`up`).
 		QueryRange(start, end, 30*time.Second)
 
@@ -134,7 +134,7 @@ func PrometheusForPod() {
 	res, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithAddress("http://127.0.0.1:45224/").
 		Expr(`up`).
 		ForPod("kube-system", "kube-apiserver-*").
 		Query()
@@ -158,7 +158,7 @@ func PrometheusQuerySum() {
 	sum, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithInClusterEndpoint("monitoring", "prometheus").
 		Expr(`up == 1`).
 		QuerySum()
 
@@ -177,7 +177,7 @@ func PrometheusQuerySumBy() {
 	result, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		DefaultClient().
+		WithInClusterEndpoint("monitoring", "prometheus").
 		Expr(`up == 1`).
 		QuerySumBy("job")
 

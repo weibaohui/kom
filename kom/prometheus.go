@@ -28,18 +28,10 @@ type PromClient struct {
 	address string
 }
 
-// DefaultClient 返回当前集群的默认 Prometheus 客户端。
-// 实际地址解析逻辑由 PrometheusService.resolveAddress 负责。
-func (s *PrometheusService) DefaultClient() *PromClient {
-	return &PromClient{
-		service: s,
-	}
-}
-
-// Client 按命名空间和服务名称返回当前集群下的 Prometheus 客户端。
+// WithInClusterEndpoint 按命名空间和服务名称返回当前集群下的 Prometheus 客户端。
 // namespace: Prometheus Service 所在的命名空间
 // svcName: Prometheus Service 的名称
-func (s *PrometheusService) Client(namespace, svcName string) *PromClient {
+func (s *PrometheusService) WithInClusterEndpoint(namespace, svcName string) *PromClient {
 	return s.WithAddress(s.resolveAddress(namespace, svcName))
 }
 
