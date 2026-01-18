@@ -47,7 +47,7 @@ func TestPrometheusNamedClient(t *testing.T) {
 	res, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		Client("prometheus-k8s").
+		Client("monitoring", "prometheus").
 		Expr(`up`).
 		WithTimeout(5 * time.Second).
 		Query()

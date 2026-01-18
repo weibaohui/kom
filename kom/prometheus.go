@@ -36,10 +36,11 @@ func (s *PrometheusService) DefaultClient() *PromClient {
 	}
 }
 
-// Client 按名称返回当前集群下的 Prometheus 客户端。
-// 地址解析同样由 PrometheusService.resolveAddress 负责。
-func (s *PrometheusService) Client(svcName string) *PromClient {
-	return s.WithAddress(s.resolveAddress(svcName))
+// Client 按命名空间和服务名称返回当前集群下的 Prometheus 客户端。
+// namespace: Prometheus Service 所在的命名空间
+// svcName: Prometheus Service 的名称
+func (s *PrometheusService) Client(namespace, svcName string) *PromClient {
+	return s.WithAddress(s.resolveAddress(namespace, svcName))
 }
 
 // WithAddress 使用显式地址构造一个临时 Prometheus 客户端，不依赖集群配置。
@@ -190,34 +191,15 @@ func (c *PromClient) api() (promv1.API, error) {
 	return promv1.NewAPI(cli), nil
 }
 
-// resolveAddress 负责根据集群信息和 client 名称解析 Prometheus 地址。
-// 自动发现集群中已安装的 Prometheus 实例（通过 Service 查找）。
-func (s *PrometheusService) resolveAddress(svcName string) string {
+// resolveAddress 根据命名空间和服务名称解析 Prometheus 地址。
+// namespace: Prometheus Service 所在的命名空间
+// svcName: Prometheus Service 的名称
+func (s *PrometheusService) resolveAddress(namespace, svcName string) string {
 	if s == nil || s.kubectl == nil {
 		return ""
 	}
-
-	// 常见的 Prometheus 命名空间列表（按优先级排序）
-	namespaces := []string{
-		"monitoring",
-		"prometheus",
-		"kube-prometheus",
-		"observability",
-		"kube-system",
-	}
-
-	// 常见的 Prometheus Service 名称模式（按优先级排序）
-	serviceNames := []string{
-		"prometheus-k8s",
-		"prometheus",
-		"prometheus-server",
-		"prometheus-operated",
-		"kube-prometheus-stack-prometheus",
-	}
-
-	// 如果指定了名称，优先匹配该名称
-	if svcName != "" && svcName != "default" {
-		serviceNames = append([]string{svcName}, serviceNames...)
+	if namespace == "" || svcName == "" {
+		return ""
 	}
 
 	ctx := context.Background()
@@ -225,29 +207,26 @@ func (s *PrometheusService) resolveAddress(svcName string) string {
 		ctx = s.kubectl.Statement.Context
 	}
 
-	// 遍历命名空间和服务名称组合，查找可用的 Prometheus Service
-	for _, ns := range namespaces {
-		for _, svcName := range serviceNames {
-			var svc v1.Service
-			err := s.kubectl.newInstance().WithContext(ctx).
-				Resource(&v1.Service{}).
-				Namespace(ns).
-				Name(svcName).
-				Get(&svc).Error
+	// 根据指定的命名空间和服务名称查找 Prometheus Service
+	var svc v1.Service
+	err := s.kubectl.newInstance().WithContext(ctx).
+		Resource(&v1.Service{}).
+		Namespace(namespace).
+		Name(svcName).
+		Get(&svc).Error
 
-			if err == nil && svc.Name != "" {
-				// 找到 Service，构造集群内访问地址
-				port := s.findPrometheusPort(&svc)
-				if port > 0 {
-					// 格式：http://service-name.namespace.svc:port
-					return fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, svc.Namespace, port)
-				}
-			}
-		}
+	if err != nil || svc.Name == "" {
+		return ""
 	}
 
-	// 如果未找到，返回空字符串
-	return ""
+	// 找到 Service，构造集群内访问地址
+	port := s.findPrometheusPort(&svc)
+	if port <= 0 {
+		return ""
+	}
+
+	// 格式：http://service-name.namespace.svc:port
+	return fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, svc.Namespace, port)
 }
 
 // findPrometheusPort 从 Service 中查找 Prometheus 的端口号。
