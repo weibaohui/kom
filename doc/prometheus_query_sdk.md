@@ -419,6 +419,39 @@ res, err := kom.
 
 当前仍有少量设计细节可以在实现阶段再细化：
 
-- **1）快捷方法设计**：是否需要提供一批基于表达式的快捷方法（例如 `QuerySum()` / `QueryAvg()` / `QueryXXX()`），对常见聚合结果做二次封装？这些方法同样不接收 `ctx` 参数，而是复用链路上的 `WithContext`。
-- **2）结果封装层级**：当前文档采用对外暴露 `PromResult` 包装类型（内部隐藏 Prometheus 官方类型）的方案，后续可以根据实际使用情况再决定是否暴露更多底层类型或提供更多 helper。
-- **3）多 Prometheus 实例配置方式**：每个集群下的多 Prometheus 实例（如 `default` / `thanos-global` 等）的配置载体（配置文件 / 注解 / 代码注册）可以在实现阶段结合现有 kom 配置体系再做详细设计。
+- **1）快捷方法设计（聚合 + 结果形态）**：
+  - 在 Query Builder 上提供结果形态快捷方法：`QueryScalar()` / `QueryVector()` / `QueryMatrix()`，在不改变 PromQL 的前提下直接返回目标类型。
+  - 在此基础上再提供带聚合语义的快捷方法：`QuerySum()` / `QueryAvg()` / `QueryMin()` / `QueryMax()` 等，对当前表达式包一层聚合并直接返回标量结果。
+  - 对于需要按 label 维度聚合的场景，增加 `QuerySumBy(labels ...string)` / `QueryAvgBy(labels ...string)` 等方法，返回例如 `map[string]float64` 形式的聚合结果。
+  - 以上所有方法均不接收 `ctx`，统一复用链路上的 `WithContext(ctx)`。
+
+- **2）资源级快捷过滤（Pod / Deployment 等）**：
+  - 在 Query Builder 上提供资源级过滤方法，例如：`ForPod(namespace, name string)`、`ForDeployment(namespace, name string)`，后续可扩展 `ForStatefulSet` / `ForDaemonSet` / `ForNode` 等。
+  - 这些方法只负责在当前 PromQL 表达式上追加合适的 label 过滤（例如 `{namespace="default",pod="mypod"}` 或 `{namespace="default",deployment="my-deploy"}`），不改变上下文。
+  - 资源过滤方法与 `Query` / `QueryRange` 以及聚合快捷方法可以自由组合，例如：
+
+    ```go
+    // 针对单个 Pod 的 QPS（sum 聚合 + Scalar 结果）
+    qps, err := kom.
+        DefaultCluster().
+        WithContext(ctx).
+        Prometheus().
+        DefaultClient().
+        Expr(`rate(http_requests_total[5m])`).
+        ForPod("default", "mypod").
+        QuerySum()
+
+    // 针对某个 Deployment，按 Pod 维度聚合 QPS
+    values, err := kom.
+        DefaultCluster().
+        WithContext(ctx).
+        Prometheus().
+        DefaultClient().
+        Expr(`rate(http_requests_total[5m])`).
+        ForDeployment("default", "my-deploy").
+        QuerySumBy("pod")
+    ```
+
+- **3）结果封装层级**：当前文档采用对外暴露 `PromResult` 包装类型（内部隐藏 Prometheus 官方类型）的方案，后续可以根据实际使用情况再决定是否暴露更多底层类型或提供更多 helper。
+
+- **4）多 Prometheus 实例配置方式**：每个集群下的多 Prometheus 实例（如 `default` / `thanos-global` 等）的配置载体（配置文件 / 注解 / 代码注册）可以在实现阶段结合现有 kom 配置体系再做详细设计。
