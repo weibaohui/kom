@@ -1,0 +1,413 @@
+# Prometheus 查询 SDK 设计文档（草案）
+
+## 1. 设计目标
+
+- **统一入口**：基于 `kom.Cluster` 抽象，提供从“集群 → Prometheus → 查询”的统一链式调用。
+- **简单易用**：用户只关心 PromQL 语句和查询参数，不需要关心底层 HTTP 客户端和地址拼接。
+- **支持多集群 / 多 Prometheus 实例**：同一个集群可以有多个 Prometheus（如本地 Prom、Thanos 等），也可以针对不同集群分别查询。
+- **与 Go 风格一致**：大量使用 `context.Context`、链式 builder、明确的错误返回。
+
+---
+
+## 2. 基本使用方式概览
+
+### 2.1 从默认集群执行瞬时查询
+
+```go
+res, err := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total[5m]))`).
+    Query(ctx)
+```
+
+### 2.2 从指定集群执行查询
+
+```go
+res, err := kom.
+    Cluster("prod-cn-beijing").
+    WithContext(ctx).
+    Prometheus().
+    DefaultClient().
+    Expr(`up`).
+    Query()
+```
+
+### 2.3 使用命名 Prometheus Client
+
+同一集群下存在多个 Prometheus 实例时，可以按名称选择：
+
+```go
+res, err := kom.
+    DefaultCluster().
+    WithContext(ctx).
+    Prometheus().
+    Client("thanos-global").
+    Expr(`sum(rate(http_requests_total[5m])) by (cluster)`).
+    Query()
+```
+
+### 2.4 使用临时指定 Prometheus 地址
+
+无需事先在配置中注册，直接指定地址：
+
+```go
+res, err := kom.
+    DefaultCluster().
+    WithContext(ctx).
+    Prometheus().
+    WithAddress("http://prometheus.monitoring.svc:9090").
+    Expr(`sum(kube_pod_container_status_ready)`).
+    Query()
+```
+
+---
+
+## 3. API 分层设计（用户视角）
+
+### 3.1 Cluster 层
+
+假定现有能力：
+
+- **`kom.DefaultCluster()`**：返回默认集群 `Cluster`。
+- **`kom.Cluster(name string)`**：按名称/ID 返回指定 `Cluster`。
+
+在此基础上，为 `Cluster` 新增：
+
+- **`Cluster.Prometheus()`**  
+  返回“Prometheus 服务访问器”，用于在该集群上下文下构造 Prometheus client 和查询。
+
+示例：
+
+```go
+cluster := kom.DefaultCluster()
+prom := cluster.Prometheus()
+_ = prom // 后续获取 client、构造查询
+```
+
+### 3.2 Prometheus 服务层
+
+从 `cluster.Prometheus()` 获得的对象，向外暴露：
+
+- **`DefaultClient()`**
+  - 返回当前集群的**默认** Prometheus client。
+  - 默认 client 的地址和认证等信息来源于 kom 的配置或集群元数据（annotation/configmap 等）。
+
+- **`Client(name string)`**
+  - 返回当前集群下已注册的、指定名称的 Prometheus client。
+  - 适用场景：
+    - `infra-prom`
+    - `business-prom`
+    - `thanos-global` 等。
+
+- **`WithAddress(addr string)`**
+  - 基于给定 HTTP 地址构造一个临时 client。
+  - 不依赖预先注册配置，适合临时测试或动态发现 endpoint 后直接调用。
+
+示例：
+
+```go
+client := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient()
+
+namedClient := kom.
+    DefaultCluster().
+    Prometheus().
+    Client("thanos-global")
+
+tmpClient := kom.
+    DefaultCluster().
+    Prometheus().
+    WithAddress("http://10.0.0.1:9090")
+```
+
+### 3.3 Prometheus Client 层
+
+Prometheus client 用于构建查询：
+
+- **`Expr(expr string)`**
+  - 接收一段 PromQL 字符串。
+  - 返回一个“查询构建器”（Query Builder）。
+
+示例：
+
+```go
+q := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total{job="api"}[5m]))`)
+```
+
+> 第一版以纯 `Expr` 为主，后续可扩展更高级的 Metric Builder（如 `Metric().Labels().Rate()` 等）。
+
+---
+
+## 4. 查询构建器（Query Builder）层
+
+`Expr` 返回的 Query Builder 负责设置查询选项并执行查询。
+
+### 4.1 瞬时查询（Instant Query）
+
+- **`Query()`**  
+  在**当前时间点**执行 PromQL 查询，使用链路上通过 `WithContext` 设置的 `context.Context`。
+
+- （可选扩展）**`QueryAt(ts time.Time)`**  
+  在指定时间点执行瞬时查询，同样复用链路上的 `context.Context`。
+
+示例：
+
+```go
+res, err := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total[5m]))`).
+    Query(ctx)
+```
+
+### 4.2 范围查询（Range Query）
+
+- 统一采用：**`QueryRange(start, end time.Time, step time.Duration)`**  
+  使用链路上通过 `WithContext` 设置的 `context.Context` 执行区间查询。
+
+示例（以 `Range` 命名为例）：
+
+```go
+start := time.Now().Add(-1 * time.Hour)
+end   := time.Now()
+step  := time.Minute
+
+res, err := kom.
+    DefaultCluster().
+    WithContext(ctx).
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total[5m]))`).
+    QueryRange(start, end, step)
+```
+
+### 4.3 附加选项（链式设置）
+
+在 Query Builder 上可以附加一些可选设置：
+
+- **`WithTimeout(d time.Duration)`**  
+  设置单次查询的超时时间。
+
+- **`WithDedup(enabled bool)`**  
+  针对 Thanos / Cortex 等支持去重的后端。
+
+- **`WithPartialResponse(enabled bool)`**  
+  是否允许返回部分结果。
+
+示例：
+
+```go
+res, err := kom.
+    DefaultCluster().
+    WithContext(ctx).
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total[5m]))`).
+    WithTimeout(3 * time.Second).
+    QueryRange(start, end, time.Minute)
+```
+
+> 第一版可以先实现 `WithTimeout`，其他选项视后端对接情况逐步增加。
+
+---
+
+## 5. 查询结果设计（PromResult）
+
+为提高易用性，接口层建议返回一个包装后的结果结构，如：
+
+- **`type PromResult struct { ... }`**  
+  封装底层 Prometheus HTTP API 的结果（类型可以是 `model.Value` 等）。
+
+对外提供便捷方法，例如：
+
+- **`Raw()`**  
+  返回原始 Prometheus HTTP API 响应对象（或 JSON）。
+
+- **`AsScalar() (float64, bool)`**  
+  当结果为 scalar 时返回具体数值及是否成功转换。
+
+- **`AsVector() []Sample`**  
+  当结果为 vector 时，返回样本数组。
+
+- **`AsMatrix() []Series`**  
+  当结果为 matrix 时，返回多条时间序列。
+
+- **`AsString() string`**  
+  以人类可读形式返回结果，便于快速调试打印。
+
+示例：
+
+```go
+res, err := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`up`).
+    Query(ctx)
+if err != nil {
+    // 处理错误
+    return
+}
+
+fmt.Println(res.AsString()) // 简单打印
+
+samples := res.AsVector()
+for _, s := range samples {
+    fmt.Printf("metric=%v value=%v\n", s.Metric, s.Value)
+}
+```
+
+> 设计倾向：**对外暴露 `PromResult` 这一层封装**，内部可以自由替换底层实现，避免直接泄露第三方库类型。
+
+---
+
+## 6. 错误处理约定
+
+- **统一签名**：  
+  - 瞬时查询：`Query() (*PromResult, error)`  
+  - 范围查询：`QueryRange(start, end, step) (*PromResult, error)`
+
+- **错误来源**：  
+  - HTTP 层错误：4xx / 5xx。  
+  - PromQL 语法错误。  
+  - 查询超时、上下文取消等。
+
+- **扩展方向**：  
+  - 未来可定义 `PrometheusError` 接口或若干 sentinel errors：  
+    - 例如 `ErrTimeout`、`ErrBadRequest` 等，便于调用方 `errors.Is` 判断。
+
+---
+
+## 7. 并发与复用约定
+
+- **Cluster / Prometheus 服务对象 / Prometheus Client 对象**  
+  设计目标：**可在多 goroutine 安全复用**（内部负责线程安全）。
+
+- **Query Builder 对象**  
+  建议：作为**一次性对象**使用，不保证同时在多个 goroutine 中并发调用。  
+  可以支持在同一 goroutine 中多次调用 `Query()` / `Range()`（例如不同时间点重复查询），但推荐“一次构建，一次使用”的模式。
+
+示例：多个 goroutine 共享 client，各自构建 query：
+
+```go
+client := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient()
+
+wg := sync.WaitGroup{}
+for i := 0; i < 10; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        res, err := client.
+            Expr(`up`).
+            Query(ctx)
+        // 处理 res/err
+    }()
+}
+wg.Wait()
+```
+
+---
+
+## 8. 与 K8s / 多集群关系
+
+- **`Cluster.Prometheus()` 的职责**：  
+  在当前集群上下文中解析出 Prometheus 的访问方式，可能是：
+  - 集群内 `Service`：如 `prometheus-k8s.monitoring.svc:9090`；
+  - 聚合查询层：如 Thanos Query / Query Frontend；
+  - 外部暴露的地址。
+
+- **多集群场景**：  
+  不同集群可以有各自的 Prometheus 配置，通过 `kom.Cluster("...").Prometheus().DefaultClient()` 访问：
+
+```go
+prodRes,  _ := kom.Cluster("prod").Prometheus().DefaultClient().Expr(`up`).Query(ctx)
+stageRes, _ := kom.Cluster("stage").Prometheus().DefaultClient().Expr(`up`).Query(ctx)
+```
+
+- **单集群多 Prometheus 场景**：  
+  一个集群可以注册多个命名 Prometheus，调用方通过 `Client(name)` 选择。
+
+---
+
+## 9. 综合示例
+
+### 9.1 查询 HTTP QPS（瞬时）
+
+```go
+ctx := context.Background()
+
+res, err := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(http_requests_total{job="api"}[5m]))`).
+    Query(ctx)
+if err != nil {
+    log.Fatalf("query prometheus failed: %v", err)
+}
+
+fmt.Println("QPS:", res.AsScalar())
+```
+
+### 9.2 查询 CPU 使用率曲线（范围）
+
+```go
+ctx := context.Background()
+start := time.Now().Add(-30 * time.Minute)
+end   := time.Now()
+
+res, err := kom.
+    DefaultCluster().
+    Prometheus().
+    DefaultClient().
+    Expr(`sum(rate(container_cpu_usage_seconds_total{namespace="default"}[2m]))`).
+    WithTimeout(5 * time.Second).
+    Range(ctx, start, end, 30*time.Second)
+if err != nil {
+    log.Fatalf("query range failed: %v", err)
+}
+
+series := res.AsMatrix()
+for _, s := range series {
+    fmt.Printf("metric=%v, points=%d\n", s.Metric, len(s.Samples))
+}
+```
+
+### 9.3 使用命名 Prometheus Client
+
+```go
+res, err := kom.
+    Cluster("prod").
+    Prometheus().
+    Client("thanos-global").
+    Expr(`sum(rate(http_requests_total[5m])) by (cluster)`).
+    Query(ctx)
+```
+
+---
+
+## 10. 待确认问题
+
+在进入具体接口定义与实现前，还需要确认几个点：
+
+- **1）`Query` / `Range` 是否统一接受 `context.Context`？**  
+  当前文档中假定：`Query(ctx)` / `Range(ctx, ...)`。如果需要保持 `.Query()` 无参形式，我们需要再设计传入 `ctx` 的方式（例如构造时传入）。
+
+- **2）范围查询方法命名偏好**：  
+  - `Range(ctx, start, end, step)`  
+  - 还是 `QueryRange(ctx, start, end, step)`。
+
+- **3）结果封装层级**：  
+  当前文档采用的是对外暴露 `PromResult` 包装类型的方案（内部隐藏 Prometheus 官方类型）。如果更倾向直接返回官方类型，也可以调整。
