@@ -45,7 +45,8 @@ func PrometheusNamedClient() {
 	res, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		Client("monitoring", "prometheus").
+		WithAddress("http://127.0.0.1:45224/").
+		// Client("monitoring", "prometheus").
 		Expr(`up`).
 		WithTimeout(5 * time.Second).
 		Query()
