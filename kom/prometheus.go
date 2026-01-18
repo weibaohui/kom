@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	v1 "k8s.io/api/core/v1"
 )
 
 // PrometheusService 提供基于当前集群的 Prometheus 访问能力。
@@ -24,7 +25,6 @@ func (k *Kubectl) Prometheus() *PrometheusService {
 // PromClient 表示一个具体的 Prometheus 实例（本地 Prom / Thanos 等）。
 type PromClient struct {
 	service *PrometheusService
-	name    string
 	address string
 }
 
@@ -33,20 +33,13 @@ type PromClient struct {
 func (s *PrometheusService) DefaultClient() *PromClient {
 	return &PromClient{
 		service: s,
-		name:    "default",
 	}
 }
 
 // Client 按名称返回当前集群下的 Prometheus 客户端。
 // 地址解析同样由 PrometheusService.resolveAddress 负责。
-func (s *PrometheusService) Client(name string) *PromClient {
-	if name == "" {
-		name = "default"
-	}
-	return &PromClient{
-		service: s,
-		name:    name,
-	}
+func (s *PrometheusService) Client(svcName string) *PromClient {
+	return s.WithAddress(s.resolveAddress(svcName))
 }
 
 // WithAddress 使用显式地址构造一个临时 Prometheus 客户端，不依赖集群配置。
@@ -188,9 +181,6 @@ func (q *PromQuery) getContext() context.Context {
 func (c *PromClient) api() (promv1.API, error) {
 	addr := c.address
 	if addr == "" {
-		addr = c.service.resolveAddress(c.name)
-	}
-	if addr == "" {
 		return nil, fmt.Errorf("prometheus address is not configured")
 	}
 	cli, err := api.NewClient(api.Config{Address: addr})
@@ -201,11 +191,102 @@ func (c *PromClient) api() (promv1.API, error) {
 }
 
 // resolveAddress 负责根据集群信息和 client 名称解析 Prometheus 地址。
-// 当前版本仅作为占位实现，返回空字符串，调用方可通过 WithAddress 显式指定。
-func (s *PrometheusService) resolveAddress(name string) string {
-	// TODO: integrate with cluster configuration in future versions.
-	_ = name
+// 自动发现集群中已安装的 Prometheus 实例（通过 Service 查找）。
+func (s *PrometheusService) resolveAddress(svcName string) string {
+	if s == nil || s.kubectl == nil {
+		return ""
+	}
+
+	// 常见的 Prometheus 命名空间列表（按优先级排序）
+	namespaces := []string{
+		"monitoring",
+		"prometheus",
+		"kube-prometheus",
+		"observability",
+		"kube-system",
+	}
+
+	// 常见的 Prometheus Service 名称模式（按优先级排序）
+	serviceNames := []string{
+		"prometheus-k8s",
+		"prometheus",
+		"prometheus-server",
+		"prometheus-operated",
+		"kube-prometheus-stack-prometheus",
+	}
+
+	// 如果指定了名称，优先匹配该名称
+	if svcName != "" && svcName != "default" {
+		serviceNames = append([]string{svcName}, serviceNames...)
+	}
+
+	ctx := context.Background()
+	if s.kubectl.Statement != nil && s.kubectl.Statement.Context != nil {
+		ctx = s.kubectl.Statement.Context
+	}
+
+	// 遍历命名空间和服务名称组合，查找可用的 Prometheus Service
+	for _, ns := range namespaces {
+		for _, svcName := range serviceNames {
+			var svc v1.Service
+			err := s.kubectl.newInstance().WithContext(ctx).
+				Resource(&v1.Service{}).
+				Namespace(ns).
+				Name(svcName).
+				Get(&svc).Error
+
+			if err == nil && svc.Name != "" {
+				// 找到 Service，构造集群内访问地址
+				port := s.findPrometheusPort(&svc)
+				if port > 0 {
+					// 格式：http://service-name.namespace.svc:port
+					return fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, svc.Namespace, port)
+				}
+			}
+		}
+	}
+
+	// 如果未找到，返回空字符串
 	return ""
+}
+
+// findPrometheusPort 从 Service 中查找 Prometheus 的端口号。
+// 通常 Prometheus 使用 9090 端口，或者端口名为 web/http/prometheus。
+func (s *PrometheusService) findPrometheusPort(svc *v1.Service) int32 {
+	if svc == nil || len(svc.Spec.Ports) == 0 {
+		return 0
+	}
+
+	// 常见的 Prometheus 端口名称
+	preferredPortNames := []string{"web", "http", "prometheus", "metrics"}
+
+	// 优先查找命名端口
+	for _, portName := range preferredPortNames {
+		for _, port := range svc.Spec.Ports {
+			if strings.EqualFold(port.Name, portName) {
+				return port.Port
+			}
+		}
+	}
+
+	// 查找 9090 端口（Prometheus 默认端口）
+	for _, port := range svc.Spec.Ports {
+		if port.Port == 9090 {
+			return port.Port
+		}
+	}
+
+	// 如果只有一个端口，使用该端口
+	if len(svc.Spec.Ports) == 1 {
+		return svc.Spec.Ports[0].Port
+	}
+
+	// 都不匹配，使用第一个端口
+	if len(svc.Spec.Ports) > 0 {
+		return svc.Spec.Ports[0].Port
+	}
+
+	return 0
 }
 
 // PromResult 封装 Prometheus 查询返回的结果。
