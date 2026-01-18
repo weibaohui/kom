@@ -75,34 +75,6 @@ func (q *PromQuery) WithTimeout(d time.Duration) *PromQuery {
 	return q
 }
 
-// ForPod 为当前查询追加 Pod 级别的过滤条件（基于 namespace / pod 标签）。
-func (q *PromQuery) ForPod(namespace, name string) *PromQuery {
-	if q.labelMatchers == nil {
-		q.labelMatchers = map[string]string{}
-	}
-	if namespace != "" {
-		q.labelMatchers["namespace"] = namespace
-	}
-	if name != "" {
-		q.labelMatchers["pod"] = name
-	}
-	return q
-}
-
-// ForDeployment 为当前查询追加 Deployment 级别的过滤条件。
-func (q *PromQuery) ForDeployment(namespace, name string) *PromQuery {
-	if q.labelMatchers == nil {
-		q.labelMatchers = map[string]string{}
-	}
-	if namespace != "" {
-		q.labelMatchers["namespace"] = namespace
-	}
-	if name != "" {
-		q.labelMatchers["deployment"] = name
-	}
-	return q
-}
-
 // Query 在当前时间点执行瞬时查询，使用链路上通过 WithContext 设置的 context。
 func (q *PromQuery) Query() (*PromResult, error) {
 	ctx := q.getContext()
@@ -441,81 +413,4 @@ func (q *PromQuery) QueryMatrix() ([]Series, error) {
 		return nil, err
 	}
 	return res.AsMatrix(), nil
-}
-
-// QuerySum 对当前表达式的结果进行 sum 聚合，并返回标量。
-func (q *PromQuery) QuerySum() (float64, error) {
-	vec, err := q.QueryVector()
-	if err != nil {
-		return 0, err
-	}
-	var sum float64
-	for _, s := range vec {
-		sum += s.Value
-	}
-	return sum, nil
-}
-
-// QueryAvg 对当前表达式的结果进行 avg 聚合，并返回标量。
-func (q *PromQuery) QueryAvg() (float64, error) {
-	vec, err := q.QueryVector()
-	if err != nil {
-		return 0, err
-	}
-	if len(vec) == 0 {
-		return 0, nil
-	}
-	var sum float64
-	for _, s := range vec {
-		sum += s.Value
-	}
-	return sum / float64(len(vec)), nil
-}
-
-// QuerySumBy 按给定 label 组合进行 sum 聚合，返回每个分组的结果。
-func (q *PromQuery) QuerySumBy(labels ...string) (map[string]float64, error) {
-	vec, err := q.QueryVector()
-	if err != nil {
-		return nil, err
-	}
-	res := make(map[string]float64)
-	for _, s := range vec {
-		key := buildGroupKey(s.Metric, labels)
-		res[key] += s.Value
-	}
-	return res, nil
-}
-
-// QueryAvgBy 按给定 label 组合进行 avg 聚合，返回每个分组的结果。
-func (q *PromQuery) QueryAvgBy(labels ...string) (map[string]float64, error) {
-	vec, err := q.QueryVector()
-	if err != nil {
-		return nil, err
-	}
-	sum := make(map[string]float64)
-	count := make(map[string]int)
-	for _, s := range vec {
-		key := buildGroupKey(s.Metric, labels)
-		sum[key] += s.Value
-		count[key]++
-	}
-	res := make(map[string]float64, len(sum))
-	for k, v := range sum {
-		if c := count[k]; c > 0 {
-			res[k] = v / float64(c)
-		}
-	}
-	return res, nil
-}
-
-// buildGroupKey 根据指定的 labels 从 Metric 中取值并构造分组 key。
-func buildGroupKey(metric map[string]string, labels []string) string {
-	if len(labels) == 0 {
-		return ""
-	}
-	parts := make([]string, 0, len(labels))
-	for _, l := range labels {
-		parts = append(parts, fmt.Sprintf("%s=%s", l, metric[l]))
-	}
-	return strings.Join(parts, ",")
 }

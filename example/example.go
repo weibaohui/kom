@@ -45,6 +45,7 @@ func Example() {
 	// NodePodCount()
 	// PodLink()
 	PrometheusNamedClient()
+	PrometheusQuery()
 }
 
 func ResourceCount() {
