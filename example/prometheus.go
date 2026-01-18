@@ -34,9 +34,9 @@ func PrometheusQuery() {
 	value, err := kom.DefaultCluster().
 		WithContext(ctx).
 		Prometheus().
-		WithAddress("http://127.0.0.1:45972/").
-		Expr(`sum(rate(process_cpu_seconds_total[1m]))`).
-		Query()
+		WithAddress("http://127.0.0.1:43422/").
+		Expr(`sum by (instance) (irate(node_cpu_seconds_total{mode!="idle"}[1m])) / sum by (instance) (irate(node_cpu_seconds_total[1m])) * 100`).
+		QueryRange(time.Now().Add(-1*time.Hour), time.Now(), time.Minute)
 
 	if err != nil {
 		klog.V(6).Infof("查询失败: %v", err)
