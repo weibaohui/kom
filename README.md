@@ -23,6 +23,7 @@
 9. 支持高频操作封装，如deployment的restart重启、scale扩缩容、启停等20余项操作功能。
 10. 支持SQL查询k8s资源。select * from pod where metadata.namespace='kube-system' or metadata.namespace='default' order by  metadata.creationTimestamp desc 
 11. 支持查询缓存，在高频、批量查询场景下，可设置缓存过期时间，提升查询性能。列表过滤条件不受缓存影响。
+12. 支持Prometheus查询，支持通过集群内的Prometheus服务或外部Prometheus地址进行监控数据查询，支持瞬时查询和区间查询，提供多种结果解析方式。
 
 
 
@@ -1138,6 +1139,186 @@ var docResult []byte
 	fmt.Printf("Get Deployment Doc [%s] :%s", field, string(docResult))
 ```
 
+### 10. Prometheus 查询
+kom 提供了强大的 Prometheus 查询功能，支持通过集群内的 Prometheus 服务或外部 Prometheus 地址进行监控数据查询。
+
+#### 使用集群内的 Prometheus 服务
+通过命名空间和服务名称自动解析集群内的 Prometheus 服务地址：
+```go
+ctx := context.Background()
+
+// 使用命名客户端（例如 "prometheus-k8s"）
+res, err := kom.DefaultCluster().
+	WithContext(ctx).
+	Prometheus().
+	WithInClusterEndpoint("prometheus-k8s", "monitoring").
+	Expr(`up`).
+	WithTimeout(5 * time.Second).
+	Query()
+
+if err != nil {
+	klog.V(6).Infof("查询失败（可能集群中未安装指定的 Prometheus）: %v", err)
+	return
+}
+
+klog.V(6).Infof("查询结果: %s", res.AsString())
+```
+
+**说明：**
+- `WithInClusterEndpoint(namespace, svcName)`：自动查找指定命名空间下的 Prometheus Service
+- 支持自动识别常见端口（9090）和端口名称（web、http、prometheus、metrics）
+- 生成的地址格式：`http://service-name.namespace.svc:port`
+
+#### 使用外部 Prometheus 地址
+直接指定 Prometheus 的访问地址：
+```go
+ctx := context.Background()
+
+value, err := kom.DefaultCluster().
+	WithContext(ctx).
+	Prometheus().
+	WithAddress("http://127.0.0.1:43422/").
+	Expr(`sum by (instance) (irate(node_cpu_seconds_total{mode!="idle"}[1m])) / sum by (instance) (irate(node_cpu_seconds_total[1m])) * 100`).
+	QueryRange(time.Now().Add(-1*time.Hour), time.Now(), time.Minute)
+
+if err != nil {
+	klog.V(6).Infof("查询失败: %v", err)
+	return
+}
+
+klog.V(6).Infof(" value: %s", value.AsString())
+```
+
+#### 瞬时查询
+在指定时间点执行查询：
+```go
+// 在当前时间点查询
+res, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`up`).
+	Query()
+
+// 在指定时间点查询
+res, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`up`).
+	QueryAt(time.Now().Add(-1 * time.Hour))
+```
+
+#### 区间查询
+执行时间范围查询：
+```go
+start := time.Now().Add(-1 * time.Hour)
+end := time.Now()
+step := time.Minute
+
+res, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`rate(http_requests_total[5m])`).
+	QueryRange(start, end, step)
+```
+
+#### 查询结果解析
+kom 提供了多种方式解析 Prometheus 查询结果：
+
+**解析为标量值：**
+```go
+val, ok := res.AsScalar()
+if ok {
+	fmt.Printf("标量值: %f\n", val)
+}
+```
+
+**解析为向量（瞬时查询结果）：**
+```go
+samples := res.AsVector()
+for _, sample := range samples {
+	fmt.Printf("Metric: %v, Value: %f, Timestamp: %v\n",
+		sample.Metric, sample.Value, sample.Timestamp)
+}
+```
+
+**解析为矩阵（区间查询结果）：**
+```go
+series := res.AsMatrix()
+for _, s := range series {
+	fmt.Printf("Series Metric: %v\n", s.Metric)
+	for _, point := range s.Samples {
+		fmt.Printf("  Timestamp: %v, Value: %f\n",
+			point.Timestamp, point.Value)
+	}
+}
+```
+
+**获取原始结果：**
+```go
+value, warnings := res.Raw()
+fmt.Printf("原始结果: %s, 警告: %v\n", value.String(), warnings)
+```
+
+**获取字符串形式（便于调试）：**
+```go
+fmt.Printf("查询结果: %s\n", res.AsString())
+```
+
+#### 便捷查询方法
+kom 提供了便捷方法直接获取特定类型的查询结果：
+
+**直接获取标量：**
+```go
+val, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`sum(up)`).
+	QueryScalar()
+```
+
+**直接获取向量：**
+```go
+samples, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`up`).
+	QueryVector()
+```
+
+**直接获取矩阵：**
+```go
+series, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`rate(http_requests_total[5m])`).
+	QueryRange(time.Now().Add(-1*time.Hour), time.Now(), time.Minute).
+	QueryMatrix()
+```
+
+#### 设置超时时间
+为查询设置超时时间：
+```go
+res, err := kom.DefaultCluster().
+	Prometheus().
+	WithAddress("http://127.0.0.1:9090").
+	Expr(`up`).
+	WithTimeout(5 * time.Second).
+	Query()
+```
+
+#### 查询参数说明
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `WithInClusterEndpoint` | namespace, svcName | 使用集群内的 Prometheus 服务 |
+| `WithAddress` | address | 使用外部 Prometheus 地址 |
+| `Expr` | expr | 设置 PromQL 查询表达式 |
+| `WithTimeout` | duration | 设置查询超时时间 |
+| `Query` | - | 执行瞬时查询 |
+| `QueryAt` | time | 在指定时间点执行瞬时查询 |
+| `QueryRange` | start, end, step | 执行区间查询 |
+| `QueryScalar` | - | 执行查询并返回标量值 |
+| `QueryVector` | - | 执行查询并返回向量 |
+| `QueryMatrix` | - | 执行查询并返回矩阵 |
 
 
 ## License
