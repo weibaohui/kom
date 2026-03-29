@@ -1323,3 +1323,8 @@ res, err := kom.DefaultCluster().
 
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fweibaohui%2Fkom.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fweibaohui%2Fkom?ref=badge_large)
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/weibaohui-kom).
+
