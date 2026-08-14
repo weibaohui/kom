@@ -47,7 +47,10 @@ func ExecHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToo
 	klog.V(6).Infof("Executing command in pod %s/%s container %s: %v %v", meta.Namespace, meta.Name, containerName, command, argsVal)
 
 	// 执行命令
-	var execResult string
+	// 修复：必须使用 *[]byte 作为 dest，kom/callbacks/exec.go 的 ExecuteCommand 通过
+	// 反射校验要求 dest 是指向字节切片的指针，否则返回
+	// "请确保dest 是一个指向字节切片的指针。定义var s []byte 使用&s"。
+	var execResult []byte
 	err = kom.Cluster(meta.Cluster).WithContext(ctx).
 		Namespace(meta.Namespace).
 		Name(meta.Name).
